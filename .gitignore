@@ -14,13 +14,18 @@ venv/
 env/
 ENV/
 
-# Flask instance folder (local config/database)
-instance/
+# Flask instance folder (local config) - but allow starter database
+instance/*
+!instance/gut_health.db
 
-# Database files (contain user data)
+# Database files (contain user data) - except starter database
 *.db
+!instance/gut_health.db
 *.sqlite
 *.sqlite3
+
+# Personal backup (not for GitHub)
+backup_gut_health.db
 
 # Backups (user-generated)
 backups/

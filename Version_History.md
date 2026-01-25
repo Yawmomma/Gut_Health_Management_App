@@ -40,6 +40,34 @@ templates/
 
 **Latest Updates: 2026-01-25**
 
+- **Footer Updated for v1.0 Release**: Updated footer text to reflect the v1.0 milestone
+  - New footer: "© 2026 Gut Health Management App | Your Personal Health Companion | By Sally - v1.0"
+  - **Files changed**: `templates/base.html`
+
+- **Database Backup Fix (BUG FIX)**: Fixed backup downloading empty database instead of the one with data
+  - **Root Cause**: Backup route used relative paths (`gut_health.db` and `instance/gut_health.db`) which didn't resolve correctly
+  - **Solution**: Changed to use Flask's `current_app.instance_path` for correct absolute path to database
+  - Deleted orphan empty database files from root and database/ folders
+  - **Files changed**: `routes/settings.py`
+
+- **Docker Database Fix**: Fixed database not loading in Docker container
+  - **Root Cause**: `.dockerignore` was excluding `*.db` and `instance/` folder, so database never got copied into image. Additionally, volume mount `./data:/app/instance` created an empty mount that overwrote any database.
+  - **Solution**: Created entrypoint script (`docker-entrypoint.sh`) that copies initial database to volume on first run
+  - Updated `.dockerignore` to allow `instance/` folder to be copied
+  - Updated `Dockerfile` to save initial database to `/app/initial_data/` before volume mount overwrites it
+  - Updated `docker-compose.yml` to use named volume `gut_health_data` for persistence
+  - **Files changed**: `.dockerignore`, `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh` (new)
+
+- **Docker Support Added**: Made the app Docker-compatible for containerized deployment
+  - Created `Dockerfile` with Python 3.12-slim base image
+  - Created `.dockerignore` to exclude unnecessary files from image
+  - Created `docker-compose.yml` for easy deployment with volume mounts
+  - Added `watchdog==3.0.0` to requirements.txt (was missing, used by live reload)
+  - Added `eventlet==0.33.3` to requirements.txt for better SocketIO production support
+  - Configured persistent volumes for database and uploads
+  - Health check endpoint configured
+  - **Files changed**: `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `requirements.txt`
+
 - **v1.0.0 - GitHub Release Preparation**: Cleaned up project files for initial public release
   - Removed development docs: PHASE2_COMPLETE.md, PHASE3_PROGRESS.md, PHASE4_COMPLETE.md, CRUD_COMPLETION_SUMMARY.md, CRUD_IMPROVEMENT_PLAN.md, revised_app_development_plan.md, EDUCATION_MARKDOWN_GUIDE.md
   - Removed test files: test_add_food.py, test_kippers.py

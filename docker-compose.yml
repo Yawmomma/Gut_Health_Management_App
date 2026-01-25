@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  gut-health-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gut-health-app
+    ports:
+      - "5001:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - FLASK_ENV=production
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
+    volumes:
+      # Persist SQLite database (entrypoint will copy initial db if empty)
+      - gut_health_data:/app/instance
+      # Persist uploaded files
+      - ./uploads:/app/static/uploads
+      # Persist educational docs
+      - ./docs:/app/docs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  gut_health_data:

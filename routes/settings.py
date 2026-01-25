@@ -16,11 +16,8 @@ bp = Blueprint('settings', __name__, url_prefix='/settings')
 @bp.route('/')
 def index():
     """Settings page"""
-    # Get database file info - try both locations
-    db_path = 'gut_health.db'
-    if not os.path.exists(db_path):
-        db_path = 'instance/gut_health.db'
-
+    # Get database file info using Flask's instance_path
+    db_path = os.path.join(current_app.instance_path, 'gut_health.db')
     db_exists = os.path.exists(db_path)
 
     db_info = None
@@ -235,10 +232,8 @@ def integrity_check():
 def backup_database():
     """Download a backup of the database"""
     try:
-        # Try both locations
-        db_path = 'gut_health.db'
-        if not os.path.exists(db_path):
-            db_path = 'instance/gut_health.db'
+        # Use Flask's instance_path for correct absolute path
+        db_path = os.path.join(current_app.instance_path, 'gut_health.db')
 
         if not os.path.exists(db_path):
             flash('Database file not found', 'error')

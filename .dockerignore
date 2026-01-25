@@ -1,0 +1,80 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Database files - keep instance/ for initial data
+# The entrypoint script will copy initial database if volume is empty
+# instance/  # NOT excluded - we need the initial database
+
+# Uploads (will be mounted as volume)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+.DS_Store
+Thumbs.db
+
+# Development files
+*.backup
+*.bak
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker/
+
+# Misc
+*.jpeg
+*.jpg
+*.png
+!static/images/*
