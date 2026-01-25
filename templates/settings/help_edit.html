@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Help Document - {{ document.title }}{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .help-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-body);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+
+    /* Preview area styling */
+    .preview-card {
+        background: #D6BD98 !important;
+        border: 2px solid #8BA48B;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+        color: #1A3636 !important;
+    }
+
+    .preview-card * {
+        color: #1A3636 !important;
+    }
+
+    .preview-card h1, .preview-card h2, .preview-card h3,
+    .preview-card h4, .preview-card h5, .preview-card h6 {
+        color: #1A3636 !important;
+    }
+
+    .preview-card p, .preview-card li, .preview-card span,
+    .preview-card div, .preview-card td, .preview-card th,
+    .preview-card a, .preview-card strong, .preview-card em,
+    .preview-card code, .preview-card pre {
+        color: #1A3636 !important;
+    }
+
+    .preview-card img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 15px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Markdown editor styling */
+    #markdown_source {
+        font-family: 'Courier New', monospace;
+        font-size: var(--text-label);
+        line-height: 1.5;
+    }
+
+    /* Tab styling */
+    .nav-tabs .nav-link {
+        font-size: var(--text-body);
+        color: #8BA48B;
+    }
+    .nav-tabs .nav-link.active {
+        background-color: #8BA48B;
+        color: white;
+        border-color: #8BA48B;
+    }
+
+    /* Existing documents list scrollbar */
+    .existing-docs-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    .existing-docs-list::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.1);
+        border-radius: 3px;
+    }
+    .existing-docs-list::-webkit-scrollbar-thumb {
+        background: rgba(214, 189, 152, 0.5);
+        border-radius: 3px;
+    }
+    .existing-docs-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(214, 189, 152, 0.7);
+    }
+
+    /* Dark green background for form cards */
+    .form-card-dark {
+        background: linear-gradient(135deg, #1A3636, #2d4a4a);
+        border: 2px solid #8BA48B;
+    }
+
+    .form-card-dark .card-title {
+        color: #D6BD98;
+    }
+
+    .form-card-dark label,
+    .form-card-dark .form-label {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .form-card-dark small,
+    .form-card-dark .text-muted {
+        color: rgba(214, 189, 152, 0.8) !important;
+    }
+
+    .form-card-dark .form-control {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #8BA48B;
+        color: #1A3636;
+    }
+
+    .form-card-dark .form-control:focus {
+        background-color: #ffffff;
+        border-color: #D6BD98;
+        box-shadow: 0 0 0 0.2rem rgba(214, 189, 152, 0.25);
+    }
+
+    .form-card-dark .form-control:disabled {
+        background-color: rgba(255, 255, 255, 0.6);
+        color: rgba(26, 54, 54, 0.7);
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="help-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-pencil-square"></i> Edit Help Doc</h6>
+
+            <!-- Navigation Links (same as index) -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M3 2h8"/><path d="M21 2v10c0 1.1-.9 2 2h-1"/><path d="M18 14v8"/><path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/><path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/><line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Existing Categories List -->
+            <div style="padding-right: 12px; margin-bottom: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-folder"></i> Categories</h6>
+                <div style="background-color: rgba(0,0,0,0.15); border-radius: 6px; padding: 8px;">
+                    {% if categories %}
+                        {% for category in categories %}
+                            <div style="padding: 3px 6px; margin-bottom: 3px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.6); padding-left: 6px; font-size: 0.58rem; line-height: 1.3; background-color: rgba(214, 189, 152, 0.1); border-radius: 3px;">
+                                <span style="font-weight: 600; color: rgba(255,255,255,0.95);">{{ category }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">No categories yet.</p>
+                    {% endif %}
+                </div>
+                <small class="text-muted d-block mt-1" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">Existing category names</small>
+            </div>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Existing Documents List -->
+            <div style="padding-right: 12px; margin-bottom: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-list-ol"></i> Other Documents</h6>
+                <div class="existing-docs-list" style="max-height: 400px; overflow-y: auto; background-color: rgba(0,0,0,0.15); border-radius: 6px; padding: 8px;">
+                    {% if existing_docs %}
+                        {% for doc in existing_docs %}
+                            <div style="padding: 2px 4px; margin-bottom: 2px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.4); padding-left: 5px; font-size: 0.55rem; line-height: 1.2;">
+                                <span style="font-weight: 600; color: var(--gold);">[{{ doc.category }}]</span>
+                                <span style="color: rgba(255,255,255,0.85);">{{ doc.title }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">No other documents.</p>
+                    {% endif %}
+                </div>
+                <small class="text-muted d-block mt-1" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">Reference for document organization.</small>
+            </div>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons -->
+            <div style="padding-right: 12px;">
+                <button type="submit" form="edit-form" class="btn btn-sm btn-success w-100 mb-2 text-label">
+                    <i class="bi bi-check-circle"></i> Save Changes
+                </button>
+                <a href="{{ url_for('settings.help_view', doc_id=document.id) }}" class="btn btn-sm btn-outline-light w-100 mb-2 text-label">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <a href="{{ url_for('settings.help_index') }}" class="btn btn-sm btn-outline-light w-100 text-label">
+                    <i class="bi bi-arrow-left"></i> Back to Help List
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- Header -->
+                <div class="mb-4">
+                    <h1 class="text-h2 mb-2"><i class="bi bi-pencil-square"></i> Edit Help Document</h1>
+                    <p class="text-muted text-body">Edit the document details and markdown content.</p>
+                </div>
+
+                <!-- Form -->
+                <form method="POST" action="{{ url_for('settings.help_edit', doc_id=document.id) }}" id="edit-form">
+                    <!-- Document Details Card -->
+                    <div class="card mb-3 form-card-dark">
+                        <div class="card-body">
+                            <h5 class="card-title text-title mb-3"><i class="bi bi-info-circle"></i> Document Details</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="category" class="form-label text-label">Category</label>
+                                    <input type="text" class="form-control form-control-sm" id="category"
+                                           name="category" value="{{ document.category }}" list="category-options" required>
+                                    <datalist id="category-options">
+                                        {% for category in categories %}
+                                            <option value="{{ category }}">
+                                        {% endfor %}
+                                    </datalist>
+                                    <small class="text-muted text-micro">Select existing or type new category</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="filename" class="form-label text-label">Filename</label>
+                                    <input type="text" class="form-control form-control-sm" id="filename"
+                                           value="{{ document.filename }}" disabled>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label text-label">Document Title</label>
+                                <input type="text" class="form-control form-control-sm" id="title"
+                                       name="title" value="{{ document.title }}" required>
+                                <small class="text-muted text-micro">Enter your custom document title</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs for Markdown Source and Preview -->
+                    <div class="card mb-3 form-card-dark">
+                        <div class="card-body">
+                            <ul class="nav nav-tabs mb-3" id="contentTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="markdown-tab" data-bs-toggle="tab"
+                                            data-bs-target="#markdown" type="button" role="tab" aria-controls="markdown" aria-selected="true">
+                                        <i class="bi bi-code-square"></i> Edit Markdown
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="preview-tab" data-bs-toggle="tab"
+                                            data-bs-target="#preview" type="button" role="tab" aria-controls="preview" aria-selected="false">
+                                        <i class="bi bi-eye"></i> Preview
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="contentTabsContent">
+                                <!-- Markdown Editor Tab -->
+                                <div class="tab-pane fade show active" id="markdown" role="tabpanel" aria-labelledby="markdown-tab">
+                                    <textarea class="form-control" id="markdown_source" name="markdown_source"
+                                              rows="20" required>{{ document.markdown_source if document.markdown_source else '# ' + document.title + '\n\n' + document.content }}</textarea>
+                                    <small class="text-muted text-micro"><i class="bi bi-info-circle"></i> Edit the markdown source. Changes will be reflected in the preview.</small>
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="update-preview-btn">
+                                        <i class="bi bi-arrow-repeat"></i> Update Preview
+                                    </button>
+                                </div>
+
+                                <!-- Preview Tab -->
+                                <div class="tab-pane fade" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                                    <div class="preview-card" id="html-preview">
+                                        {{ document.content|safe }}
+                                    </div>
+                                    <small class="text-muted text-micro"><i class="bi bi-info-circle"></i> This is how your document will look when published.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Update preview when markdown is edited
+document.getElementById('update-preview-btn').addEventListener('click', function() {
+    const markdownSource = document.getElementById('markdown_source').value;
+
+    // Send to server to convert markdown to HTML
+    fetch('{{ url_for("settings.help_preview_markdown") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ markdown: markdownSource })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.html) {
+            document.getElementById('html-preview').innerHTML = data.html;
+
+            // Switch to preview tab
+            const previewTab = new bootstrap.Tab(document.getElementById('preview-tab'));
+            previewTab.show();
+
+            // Show success message
+            const btn = document.getElementById('update-preview-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Updated!';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success');
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-primary');
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        alert('Error updating preview: ' + error);
+    });
+});
+</script>
+{% endblock %}

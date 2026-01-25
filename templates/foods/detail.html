@@ -1,0 +1,1443 @@
+{% extends "base.html" %}
+
+{% block title %}{{ food.name }} - Gut Health App{% endblock %}
+
+{% macro get_worst_color(fodmap_values, histamine_level, dao_blocker, histamine_liberator) %}
+    {# Priority: Red > Amber > Green #}
+    {% set all_values = fodmap_values + [histamine_level, dao_blocker, histamine_liberator] %}
+    {# Check for Red/High/Yes first #}
+    {% if 'Red' in all_values or 'High' in all_values or 'Yes' in all_values %}
+        red
+    {# Then check for Amber/Medium #}
+    {% elif 'Amber' in all_values or 'Medium' in all_values %}
+        amber
+    {# Default to green #}
+    {% else %}
+        green
+    {% endif %}
+{% endmacro %}
+
+{% macro render_serving_data(serving_level, food) %}
+    {# Determine properties based on serving level #}
+    {% if serving_level == 'safe' %}
+        {% set title = 'Safe Serving' %}
+        {% set badge_class = 'safe' %}
+        {% set modal_target = '#addToDiaryModalSafe' %}
+        {% set serving_size = food.safe_serving %}
+        {% set serving_unit = food.safe_serving_unit %}
+        {% set serving_note = food.safe_serving_note %}
+        {% set serving_type = food.safe_serving_type %}
+        {% set fructose = food.safe_fructose or 'Green' %}
+        {% set sorbitol = food.safe_sorbitol or 'Green' %}
+        {% set lactose = food.safe_lactose or 'Green' %}
+        {% set gos = food.safe_gos or 'Green' %}
+        {% set fructans = food.safe_fructans or 'Green' %}
+        {% set mannitol = food.safe_mannitol or 'Green' %}
+        {% set polyols = food.safe_polyols or 'Green' %}
+        {% set histamine_level = food.safe_histamine_level or 'Low' %}
+        {% set dao_blocker = food.safe_dao_blocker or 'No' %}
+        {% set histamine_liberator = food.safe_histamine_liberator or 'No' %}
+    {% elif serving_level == 'moderate' %}
+        {% set title = 'Moderate Serving' %}
+        {% set badge_class = 'moderate' %}
+        {% set modal_target = '#addToDiaryModalModerate' %}
+        {% set serving_size = food.moderate_serving %}
+        {% set serving_unit = food.moderate_serving_unit %}
+        {% set serving_note = food.moderate_serving_note %}
+        {% set serving_type = food.moderate_serving_type %}
+        {% set fructose = food.moderate_fructose or 'Amber' %}
+        {% set sorbitol = food.moderate_sorbitol or 'Amber' %}
+        {% set lactose = food.moderate_lactose or 'Amber' %}
+        {% set gos = food.moderate_gos or 'Amber' %}
+        {% set fructans = food.moderate_fructans or 'Amber' %}
+        {% set mannitol = food.moderate_mannitol or 'Amber' %}
+        {% set polyols = food.moderate_polyols or 'Amber' %}
+        {% set histamine_level = food.moderate_histamine_level or 'Medium' %}
+        {% set dao_blocker = food.moderate_dao_blocker or 'No' %}
+        {% set histamine_liberator = food.moderate_histamine_liberator or 'No' %}
+    {% else %} {# high #}
+        {% set title = 'High Serving' %}
+        {% set badge_class = 'high' %}
+        {% set modal_target = '#addToDiaryModalHigh' %}
+        {% set serving_size = food.high_serving %}
+        {% set serving_unit = food.high_serving_unit %}
+        {% set serving_note = food.high_serving_note %}
+        {% set serving_type = food.high_serving_type %}
+        {% set fructose = food.high_fructose or 'Red' %}
+        {% set sorbitol = food.high_sorbitol or 'Red' %}
+        {% set lactose = food.high_lactose or 'Red' %}
+        {% set gos = food.high_gos or 'Red' %}
+        {% set fructans = food.high_fructans or 'Red' %}
+        {% set mannitol = food.high_mannitol or 'Red' %}
+        {% set polyols = food.high_polyols or 'Red' %}
+        {% set histamine_level = food.high_histamine_level or 'High' %}
+        {% set dao_blocker = food.high_dao_blocker or 'Yes' %}
+        {% set histamine_liberator = food.high_histamine_liberator or 'Yes' %}
+    {% endif %}
+
+    {# Calculate traffic light color #}
+    {% set fodmap_values = [fructose, sorbitol, lactose, gos, fructans, mannitol, polyols] %}
+    {% set traffic_light_color = get_worst_color(fodmap_values, histamine_level, dao_blocker, histamine_liberator) %}
+
+    <div class="serving-card {{ badge_class }}">
+        <!-- Header row with title on left and traffic light on right -->
+        <div class="serving-header-row">
+            <h6 class="serving-title">{{ title }}</h6>
+            <!-- Serving size and traffic light in top right -->
+            <div class="serving-size-display">
+                <span class="traffic-light-circle {{ traffic_light_color }}"></span>
+                <span class="size-text">{{ serving_size }}{{ serving_unit or '' }}</span>
+            </div>
+        </div>
+
+        <!-- Serving note and type -->
+        {% if serving_note or serving_type %}
+        <div class="serving-meta">
+            {% if serving_note %}
+                <span class="meta-text">{{ serving_note }}</span>
+            {% endif %}
+            {% if serving_note and serving_type %}
+                <span class="meta-divider">|</span>
+            {% endif %}
+            {% if serving_type %}
+                <span class="meta-text">{{ serving_type }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="section-divider-thin"></div>
+
+        <!-- FODMAP Ratings Section -->
+        <div class="ratings-section">
+            <h6 class="section-header"><i class="bi bi-diagram-3"></i> FODMAP</h6>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ fructose|lower }}"></span>
+                <span class="rating-label">Fructose</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ sorbitol|lower }}"></span>
+                <span class="rating-label">Sorbitol</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ lactose|lower }}"></span>
+                <span class="rating-label">Lactose</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ gos|lower }}"></span>
+                <span class="rating-label">GOS</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ fructans|lower }}"></span>
+                <span class="rating-label">Fructans</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ mannitol|lower }}"></span>
+                <span class="rating-label">Mannitol</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {{ polyols|lower }}"></span>
+                <span class="rating-label">Polyols</span>
+            </div>
+        </div>
+
+        <div class="section-divider-thin"></div>
+
+        <!-- Histamine Ratings Section -->
+        <div class="ratings-section">
+            <h6 class="section-header"><i class="bi bi-activity"></i> Histamine</h6>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {% if histamine_level == 'Low' %}green{% elif histamine_level == 'Medium' %}amber{% else %}red{% endif %}"></span>
+                <span class="rating-label">Level</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {% if dao_blocker == 'No' %}green{% else %}red{% endif %}"></span>
+                <span class="rating-label">DAO Blocker</span>
+            </div>
+            <div class="rating-item">
+                <span class="traffic-light-circle-small {% if histamine_liberator == 'No' %}green{% else %}red{% endif %}"></span>
+                <span class="rating-label">Liberator</span>
+            </div>
+        </div>
+
+        <!-- Add to Diary Button -->
+        <button class="btn btn-success btn-sm w-100 mt-2 text-body" data-bs-toggle="modal" data-bs-target="{{ modal_target }}" style="padding: 4px 8px;">
+            <i class="bi bi-plus-circle"></i> Add to Diary
+        </button>
+    </div>
+{% endmacro %}
+
+{% block extra_css %}
+<style>
+    .traffic-light-circle {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+    }
+
+    .traffic-light-circle.large {
+        width: 48px;
+        height: 48px;
+    }
+
+    .traffic-light-circle-small {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .traffic-light-circle.green,
+    .traffic-light-circle-small.green {
+        background-color: #28a745;
+    }
+
+    .traffic-light-circle.amber,
+    .traffic-light-circle-small.amber {
+        background-color: #ffc107;
+    }
+
+    .traffic-light-circle.red,
+    .traffic-light-circle-small.red {
+        background-color: #dc3545;
+    }
+
+    /* Side-by-side serving cards container */
+    .serving-cards-container {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    /* Individual serving card */
+    .serving-card {
+        flex: 1;
+        min-width: 220px;
+        border: var(--bevel);
+        border-radius: 8px;
+        padding: 10px;
+        background-color: rgba(139, 164, 139, 0.15);
+    }
+
+    .serving-card.safe {
+        border-left: 3px solid #28a745;
+    }
+
+    .serving-card.moderate {
+        border-left: 3px solid #ffc107;
+    }
+
+    .serving-card.high {
+        border-left: 3px solid #dc3545;
+    }
+
+    /* Header row with title and traffic light */
+    .serving-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .serving-title {
+        margin: 0;
+        font-size: var(--text-body);
+        font-weight: 600;
+        color: var(--white-ish);
+    }
+
+    /* Serving size display - now in top right */
+    .serving-size-display {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .size-text {
+        font-size: var(--text-title);
+        font-weight: 600;
+        color: var(--gold);
+    }
+
+    /* Serving metadata */
+    .serving-meta {
+        font-size: var(--text-label);
+        color: rgba(214, 189, 152, 0.8);
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+
+    .meta-text {
+        display: inline;
+    }
+
+    .meta-divider {
+        margin: 0 4px;
+    }
+
+    /* Divider */
+    .section-divider-thin {
+        border-top: 1px solid rgba(214, 189, 152, 0.3);
+        margin: 8px 0;
+    }
+
+    /* Ratings section */
+    .ratings-section {
+        margin-bottom: 8px;
+    }
+
+    .section-header {
+        font-size: var(--text-body);
+        font-weight: 600;
+        color: var(--gold);
+        margin: 0 0 6px 0;
+    }
+
+    .rating-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 0;
+    }
+
+    .rating-label {
+        font-size: var(--text-body);
+        color: var(--white-ish);
+    }
+
+    /* Legacy styles for large badge in header */
+    .serving-badge {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+    }
+
+    .serving-badge.safe {
+        background-color: #28a745;
+    }
+
+    .serving-badge.moderate {
+        background-color: #ffc107;
+        color: #333;
+    }
+
+    .serving-badge.high {
+        background-color: #dc3545;
+    }
+
+    .section-divider {
+        border-top: 2px solid var(--sage);
+        margin: 15px 0;
+        opacity: 0.3;
+    }
+
+    /* Sidebar navigation hover effects */
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .quick-action-btn-outline {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: transparent !important;
+        border: 1px solid #1A3636 !important;
+        color: #fff !important;
+    }
+    .quick-action-btn-outline:hover {
+        transform: translateY(-1px);
+        background-color: rgba(26, 54, 54, 0.3) !important;
+    }
+    /* Nutrition table compact styling */
+    .nutrition-table td, .nutrition-table th {
+        padding: 1px 2px !important;
+        font-size: 0.48rem !important;
+        line-height: 1.1 !important;
+        white-space: nowrap;
+    }
+    .nutrition-table thead th {
+        font-size: 0.45rem !important;
+    }
+    .nutrition-table td strong {
+        font-size: 0.48rem !important;
+    }
+    .nutrition-table .text-value {
+        font-size: 0.48rem !important;
+    }
+    .nutrition-table .text-micro {
+        font-size: 0.42rem !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<div class="row g-0">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-2 col-md-3" style="background: linear-gradient(135deg, #8BA48B, #677D6A); min-height: 100%;">
+        <div style="position: sticky; top: 50px; padding: 12px; padding-top: 28px;">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-file-earmark-text"></i> Food Details</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <path d="M9 2c0 4-3 6-3 10"/>
+                            <path d="M12 2c0 4-3 6-3 10"/>
+                            <path d="M15 2c0 4-3 6-3 10"/>
+                            <path d="M18 2c0 4-3 6-3 10"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+                            <line x1="8" y1="8" x2="16" y2="8"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                            <line x1="8" y1="16" x2="12" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"/>
+                            <circle cx="19" cy="12" r="1"/>
+                            <circle cx="5" cy="12" r="1"/>
+                            <circle cx="12" cy="19" r="1"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Separator line -->
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
+                <a href="{{ url_for('foods.edit_food', food_id=food.id) }}" class="btn btn-sm text-body quick-action-btn-sidebar" style="width: 100%; background-color: #D6BD98 !important; border-color: #D6BD98 !important; color: #1A3636 !important;">
+                    <i class="bi bi-pencil-square"></i> Edit Food
+                </a>
+
+                <a href="{{ url_for('foods.search', category=food.category) }}" class="btn btn-sm text-body quick-action-btn-outline" style="width: 100%;">
+                    <i class="bi bi-arrow-left"></i> Back to {{ food.category }}
+                </a>
+
+                <a href="{{ url_for('foods.search') }}" class="btn btn-sm text-body quick-action-btn-outline" style="width: 100%;">
+                    <i class="bi bi-search"></i> Search Foods
+                </a>
+
+                {% set total_usage = meal_count + recipe_count + saved_meal_count %}
+                {% if total_usage > 0 %}
+                <div class="text-label" style="padding: 10px; background: rgba(255, 193, 7, 0.15); border-radius: 6px; line-height: 1.4; margin-bottom: 8px;">
+                    <div style="color: #ffc107; font-weight: bold; margin-bottom: 4px;">
+                        <i class="bi bi-info-circle"></i> Usage:
+                    </div>
+                    {% if meal_count > 0 %}
+                    <div style="color: rgba(255, 255, 255, 0.9);">
+                        <i class="bi bi-circle-fill" style="font-size: 0.4rem;"></i> {{ meal_count }} diary meal{{ 's' if meal_count != 1 else '' }}
+                    </div>
+                    {% endif %}
+                    {% if recipe_count > 0 %}
+                    <div style="color: rgba(255, 255, 255, 0.9);">
+                        <i class="bi bi-circle-fill" style="font-size: 0.4rem;"></i> {{ recipe_count }} recipe{{ 's' if recipe_count != 1 else '' }}
+                    </div>
+                    {% endif %}
+                    {% if saved_meal_count > 0 %}
+                    <div style="color: rgba(255, 255, 255, 0.9);">
+                        <i class="bi bi-circle-fill" style="font-size: 0.4rem;"></i> {{ saved_meal_count }} saved meal{{ 's' if saved_meal_count != 1 else '' }}
+                    </div>
+                    {% endif %}
+                    <div style="color: rgba(255, 255, 255, 0.7); margin-top: 4px; font-style: italic;">
+                        Cannot delete
+                    </div>
+                </div>
+                {% endif %}
+
+                <button type="button" class="btn btn-outline-light btn-sm text-body" style="width: 100%;" {% if total_usage > 0 %}disabled title="Cannot delete - food is in use"{% else %}data-bs-toggle="modal" data-bs-target="#deleteFoodModal"{% endif %}>
+                    <i class="bi bi-trash"></i> Delete Food
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-lg-10 col-md-9" style="padding-left: 30px; min-height: 100%;">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb text-label" style="margin-bottom: 0; padding: 6px 0;">
+                <li class="breadcrumb-item"><a href="{{ url_for('foods.index') }}">Food Guide</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('foods.search', category=food.category) }}">{{ food.category }}</a></li>
+                <li class="breadcrumb-item active">{{ food.name }}</li>
+            </ol>
+        </nav>
+
+        <!-- Food Header -->
+        <div class="card mb-3" style="background-color: var(--bg-elevated); border: 1px solid var(--gold);">
+            <div class="card-body" style="padding: 10px;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1 text-h2" style="color: var(--white-ish);">{{ food.name }}</h3>
+                        <p class="text-muted mb-0 text-body"><i class="bi bi-tag"></i> {{ food.category }}</p>
+                    </div>
+                    <!-- Calculate 1 serve traffic light color -->
+                    {% set safe_fodmaps = [
+                        food.safe_fructose or 'Green',
+                        food.safe_sorbitol or 'Green',
+                        food.safe_lactose or 'Green',
+                        food.safe_gos or 'Green',
+                        food.safe_fructans or 'Green',
+                        food.safe_mannitol or 'Green',
+                        food.safe_polyols or 'Green'
+                    ] %}
+                    {% set moderate_fodmaps = [
+                        food.moderate_fructose or 'Amber',
+                        food.moderate_sorbitol or 'Amber',
+                        food.moderate_lactose or 'Amber',
+                        food.moderate_gos or 'Amber',
+                        food.moderate_fructans or 'Amber',
+                        food.moderate_mannitol or 'Amber',
+                        food.moderate_polyols or 'Amber'
+                    ] %}
+                    {% set high_fodmaps = [
+                        food.high_fructose or 'Red',
+                        food.high_sorbitol or 'Red',
+                        food.high_lactose or 'Red',
+                        food.high_gos or 'Red',
+                        food.high_fructans or 'Red',
+                        food.high_mannitol or 'Red',
+                        food.high_polyols or 'Red'
+                    ] %}
+
+                    {% set safe_color = get_worst_color(safe_fodmaps, food.safe_histamine_level or 'Low', food.safe_dao_blocker or 'No', food.safe_histamine_liberator or 'No') %}
+                    {% set moderate_color = get_worst_color(moderate_fodmaps, food.moderate_histamine_level or 'Medium', food.moderate_dao_blocker or 'No', food.moderate_histamine_liberator or 'No') %}
+                    {% set high_color = get_worst_color(high_fodmaps, food.high_histamine_level or 'High', food.high_dao_blocker or 'Yes', food.high_histamine_liberator or 'Yes') %}
+
+                    <!-- Determine which serving is "1 serve" -->
+                    {% if food.safe_serving_type == '1 serve' %}
+                        {% set one_serve_color = safe_color %}
+                    {% elif food.moderate_serving_type == '1 serve' %}
+                        {% set one_serve_color = moderate_color %}
+                    {% elif food.high_serving_type == '1 serve' %}
+                        {% set one_serve_color = high_color %}
+                    {% else %}
+                        {% set one_serve_color = moderate_color %}
+                    {% endif %}
+
+                    <!-- Display 1 serve traffic light -->
+                    <span class="traffic-light-circle {{ one_serve_color }}" title="1 serve rating" style="width: 32px; height: 32px; margin-left: auto;"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side-by-side serving cards -->
+        {# Only show serving cards if at least one serving size exists #}
+        {% set has_serving_data = food.safe_serving or food.moderate_serving or food.high_serving %}
+        {% if has_serving_data %}
+        <div class="serving-cards-container" style="margin-bottom: 15px;">
+            {{ render_serving_data('safe', food) }}
+            {{ render_serving_data('moderate', food) }}
+            {{ render_serving_data('high', food) }}
+        </div>
+        {% endif %}
+
+        <!-- Preparation Notes -->
+        {% if food.preparation_notes %}
+        <div class="card mb-3" style="background-color: var(--bg-elevated); border: 1px solid var(--gold);">
+            <div class="card-header" style="background-color: var(--sage); color: var(--white-ish); padding: 6px 10px;">
+                <h6 class="mb-0 text-body"><i class="bi bi-lightbulb"></i> Preparation & Storage Notes</h6>
+            </div>
+            <div class="card-body" style="padding: 10px;">
+                <p class="mb-0 text-title" style="color: var(--white-ish); white-space: pre-line; line-height: 1.5;">{{ food.preparation_notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Nutrition Information Panel -->
+        {# Show nutrition panel if ANY nutrition field has been filled #}
+        {% set has_nutrition_data = food.health_star_rating is not none or food.serving_size or food.servings_per_pack is not none or
+            food.energy_per_serve_kj is not none or food.energy_per_100_kj is not none or
+            food.protein_per_serve is not none or food.fat_per_serve is not none or food.carbohydrate_per_serve is not none or
+            food.sodium_per_serve is not none or food.calcium_per_serve is not none or
+            food.vitamin_a_per_serve is not none or food.riboflavin_b2_per_serve is not none or
+            food.ingredients_list or food.contains_allergens or food.may_contain_allergens or food.where_to_buy %}
+        {% if has_nutrition_data %}
+        <div class="card mb-3" style="background-color: var(--bg-elevated); border: 1px solid var(--gold);">
+            <div class="card-header" style="background-color: var(--sage); color: var(--white-ish); padding: 6px 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h5 class="mb-0 text-title"><i class="bi bi-clipboard-data"></i> Nutrition Information</h5>
+
+                    {# Show Add to Diary controls only for packaged foods without serving data #}
+                    {% if not has_serving_data %}
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="text" id="packaged_serving_qty" placeholder="e.g., 2 servings, 150g"
+                               class="form-control form-control-sm text-label"
+                               style="width: 150px; padding: 4px 8px; background-color: var(--bg-deep); color: var(--white-ish); border: 1px solid var(--gold);">
+                        <button class="btn btn-success btn-sm text-body"
+                                style="padding: 4px 12px; white-space: nowrap;"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addToDiaryModalPackaged">
+                            <i class="bi bi-plus-circle"></i> Add to Diary
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body" style="color: var(--white-ish); padding: 10px;">
+
+                <!-- Health Star Rating, Servings per Package, Serving Size -->
+                {% if food.health_star_rating is not none or food.servings_per_pack is not none or food.serving_size %}
+                <div class="row mb-3 align-items-center">
+                    {% if food.health_star_rating is not none %}
+                    <div class="col-md-4 text-center">
+                        <div class="text-label mb-1" style="color: var(--gold);">Health Star Rating</div>
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40'%3E%3Crect width='100' height='40' fill='%23000' rx='5'/%3E%3Ctext x='8' y='26' fill='%23fff' font-size='20' font-weight='bold'%3E{{ food.health_star_rating }}%3C/text%3E%3Ctext x='42' y='26' fill='%23FFD700' font-size='24'%3E★%3C/text%3E%3C/svg%3E" alt="Health Star Rating {{ food.health_star_rating }}" style="width: 100px; height: 40px;">
+                    </div>
+                    {% endif %}
+                    {% if food.servings_per_pack is not none or food.serving_size %}
+                    <div class="{% if food.health_star_rating is not none %}col-md-8{% else %}col-md-12{% endif %} text-center">
+                        <div class="d-flex justify-content-center align-items-center gap-4">
+                            {% if food.servings_per_pack is not none %}
+                            <div>
+                                <span class="text-label" style="color: var(--gold);">Servings per Package:</span>
+                                <span class="text-value" style="font-weight: bold; margin-left: 8px;">{{ food.servings_per_pack }}</span>
+                            </div>
+                            {% endif %}
+                            {% if food.serving_size %}
+                            <div>
+                                <span class="text-label" style="color: var(--gold);">Serving Size:</span>
+                                <span class="text-value" style="font-weight: bold; margin-left: 8px;">{{ food.serving_size }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Nutrition Table - Three columns: Macros/Cholesterol/Carbs | Minerals | Vitamins -->
+                <div class="row g-2">
+                    <!-- LEFT COLUMN: Macronutrients, Cholesterol, Carbohydrates -->
+                    <div class="col-md-4" style="border-right: 1px solid rgba(214, 189, 152, 0.3); padding-right: 10px;">
+                        <table class="table table-borderless nutrition-table" style="color: var(--white-ish); margin-bottom: 0; table-layout: fixed; width: 100%;">
+                            <thead style="border-bottom: 2px solid var(--gold);">
+                                <tr>
+                                    <th style="width: 36%;"></th>
+                                    <th class="text-center" style="width: 24%;">Serve</th>
+                                    <th class="text-center" style="width: 22%;">100g</th>
+                                    <th class="text-center" style="width: 18%;">RDI%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Energy Section -->
+                                <tr style="border-bottom: 1px solid rgba(214, 189, 152, 0.2);">
+                                    <td><strong>Energy</strong></td>
+                                    <td class="text-center">
+                                        {% if food.energy_per_serve_kj is not none %}{{ food.energy_per_serve_kj|format_num }}kJ{% else %}-{% endif %}
+                                        {% if food.energy_per_serve_cal is not none %}<br><span style="font-size: var(--text-micro);">({{ food.energy_per_serve_cal|format_num }}Cal)</span>{% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if food.energy_per_100_kj is not none %}{{ food.energy_per_100_kj|format_num }}kJ{% else %}-{% endif %}
+                                        {% if food.energy_per_100_cal is not none %}<br><span style="font-size: var(--text-micro);">({{ food.energy_per_100_cal|format_num }}Cal)</span>{% endif %}
+                                    </td>
+                                    <td></td>
+                                </tr>
+
+                                <!-- Section divider - Macronutrients -->
+                                <tr style="height: 8px;">
+                                    <td colspan="4" style="border-bottom: 1px solid rgba(214, 189, 152, 0.1);"></td>
+                                </tr>
+
+                                <!-- Protein -->
+                                <tr>
+                                    <td><strong>Protein</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.protein_per_serve is not none %}{{ food.protein_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.protein_per_100 is not none %}{{ food.protein_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+
+                                <!-- Fat -->
+                                <tr>
+                                    <td><strong>Fat, total</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.fat_per_serve is not none %}{{ food.fat_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.fat_per_100 is not none %}{{ food.fat_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3">- Saturated</td>
+                                    <td class="text-center text-value table-numeric">{% if food.saturated_fat_per_serve is not none %}{{ food.saturated_fat_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.saturated_fat_per_100 is not none %}{{ food.saturated_fat_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3">- Trans</td>
+                                    <td class="text-center text-value table-numeric">{% if food.trans_fat_per_serve is not none %}{{ food.trans_fat_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.trans_fat_per_100 is not none %}{{ food.trans_fat_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3">- Polyunsat.</td>
+                                    <td class="text-center text-value table-numeric">{% if food.polyunsaturated_fat_per_serve is not none %}{{ food.polyunsaturated_fat_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.polyunsaturated_fat_per_100 is not none %}{{ food.polyunsaturated_fat_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3">- Monounsat.</td>
+                                    <td class="text-center text-value table-numeric">{% if food.monounsaturated_fat_per_serve is not none %}{{ food.monounsaturated_fat_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.monounsaturated_fat_per_100 is not none %}{{ food.monounsaturated_fat_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+
+                                <!-- Cholesterol with line separators above and below -->
+                                <tr style="border-top: 1px solid rgba(214, 189, 152, 0.3);">
+                                    <td><strong>Cholesterol</strong> <span style="color: rgba(214, 189, 152, 0.7);">(mg)</span></td>
+                                    <td class="text-center text-value table-numeric">{% if food.cholesterol_per_serve is not none %}{{ food.cholesterol_per_serve|format_num }}{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.cholesterol_per_100 is not none %}{{ food.cholesterol_per_100|format_num }}{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr style="height: 2px;">
+                                    <td colspan="4" style="border-bottom: 1px solid rgba(214, 189, 152, 0.3);"></td>
+                                </tr>
+
+                                <!-- Carbohydrate -->
+                                <tr>
+                                    <td><strong>Carbohydrate</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.carbohydrate_per_serve is not none %}{{ food.carbohydrate_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.carbohydrate_per_100 is not none %}{{ food.carbohydrate_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-3">- Sugars</td>
+                                    <td class="text-center text-value table-numeric">{% if food.sugars_per_serve is not none %}{{ food.sugars_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.sugars_per_100 is not none %}{{ food.sugars_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-5">Lactose</td>
+                                    <td class="text-center text-value table-numeric">{% if food.lactose_per_serve is not none %}{{ food.lactose_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.lactose_per_100 is not none %}{{ food.lactose_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-5">Galactose</td>
+                                    <td class="text-center text-value table-numeric">{% if food.galactose_per_serve is not none %}{{ food.galactose_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.galactose_per_100 is not none %}{{ food.galactose_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+
+                                <!-- Dietary Fibre -->
+                                <tr>
+                                    <td><strong>Dietary Fibre</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.dietary_fibre_per_serve is not none %}{{ food.dietary_fibre_per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.dietary_fibre_per_100 is not none %}{{ food.dietary_fibre_per_100|format_num }}g{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- MIDDLE COLUMN: Minerals -->
+                    <div class="col-md-4" style="border-right: 1px solid rgba(214, 189, 152, 0.3); padding-left: 10px; padding-right: 10px;">
+                        <table class="table table-borderless nutrition-table" style="color: var(--white-ish); margin-bottom: 0; table-layout: fixed; width: 100%;">
+                            <thead style="border-bottom: 2px solid var(--gold);">
+                                <tr>
+                                    <th style="width: 35%;"></th>
+                                    <th class="text-center" style="width: 30%;">Serve</th>
+                                    <th class="text-center" style="width: 25%;">100g</th>
+                                    <th class="text-center" style="width: 10%;">RDI%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Minerals Header -->
+                                <tr style="border-bottom: 1px solid rgba(214, 189, 152, 0.2);">
+                                    <td colspan="4"><strong>Minerals</strong></td>
+                                </tr>
+
+                                {% if food.sodium_per_serve is not none or food.sodium_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Sodium</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.sodium_per_serve is not none %}{{ food.sodium_per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.sodium_per_100 is not none %}{{ food.sodium_per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.potassium_per_serve is not none or food.potassium_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Potassium</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.potassium_per_serve is not none %}{{ food.potassium_per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.potassium_per_100 is not none %}{{ food.potassium_per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td></td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.calcium_per_serve is not none or food.calcium_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Calcium</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.calcium_per_serve is not none %}{{ food.calcium_per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.calcium_per_100 is not none %}{{ food.calcium_per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.calcium_rdi_percent %}{{ food.calcium_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.phosphorus_per_serve is not none or food.phosphorus_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Phosphorus</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.phosphorus_per_serve is not none %}{{ food.phosphorus_per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.phosphorus_per_100 is not none %}{{ food.phosphorus_per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.phosphorus_rdi_percent %}{{ food.phosphorus_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if custom_nutrients and custom_nutrients.minerals and custom_nutrients.minerals|length > 0 %}
+                                <!-- Section divider - Custom Minerals -->
+                                <tr style="height: 8px;">
+                                    <td colspan="4" style="border-bottom: 1px solid rgba(214, 189, 152, 0.1);"></td>
+                                </tr>
+                                {% for mineral in custom_nutrients.minerals %}
+                                <tr>
+                                    <td><strong>{{ mineral.name }}</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if mineral.per_serve is not none %}{{ mineral.per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if mineral.per_100 is not none %}{{ mineral.per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if mineral.rdi %}{{ mineral.rdi }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Vitamins -->
+                    <div class="col-md-4" style="padding-left: 10px;">
+                        <table class="table table-borderless nutrition-table" style="color: var(--white-ish); margin-bottom: 0; table-layout: fixed; width: 100%;">
+                            <thead style="border-bottom: 2px solid var(--gold);">
+                                <tr>
+                                    <th style="width: 35%;"></th>
+                                    <th class="text-center" style="width: 30%;">Serve</th>
+                                    <th class="text-center" style="width: 25%;">100g</th>
+                                    <th class="text-center" style="width: 10%;">RDI%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Vitamins Header -->
+                                <tr style="border-bottom: 1px solid rgba(214, 189, 152, 0.2);">
+                                    <td colspan="4"><strong>Vitamins</strong></td>
+                                </tr>
+                                <tr style="height: 8px;">
+                                    <td colspan="4" style="border-bottom: 1px solid rgba(214, 189, 152, 0.1);"></td>
+                                </tr>
+
+                                {% if food.vitamin_a_per_serve is not none or food.vitamin_a_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Vitamin A</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_a_per_serve is not none %}{{ food.vitamin_a_per_serve|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_a_per_100 is not none %}{{ food.vitamin_a_per_100|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.vitamin_a_rdi_percent %}{{ food.vitamin_a_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.riboflavin_b2_per_serve is not none or food.riboflavin_b2_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Riboflavin (B2)</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.riboflavin_b2_per_serve is not none %}{{ food.riboflavin_b2_per_serve|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.riboflavin_b2_per_100 is not none %}{{ food.riboflavin_b2_per_100|format_num }}mg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.riboflavin_b2_rdi_percent %}{{ food.riboflavin_b2_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.vitamin_b12_per_serve is not none or food.vitamin_b12_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Vitamin B12</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_b12_per_serve is not none %}{{ food.vitamin_b12_per_serve|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_b12_per_100 is not none %}{{ food.vitamin_b12_per_100|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.vitamin_b12_rdi_percent %}{{ food.vitamin_b12_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if food.vitamin_d_per_serve is not none or food.vitamin_d_per_100 is not none %}
+                                <tr>
+                                    <td><strong>Vitamin D</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_d_per_serve is not none %}{{ food.vitamin_d_per_serve|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if food.vitamin_d_per_100 is not none %}{{ food.vitamin_d_per_100|format_num }}mcg{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if food.vitamin_d_rdi_percent %}{{ food.vitamin_d_rdi_percent }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if custom_nutrients and custom_nutrients.vitamins and custom_nutrients.vitamins|length > 0 %}
+                                <!-- Section divider - Custom Vitamins -->
+                                <tr style="height: 8px;">
+                                    <td colspan="4" style="border-bottom: 1px solid rgba(214, 189, 152, 0.1);"></td>
+                                </tr>
+                                {% for vitamin in custom_nutrients.vitamins %}
+                                <tr>
+                                    <td><strong>{{ vitamin.name }}</strong></td>
+                                    <td class="text-center text-value table-numeric">{% if vitamin.per_serve is not none %}{{ vitamin.per_serve|format_num }}{{ vitamin.unit or 'mg' }}{% else %}-{% endif %}</td>
+                                    <td class="text-center text-value table-numeric">{% if vitamin.per_100 is not none %}{{ vitamin.per_100|format_num }}{{ vitamin.unit or 'mg' }}{% else %}-{% endif %}</td>
+                                    <td class="text-center text-micro">{% if vitamin.rdi %}{{ vitamin.rdi }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if custom_nutrients and custom_nutrients.macros and custom_nutrients.macros|length > 0 %}
+                <!-- Custom Macronutrients (if any) - full width below -->
+                <div class="mt-2">
+                    <table class="table table-borderless" style="color: var(--white-ish);">
+                        <thead class="text-label" style="border-bottom: 2px solid var(--gold);">
+                            <tr>
+                                <th style="width: 45%;"></th>
+                                <th class="text-center" style="width: 25%;">Per Serve</th>
+                                <th class="text-center" style="width: 25%;">Per 100mL</th>
+                                <th class="text-center" style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-label">
+                            <tr style="border-bottom: 1px solid rgba(214, 189, 152, 0.2);">
+                                <td colspan="4"><strong>Custom Macronutrients</strong></td>
+                            </tr>
+                            {% for macro in custom_nutrients.macros %}
+                            <tr>
+                                <td><strong>{{ macro.name }}</strong></td>
+                                <td class="text-center text-value table-numeric">{% if macro.per_serve is not none %}{{ macro.per_serve|format_num }}g{% else %}-{% endif %}</td>
+                                <td class="text-center text-value table-numeric">{% if macro.per_100 is not none %}{{ macro.per_100|format_num }}g{% else %}-{% endif %}</td>
+                                <td class="text-center">-</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <p class="mb-0 mt-1 text-label"><small class="text-muted">RDI% = Percentage of Recommended Dietary Intake</small></p>
+
+                <!-- Ingredients List -->
+                {% if food.ingredients_list %}
+                <div class="mt-3">
+                    <h6 class="mb-1 text-title"><i class="bi bi-list-ul"></i> <strong>Ingredient List</strong></h6>
+                    <p class="text-body" style="line-height: 1.4;">{{ food.ingredients_list }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Allergens -->
+                <div class="mt-2">
+                    <h6 class="mb-1 text-title"><strong>Contains:</strong> {% if food.contains_allergens %}<span style="font-weight: bold; color: var(--gold);">{{ food.contains_allergens }}</span>{% else %}-{% endif %}</h6>
+                    <h6 class="mb-0 text-title"><strong>May Contain:</strong> {% if food.may_contain_allergens %}{{ food.may_contain_allergens }}{% else %}-{% endif %}</h6>
+                </div>
+
+                <!-- Where to Buy -->
+                {% if food.where_to_buy %}
+                <div class="mt-3">
+                    <h6 class="mb-2 text-title"><i class="bi bi-shop"></i> <strong>Where to buy</strong></h6>
+                    <div class="d-flex gap-2 justify-content-center flex-wrap">
+                        {% set stores = food.where_to_buy.split(',') %}
+                        {% for store in stores %}
+                        <div class="text-center">
+                            {% if 'woolworths' in store.lower() %}
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%2327b24a' rx='8'/%3E%3Ctext x='30' y='36' text-anchor='middle' fill='white' font-size='11' font-weight='bold'%3EWoolies%3C/text%3E%3C/svg%3E" alt="Woolworths" style="width: 60px; height: 60px;">
+                            {% elif 'coles' in store.lower() %}
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23e30613' rx='8'/%3E%3Ctext x='30' y='36' text-anchor='middle' fill='white' font-size='13' font-weight='bold'%3EColes%3C/text%3E%3C/svg%3E" alt="Coles" style="width: 60px; height: 60px;">
+                            {% else %}
+                            <div style="width: 60px; height: 60px; background-color: var(--sage); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-label" style="color: var(--white-ish); font-weight: bold; text-align: center; padding: 4px;">{{ store.strip() }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if food.servings_per_pack is not none %}
+                <p class="mt-2 mb-0 text-center text-label"><small class="text-muted">Servings per pack: {{ food.servings_per_pack }}</small></p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+
+<!-- Add to Diary Modal - Safe Serving -->
+<div class="modal fade" id="addToDiaryModalSafe" tabindex="-1" aria-labelledby="addToDiaryModalSafeLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('diary.add_meal') }}" id="quickAddFormSafe">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addToDiaryModalSafeLabel">Add {{ food.name }} (Safe Serving) to Diary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="meal_date_safe" class="form-label"><strong>Date *</strong></label>
+                        <input type="date" class="form-control meal-date" id="meal_date_safe" name="meal_date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_time_safe" class="form-label"><strong>Time *</strong></label>
+                        <input type="time" class="form-control meal-time" id="meal_time_safe" name="meal_time" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_type_safe" class="form-label"><strong>Meal Type *</strong></label>
+                        <select class="form-select" id="meal_type_safe" name="meal_type" required>
+                            <option value="">Choose...</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Morning Snack">Morning Snack</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Afternoon Snack">Afternoon Snack</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Evening Snack">Evening Snack</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="portion_size_safe" class="form-label"><strong>Portion Size *</strong></label>
+                        <input type="text" class="form-control" id="portion_size_safe" name="portions[]"
+                               value="{{ food.safe_serving }}{{ food.safe_serving_unit or '' }}" placeholder="e.g., {{ food.safe_serving }}{{ food.safe_serving_unit or 'g' }}" required>
+                        <small class="text-muted">Safe serving size</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_safe" class="form-label"><strong>Location</strong></label>
+                        <select class="form-select" id="location_safe" name="location">
+                            <option value="Home" selected>Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="preparation_safe" class="form-label"><strong>Preparation</strong></label>
+                        <select class="form-select" id="preparation_safe" name="preparation">
+                            <option value="Fresh" selected>Fresh</option>
+                            <option value="Leftover">Leftover</option>
+                            <option value="Reheated">Reheated</option>
+                            <option value="Restaurant">Restaurant</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_notes_safe" class="form-label"><strong>Notes</strong></label>
+                        <textarea class="form-control" id="meal_notes_safe" name="notes" rows="2"
+                                  placeholder="Any additional notes about this meal..."></textarea>
+                    </div>
+
+                    <input type="hidden" name="food_ids[]" value="{{ food.id }}">
+                    <input type="hidden" name="serving_types[]" value="safe">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add to Diary
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Diary Modal - Moderate Serving -->
+<div class="modal fade" id="addToDiaryModalModerate" tabindex="-1" aria-labelledby="addToDiaryModalModerateLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('diary.add_meal') }}" id="quickAddFormModerate">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addToDiaryModalModerateLabel">Add {{ food.name }} (Moderate Serving) to Diary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="meal_date_moderate" class="form-label"><strong>Date *</strong></label>
+                        <input type="date" class="form-control meal-date" id="meal_date_moderate" name="meal_date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_time_moderate" class="form-label"><strong>Time *</strong></label>
+                        <input type="time" class="form-control meal-time" id="meal_time_moderate" name="meal_time" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_type_moderate" class="form-label"><strong>Meal Type *</strong></label>
+                        <select class="form-select" id="meal_type_moderate" name="meal_type" required>
+                            <option value="">Choose...</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Morning Snack">Morning Snack</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Afternoon Snack">Afternoon Snack</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Evening Snack">Evening Snack</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="portion_size_moderate" class="form-label"><strong>Portion Size *</strong></label>
+                        <input type="text" class="form-control" id="portion_size_moderate" name="portions[]"
+                               value="{{ food.moderate_serving }}{{ food.moderate_serving_unit or '' }}" placeholder="e.g., {{ food.moderate_serving }}{{ food.moderate_serving_unit or 'g' }}" required>
+                        <small class="text-muted">Moderate serving size</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_moderate" class="form-label"><strong>Location</strong></label>
+                        <select class="form-select" id="location_moderate" name="location">
+                            <option value="Home" selected>Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="preparation_moderate" class="form-label"><strong>Preparation</strong></label>
+                        <select class="form-select" id="preparation_moderate" name="preparation">
+                            <option value="Fresh" selected>Fresh</option>
+                            <option value="Leftover">Leftover</option>
+                            <option value="Reheated">Reheated</option>
+                            <option value="Restaurant">Restaurant</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_notes_moderate" class="form-label"><strong>Notes</strong></label>
+                        <textarea class="form-control" id="meal_notes_moderate" name="notes" rows="2"
+                                  placeholder="Any additional notes about this meal..."></textarea>
+                    </div>
+
+                    <input type="hidden" name="food_ids[]" value="{{ food.id }}">
+                    <input type="hidden" name="serving_types[]" value="moderate">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add to Diary
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Diary Modal - High Serving -->
+<div class="modal fade" id="addToDiaryModalHigh" tabindex="-1" aria-labelledby="addToDiaryModalHighLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('diary.add_meal') }}" id="quickAddFormHigh">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addToDiaryModalHighLabel">Add {{ food.name }} (High Serving) to Diary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="meal_date_high" class="form-label"><strong>Date *</strong></label>
+                        <input type="date" class="form-control meal-date" id="meal_date_high" name="meal_date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_time_high" class="form-label"><strong>Time *</strong></label>
+                        <input type="time" class="form-control meal-time" id="meal_time_high" name="meal_time" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_type_high" class="form-label"><strong>Meal Type *</strong></label>
+                        <select class="form-select" id="meal_type_high" name="meal_type" required>
+                            <option value="">Choose...</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Morning Snack">Morning Snack</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Afternoon Snack">Afternoon Snack</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Evening Snack">Evening Snack</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="portion_size_high" class="form-label"><strong>Portion Size *</strong></label>
+                        <input type="text" class="form-control" id="portion_size_high" name="portions[]"
+                               value="{{ food.high_serving }}{{ food.high_serving_unit or '' }}" placeholder="e.g., {{ food.high_serving }}{{ food.high_serving_unit or 'g' }}" required>
+                        <small class="text-muted">High serving size</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_high" class="form-label"><strong>Location</strong></label>
+                        <select class="form-select" id="location_high" name="location">
+                            <option value="Home" selected>Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="preparation_high" class="form-label"><strong>Preparation</strong></label>
+                        <select class="form-select" id="preparation_high" name="preparation">
+                            <option value="Fresh" selected>Fresh</option>
+                            <option value="Leftover">Leftover</option>
+                            <option value="Reheated">Reheated</option>
+                            <option value="Restaurant">Restaurant</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_notes_high" class="form-label"><strong>Notes</strong></label>
+                        <textarea class="form-control" id="meal_notes_high" name="notes" rows="2"
+                                  placeholder="Any additional notes about this meal..."></textarea>
+                    </div>
+
+                    <input type="hidden" name="food_ids[]" value="{{ food.id }}">
+                    <input type="hidden" name="serving_types[]" value="high">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add to Diary
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default date and time to now for all modals
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    const dateValue = `${year}-${month}-${day}`;
+    const timeValue = `${hours}:${minutes}`;
+
+    // Set date and time for all modals
+    document.querySelectorAll('.meal-date').forEach(input => {
+        input.value = dateValue;
+    });
+
+    document.querySelectorAll('.meal-time').forEach(input => {
+        input.value = timeValue;
+    });
+
+    // Transfer packaged serving quantity to modal when opened
+    const packagedModal = document.getElementById('addToDiaryModalPackaged');
+    if (packagedModal) {
+        packagedModal.addEventListener('show.bs.modal', function() {
+            const qtyInput = document.getElementById('packaged_serving_qty');
+            const portionInput = document.getElementById('portion_size_packaged');
+            if (qtyInput && portionInput) {
+                portionInput.value = qtyInput.value || '';
+            }
+        });
+    }
+});
+</script>
+
+<!-- Add to Diary Modal - Packaged Food -->
+<div class="modal fade" id="addToDiaryModalPackaged" tabindex="-1" aria-labelledby="addToDiaryModalPackagedLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('diary.add_meal') }}" id="quickAddFormPackaged">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addToDiaryModalPackagedLabel">Add {{ food.name }} to Diary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="meal_date_packaged" class="form-label"><strong>Date *</strong></label>
+                        <input type="date" class="form-control meal-date" id="meal_date_packaged" name="meal_date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_time_packaged" class="form-label"><strong>Time *</strong></label>
+                        <input type="time" class="form-control meal-time" id="meal_time_packaged" name="meal_time" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_type_packaged" class="form-label"><strong>Meal Type *</strong></label>
+                        <select class="form-select" id="meal_type_packaged" name="meal_type" required>
+                            <option value="">Choose...</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Morning Snack">Morning Snack</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Afternoon Snack">Afternoon Snack</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Evening Snack">Evening Snack</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="portion_size_packaged" class="form-label"><strong>Portion Size *</strong></label>
+                        <input type="text" class="form-control" id="portion_size_packaged" name="portions[]"
+                               placeholder="e.g., 2 servings, 150g" required>
+                        <small class="text-muted">Enter custom serving size</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_packaged" class="form-label"><strong>Location</strong></label>
+                        <select class="form-select" id="location_packaged" name="location">
+                            <option value="Home" selected>Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="preparation_packaged" class="form-label"><strong>Preparation</strong></label>
+                        <select class="form-select" id="preparation_packaged" name="preparation">
+                            <option value="Fresh" selected>Fresh</option>
+                            <option value="Leftover">Leftover</option>
+                            <option value="Reheated">Reheated</option>
+                            <option value="Restaurant">Restaurant</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_notes_packaged" class="form-label"><strong>Notes</strong></label>
+                        <textarea class="form-control" id="meal_notes_packaged" name="notes" rows="2"
+                                  placeholder="Any additional notes about this meal..."></textarea>
+                    </div>
+
+                    <input type="hidden" name="food_ids[]" value="{{ food.id }}">
+                    <input type="hidden" name="serving_types[]" value="">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add to Diary
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Food Confirmation Modal -->
+<div class="modal fade" id="deleteFoodModal" tabindex="-1" aria-labelledby="deleteFoodModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteFoodModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"><strong>Are you sure you want to delete "{{ food.name }}"?</strong></p>
+                <p class="text-muted mb-0">This action cannot be undone. All FODMAP and histamine data for this food will be permanently removed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <form method="POST" action="{{ url_for('foods.delete_food', food_id=food.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Food
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

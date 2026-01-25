@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Flask instance folder (local config/database)
+instance/
+
+# Database files (contain user data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups (user-generated)
+backups/
+
+# Data exports and embeddings (runtime generated)
+data/exports/
+data/embeddings/
+
+# User uploads (recipe images, etc.)
+static/uploads/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code config
+.claude/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary/misc files
+nul
+*.log
+*.backup
+tmpclaude-*
+
+# Downloaded/temporary files (remove these lines if you want to keep them)
+aeca09d8317acba7f4814b897495dc6d32e2f91f.jpeg
+ai_studio_code (1).html

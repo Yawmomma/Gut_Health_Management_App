@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Diary - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .diary-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+        margin: 12px 0;
+    }
+
+    .calendar-header {
+        text-align: center;
+        font-weight: bold;
+        padding: 6px;
+        background-color: #0d6efd;
+        color: white;
+        font-size: var(--text-label);
+    }
+
+    .calendar-day {
+        border: 1px solid #dee2e6;
+        min-height: 70px;
+        padding: 5px;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: #212529;
+        display: block;
+    }
+
+    .calendar-day:hover {
+        background-color: #e7f3ff;
+        border-color: #0d6efd;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .calendar-day.other-month {
+        background-color: #f8f9fa;
+        color: #adb5bd;
+    }
+
+    .calendar-day.today {
+        background-color: #fff3cd;
+        border: 2px solid #ffc107;
+    }
+
+    .calendar-day.has-entries {
+        border-left: 3px solid #28a745;
+    }
+
+    .calendar-day.has-symptoms {
+        border-left: 3px solid #dc3545;
+    }
+
+    .day-number {
+        font-size: var(--text-title);
+        font-weight: bold;
+        margin-bottom: 3px;
+    }
+
+    .entry-indicators {
+        margin-top: 3px;
+    }
+
+    .entry-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-right: 2px;
+    }
+
+    .dot-meal { background-color: #28a745; }
+    .dot-symptom { background-color: #dc3545; }
+    .dot-bowel { background-color: #0dcaf0; }
+    .dot-stress { background-color: #fd7e14; }
+    .dot-note { background-color: #6c757d; }
+
+    .month-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 12px;
+    }
+
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="diary-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-journal-text"></i> Diary</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <h1 class="mb-3 text-h2"><i class="bi bi-journal-text"></i> Food & Symptom Diary</h1>
+
+                <!-- Quick Action Buttons -->
+        <div class="card mb-3">
+            <div class="card-body" style="padding: 10px;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="card-title mb-0 text-body">Quick Add Entry</h5>
+                    <div>
+                        <a href="{{ url_for('diary.trends') }}" class="btn btn-sm btn-outline-primary text-label" style="padding: 3px 8px;">
+                            <i class="bi bi-graph-up"></i> Trends
+                        </a>
+                        <a href="{{ url_for('diary.weekly_summary') }}" class="btn btn-sm btn-outline-primary text-label" style="padding: 3px 8px;">
+                            <i class="bi bi-calendar-week"></i> Weekly
+                        </a>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('diary.add_meal') }}" class="btn btn-success btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-egg-fried"></i> Log Meal
+                    </a>
+                    <a href="{{ url_for('diary.add_symptom') }}" class="btn btn-danger btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-heart-pulse"></i> Log Symptom
+                    </a>
+                    <a href="{{ url_for('diary.add_bowel') }}" class="btn btn-info btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-clipboard-pulse"></i> Log Bowel Movement
+                    </a>
+                    <a href="{{ url_for('diary.add_stress') }}" class="btn btn-warning btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-emoji-frown"></i> Log Stress
+                    </a>
+                    <a href="{{ url_for('diary.add_note') }}" class="btn btn-secondary btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-pencil-square"></i> Add Note
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Month Navigation -->
+        <div class="card mb-3">
+            <div class="card-body" style="padding: 10px;">
+                <div class="month-navigation">
+                    <a href="{{ url_for('diary.index', year=prev_month.year, month=prev_month.month) }}"
+                       class="btn btn-outline-secondary btn-sm text-label" style="padding: 4px 10px;">
+                        <i class="bi bi-chevron-left"></i> Previous Month
+                    </a>
+
+                    <h3 class="mb-0 text-body">
+                        {{ current_date.strftime('%B %Y') }}
+                    </h3>
+
+                    <a href="{{ url_for('diary.index', year=next_month.year, month=next_month.month) }}"
+                       class="btn btn-outline-secondary btn-sm text-label" style="padding: 4px 10px;">
+                        Next Month <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="card mb-2">
+            <div class="card-body py-1" style="padding-left: 10px; padding-right: 10px;">
+                <div class="d-flex flex-wrap align-items-center">
+                    <strong class="me-3 text-label">Legend:</strong>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-meal"></span>
+                        <small class="text-label">Meal</small>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-symptom"></span>
+                        <small class="text-label">Symptom</small>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-bowel"></span>
+                        <small class="text-label">Bowel</small>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-stress"></span>
+                        <small class="text-label">Stress</small>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-note"></span>
+                        <small class="text-label">Note</small>
+                    </div>
+                    <div class="legend-item ms-auto">
+                        <div style="width: 20px; height: 14px; background-color: #fff3cd; border: 2px solid #ffc107; display: inline-block; margin-right: 4px;"></div>
+                        <small class="text-label">Today</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="card">
+            <div class="card-body" style="padding: 10px;">
+                <!-- Day Headers -->
+                <div class="calendar-grid">
+                    <div class="calendar-header">Sun</div>
+                    <div class="calendar-header">Mon</div>
+                    <div class="calendar-header">Tue</div>
+                    <div class="calendar-header">Wed</div>
+                    <div class="calendar-header">Thu</div>
+                    <div class="calendar-header">Fri</div>
+                    <div class="calendar-header">Sat</div>
+
+                    <!-- Calendar Days -->
+                    {% for week in calendar_weeks %}
+                        {% for day in week %}
+                            {% if day %}
+                                {% set day_entries = entries_by_date.get(day.isoformat(), []) %}
+                                {% set is_today = (day == today) %}
+                                {% set is_current_month = (day.month == current_date.month) %}
+                                {% set has_symptoms = day_entries|selectattr('entry_type', 'equalto', 'symptom')|list|length > 0 %}
+                                {% set has_entries = day_entries|length > 0 %}
+
+                                <a href="{{ url_for('diary.day_view', date_string=day.isoformat()) }}"
+                                   class="calendar-day
+                                          {% if is_today %}today{% endif %}
+                                          {% if not is_current_month %}other-month{% endif %}
+                                          {% if has_symptoms %}has-symptoms{% elif has_entries %}has-entries{% endif %}">
+                                    <div class="day-number">{{ day.day }}</div>
+
+                                    {% if has_entries %}
+                                        <div class="entry-indicators">
+                                            {% if day_entries|selectattr('entry_type', 'equalto', 'meal')|list|length > 0 %}
+                                                <span class="entry-dot dot-meal" title="Meals"></span>
+                                            {% endif %}
+                                            {% if day_entries|selectattr('entry_type', 'equalto', 'symptom')|list|length > 0 %}
+                                                <span class="entry-dot dot-symptom" title="Symptoms"></span>
+                                            {% endif %}
+                                            {% if day_entries|selectattr('entry_type', 'equalto', 'bowel')|list|length > 0 %}
+                                                <span class="entry-dot dot-bowel" title="Bowel Movements"></span>
+                                            {% endif %}
+                                            {% if day_entries|selectattr('entry_type', 'equalto', 'stress')|list|length > 0 %}
+                                                <span class="entry-dot dot-stress" title="Stress"></span>
+                                            {% endif %}
+                                            {% if day_entries|selectattr('entry_type', 'equalto', 'note')|list|length > 0 %}
+                                                <span class="entry-dot dot-note" title="Notes"></span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <div class="calendar-day other-month"></div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white" style="padding: 6px 10px;">
+                <h5 class="mb-0 text-body"><i class="bi bi-graph-up"></i> {{ current_date.strftime('%B %Y') }} Summary</h5>
+            </div>
+            <div class="card-body" style="padding: 10px;">
+                <div class="row text-center">
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-success text-value" style="margin-bottom: 2px;">{{ month_stats.meals }}</h3>
+                        <small class="text-muted text-label">Meals Logged</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-danger text-value" style="margin-bottom: 2px;">{{ month_stats.symptoms }}</h3>
+                        <small class="text-muted text-label">Symptom Logs</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-info text-value" style="margin-bottom: 2px;">{{ month_stats.bowel }}</h3>
+                        <small class="text-muted text-label">Bowel Movements</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-warning text-value" style="margin-bottom: 2px;">{{ month_stats.stress }}</h3>
+                        <small class="text-muted text-label">Stress Logs</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-secondary text-value" style="margin-bottom: 2px;">{{ month_stats.notes }}</h3>
+                        <small class="text-muted text-label">Notes</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <h3 class="text-primary text-value" style="margin-bottom: 2px;">{{ month_stats.total }}</h3>
+                        <small class="text-muted text-label">Total Entries</small>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+{% endblock %}

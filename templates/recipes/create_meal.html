@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Create Saved Meal - Gut Health App{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .create-meal-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-actions-container {
+        padding-right: 12px;
+        margin-top: 10px;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .quick-action-btn-outline {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: transparent !important;
+        border: 1px solid #1A3636 !important;
+        color: #fff !important;
+    }
+    .quick-action-btn-outline:hover {
+        transform: translateY(-1px);
+        background-color: rgba(26, 54, 54, 0.3) !important;
+    }
+</style>
+
+<!-- Spacer to match other pages' vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="create-meal-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-plus-circle"></i> Create Meal</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons in Sidebar -->
+            <div class="quick-actions-container">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightning-charge"></i> Actions</h6>
+
+                <div class="d-flex flex-column gap-2">
+                    <button type="submit" form="meal-form" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-check-circle me-1"></i> Save Meal
+                    </button>
+                    <a href="{{ url_for('recipes.my_meals') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </a>
+                </div>
+
+                <!-- Thin separator -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 0;"></div>
+
+                <!-- Back Button -->
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('recipes.index') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Recipes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <h1 class="mb-4 text-h2"><i class="bi bi-plus-circle text-success"></i> Create Saved Meal</h1>
+
+                <div class="alert alert-info mb-4">
+                    <h5><i class="bi bi-lightbulb"></i> Quick Tip</h5>
+                    <p class="mb-0">Save meals you eat regularly (like "Usual Breakfast" or "Work Lunch") to log them quickly in your diary. All foods will be added as a single meal entry.</p>
+                </div>
+
+                <form id="meal-form" method="POST" action="{{ url_for('recipes.create_meal') }}" enctype="multipart/form-data">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Meal Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="name" class="form-label"><strong>Meal Name *</strong></label>
+                                    <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Usual Breakfast, Work Lunch">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="meal_type" class="form-label"><strong>Meal Type</strong></label>
+                                    <select class="form-select" id="meal_type" name="meal_type">
+                                        <option value="">Choose...</option>
+                                        <option value="Breakfast">Breakfast</option>
+                                        <option value="Lunch">Lunch</option>
+                                        <option value="Dinner">Dinner</option>
+                                        <option value="Snack">Snack</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label"><strong>Description</strong></label>
+                                <textarea class="form-control" id="description" name="description" rows="2" placeholder="Optional notes about this meal"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="meal_photo" class="form-label"><strong>Meal Photo</strong></label>
+                                <input type="file" class="form-control" id="meal_photo" name="meal_photo" accept="image/*">
+                                <small class="text-muted">Upload a photo of your meal (PNG, JPG, JPEG, GIF, WEBP)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-bag"></i> Foods in This Meal</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="foods-container">
+                                <!-- Food rows will be added here -->
+                            </div>
+                            <button type="button" class="btn btn-outline-success" onclick="addFood()">
+                                <i class="bi bi-plus-circle"></i> Add Food
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let foodCount = 0;
+
+// Foods data for search
+const foods = {{ foods | tojson | safe }};
+
+function addFood() {
+    foodCount++;
+    const container = document.getElementById('foods-container');
+    const foodDiv = document.createElement('div');
+    foodDiv.className = 'food-row mb-3 p-3 border rounded';
+    foodDiv.id = `food-${foodCount}`;
+    foodDiv.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-7 mb-2">
+                <label class="form-label text-label"><strong>Food</strong></label>
+                <select class="form-select food-select" name="food_ids[]" onchange="updateFoodInfo(${foodCount})">
+                    <option value="">Choose a food...</option>
+                    ${foods.map(food => `<option value="${food.id}">${food.name} (${food.category})</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label class="form-label text-label"><strong>Portion Size</strong></label>
+                <input type="text" class="form-control" name="portions[]" placeholder="e.g., 100g, 1 cup">
+            </div>
+            <div class="col-md-1 mb-2">
+                <label class="form-label text-label">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeFood(${foodCount})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div id="food-info-${foodCount}" class="mt-2"></div>
+    `;
+    container.appendChild(foodDiv);
+}
+
+function removeFood(id) {
+    const element = document.getElementById(`food-${id}`);
+    element.remove();
+}
+
+function updateFoodInfo(foodId) {
+    const select = document.querySelector(`#food-${foodId} .food-select`);
+    const foodIdValue = parseInt(select.value);
+    const infoDiv = document.getElementById(`food-info-${foodId}`);
+
+    if (!foodIdValue) {
+        infoDiv.innerHTML = '';
+        return;
+    }
+
+    const food = foods.find(f => f.id === foodIdValue);
+    if (!food) return;
+
+    let fodmapBadges = '';
+    const fodmaps = ['fructans', 'gos', 'lactose', 'fructose', 'polyols', 'mannitol', 'sorbitol'];
+    fodmaps.forEach(fodmap => {
+        if (food[fodmap]) {
+            const color = food[fodmap].toLowerCase() === 'green' ? 'success' :
+                         food[fodmap].toLowerCase() === 'amber' ? 'warning' : 'danger';
+            fodmapBadges += `<span class="badge bg-${color} me-1">${fodmap}: ${food[fodmap]}</span>`;
+        }
+    });
+
+    let histamineBadge = '';
+    if (food.histamine_level) {
+        const color = food.histamine_level.toLowerCase() === 'low' ? 'success' :
+                     food.histamine_level.toLowerCase() === 'medium' ? 'warning' : 'danger';
+        histamineBadge = `<span class="badge bg-${color}">Histamine: ${food.histamine_level}</span>`;
+    }
+
+    infoDiv.innerHTML = `
+        <div class="alert alert-info mb-0 py-2">
+            <small>
+                ${fodmapBadges}
+                ${histamineBadge}
+                ${food.safe_serving ? `<br><span class="text-muted">Safe serving: ${food.safe_serving}</span>` : ''}
+            </small>
+        </div>
+    `;
+}
+
+// Add first food on page load
+document.addEventListener('DOMContentLoaded', function() {
+    addFood();
+});
+</script>
+{% endblock %}

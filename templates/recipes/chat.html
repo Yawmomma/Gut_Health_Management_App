@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}AI Recipe Helper - Gut Health App{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 text-h2"><i class="bi bi-chat-dots"></i> AI Recipe Helper</h1>
+
+<div class="row">
+    <!-- Main Chat Area -->
+    <div class="col-lg-8">
+        <!-- LLM Provider Selection -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-gear"></i> LLM Provider</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Provider</label>
+                        <select id="llm-provider" class="form-select">
+                            <option value="ollama" selected>Ollama (Local)</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic (Claude)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Model (Optional)</label>
+                        <input type="text" id="llm-model" class="form-control" placeholder="Leave empty for default">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-outline-primary w-100" id="new-chat-btn">
+                            <i class="bi bi-plus-circle"></i> New Chat
+                        </button>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0" id="provider-info">
+                    <small><strong>Ollama:</strong> Local LLM. Make sure Ollama is running (<code>ollama serve</code>).</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Chat</h5>
+                    <span id="current-conversation-title" class="text-muted small"></span>
+                </div>
+                <div id="chat-messages" class="mb-3" style="height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-chat-text" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Start a conversation or select a saved chat from the history below.</p>
+                    </div>
+                </div>
+                <form id="chat-form">
+                    <div class="input-group">
+                        <input type="text" id="user-message" class="form-control" placeholder="Ask for recipe suggestions, meal ideas, or food advice..." autocomplete="off">
+                        <button class="btn btn-primary" type="submit" id="send-btn">
+                            <i class="bi bi-send"></i> Send
+                        </button>
+                    </div>
+                </form>
+                <div id="chat-status" class="mt-2 small text-muted"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat History Sidebar -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Chat History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="chat-history" style="max-height: 700px; overflow-y: auto;">
+                    <div class="text-center text-muted p-4">
+                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">No saved chats yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.chat-message.user {
+    background-color: #e3f2fd;
+    margin-left: 20%;
+    text-align: right;
+}
+
+.chat-message.assistant {
+    background-color: #ffffff;
+    margin-right: 20%;
+    border: 1px solid #dee2e6;
+}
+
+.chat-message .role {
+    font-weight: bold;
+    font-size: var(--text-value);
+    margin-bottom: 5px;
+}
+
+.chat-message.user .role {
+    color: #1976d2;
+}
+
+.chat-message.assistant .role {
+    color: #388e3c;
+}
+
+.history-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background-color: #f8f9fa;
+}
+
+.history-item.active {
+    background-color: #e3f2fd;
+}
+
+.history-item .title {
+    font-weight: 500;
+    font-size: var(--text-title);
+    margin-bottom: 3px;
+}
+
+.history-item .meta {
+    font-size: var(--text-title);
+    color: #6c757d;
+}
+
+.history-item .actions {
+    display: none;
+}
+
+.history-item:hover .actions {
+    display: inline-block;
+}
+</style>
+
+<script>
+let currentConversationId = null;
+let currentProvider = 'ollama';
+let currentModel = null;
+
+// Load chat history on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+
+    // Provider change handler
+    document.getElementById('llm-provider').addEventListener('change', function() {
+        currentProvider = this.value;
+        updateProviderInfo();
+    });
+
+    // Model input handler
+    document.getElementById('llm-model').addEventListener('input', function() {
+        currentModel = this.value.trim() || null;
+    });
+
+    // New chat button
+    document.getElementById('new-chat-btn').addEventListener('click', function() {
+        startNewChat();
+    });
+
+    // Chat form submission
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+});
+
+function updateProviderInfo() {
+    const infoDiv = document.getElementById('provider-info');
+    const provider = document.getElementById('llm-provider').value;
+
+    const infos = {
+        'ollama': '<small><strong>Ollama:</strong> Local LLM. Make sure Ollama is running (<code>ollama serve</code>).</small>',
+        'openai': '<small><strong>OpenAI:</strong> Requires API key in environment variables. Supports GPT-3.5, GPT-4, etc.</small>',
+        'anthropic': '<small><strong>Anthropic:</strong> Requires API key in environment variables. Supports Claude models.</small>'
+    };
+
+    infoDiv.innerHTML = infos[provider];
+}
+
+function startNewChat() {
+    currentConversationId = null;
+    document.getElementById('chat-messages').innerHTML = '<div class="text-center text-muted"><i class="bi bi-chat-text" style="font-size: 3rem;"></i><p class="mt-2">Start a new conversation</p></div>';
+    document.getElementById('current-conversation-title').textContent = '';
+    document.getElementById('user-message').value = '';
+    document.getElementById('user-message').focus();
+
+    // Remove active class from all history items
+    document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+}
+
+async function loadChatHistory() {
+    try {
+        const response = await fetch('/api/chat/conversations');
+        const conversations = await response.json();
+
+        const historyDiv = document.getElementById('chat-history');
+
+        if (conversations.length === 0) {
+            historyDiv.innerHTML = '<div class="text-center text-muted p-4"><i class="bi bi-inbox" style="font-size: 2rem;"></i><p class="mt-2 mb-0">No saved chats yet</p></div>';
+            return;
+        }
+
+        historyDiv.innerHTML = conversations.map(conv => `
+            <div class="history-item" data-id="${conv.id}" onclick="loadConversation(${conv.id})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="title">${escapeHtml(conv.title)}</div>
+                        <div class="meta">
+                            <span class="badge bg-info">${conv.provider}</span>
+                            <span class="ms-2">${conv.message_count} messages</span>
+                            <span class="ms-2">${formatDate(conv.updated_at)}</span>
+                        </div>
+                    </div>
+                    <div class="actions ms-2">
+                        <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteConversation(${conv.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
+async function loadConversation(conversationId) {
+    try {
+        const response = await fetch(`/api/chat/conversations/${conversationId}`);
+        const data = await response.json();
+
+        currentConversationId = conversationId;
+        currentProvider = data.conversation.provider;
+        document.getElementById('llm-provider').value = currentProvider;
+        document.getElementById('current-conversation-title').textContent = data.conversation.title;
+
+        // Display messages
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = data.messages.map(msg => `
+            <div class="chat-message ${msg.role}">
+                <div class="role">${msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
+                <div class="content">${escapeHtml(msg.content)}</div>
+            </div>
+        `).join('');
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Mark as active in history
+        document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
+        document.querySelector(`.history-item[data-id="${conversationId}"]`)?.classList.add('active');
+
+    } catch (error) {
+        console.error('Error loading conversation:', error);
+        alert('Error loading conversation');
+    }
+}
+
+async function sendMessage() {
+    const messageInput = document.getElementById('user-message');
+    const message = messageInput.value.trim();
+
+    if (!message) return;
+
+    // Disable send button
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+
+    // Add user message to chat
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML += `
+        <div class="chat-message user">
+            <div class="role">You</div>
+            <div class="content">${escapeHtml(message)}</div>
+        </div>
+    `;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Clear input
+    messageInput.value = '';
+
+    // Show status
+    document.getElementById('chat-status').textContent = 'Waiting for response...';
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                provider: currentProvider,
+                model: currentModel,
+                conversation_id: currentConversationId
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Update conversation ID
+            if (!currentConversationId) {
+                currentConversationId = data.conversation_id;
+            }
+
+            // Add AI response to chat
+            chatMessages.innerHTML += `
+                <div class="chat-message assistant">
+                    <div class="role">AI Assistant</div>
+                    <div class="content">${escapeHtml(data.response)}</div>
+                </div>
+            `;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Reload chat history
+            loadChatHistory();
+
+            document.getElementById('chat-status').textContent = '';
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        document.getElementById('chat-status').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    } finally {
+        // Re-enable send button
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        messageInput.focus();
+    }
+}
+
+async function deleteConversation(conversationId) {
+    if (!confirm('Are you sure you want to delete this conversation?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            if (currentConversationId === conversationId) {
+                startNewChat();
+            }
+            loadChatHistory();
+        } else {
+            alert('Error deleting conversation');
+        }
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+        alert('Error deleting conversation');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+}
+</script>
+{% endblock %}

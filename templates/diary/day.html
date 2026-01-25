@@ -1,0 +1,1262 @@
+{% extends "base.html" %}
+
+{% block title %}Day View - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .diary-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 60px;
+        margin-bottom: 30px;
+    }
+
+    .timeline-time {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50px;
+        font-weight: bold;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .timeline-card {
+        border-left: 4px solid #0d6efd;
+        transition: transform 0.2s;
+    }
+
+    .timeline-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .timeline-card.meal {
+        border-color: rgba(40, 167, 69, 0.45) !important;
+        border-left: 4px solid #28a745 !important;
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.16), rgba(40, 167, 69, 0.08)) !important;
+    }
+
+    .timeline-card.symptom {
+        border-color: rgba(220, 53, 69, 0.45) !important;
+        border-left: 4px solid #dc3545 !important;
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.18), rgba(220, 53, 69, 0.08)) !important;
+    }
+
+    .timeline-card.bowel {
+        border-color: rgba(13, 202, 240, 0.45) !important;
+        border-left: 4px solid #0dcaf0 !important;
+        background: linear-gradient(135deg, rgba(13, 202, 240, 0.16), rgba(13, 202, 240, 0.08)) !important;
+    }
+    .timeline-card.stress {
+        border-color: rgba(255, 193, 7, 0.45) !important;
+        border-left: 4px solid #ffc107 !important;
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.16), rgba(255, 193, 7, 0.08)) !important;
+    }
+
+    .timeline-card.note {
+        border-color: rgba(108, 117, 125, 0.45) !important;
+        border-left: 4px solid #6c757d !important;
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.16), rgba(108, 117, 125, 0.08)) !important;
+    }
+
+    .entry-icon {
+        font-size: 1.5rem;
+        margin-right: 10px;
+    }
+
+    .food-badge-small {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .traffic-light {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.2);
+        flex-shrink: 0;
+    }
+
+    .traffic-light.green {
+        background-color: #28a745;
+    }
+
+    .traffic-light.amber {
+        background-color: #ffc107;
+    }
+
+    .traffic-light.red {
+        background-color: #dc3545;
+    }
+
+    .food-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 10px;
+    }
+
+    .food-list li {
+        margin-bottom: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .food-name {
+        min-width: 0;
+        flex-shrink: 1;
+    }
+
+    .food-traffic-lights {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    .traffic-light-group {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    .traffic-light-label {
+        font-size: var(--text-label);
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .food-meta-inline {
+        font-size: var(--text-label);
+        color: #6c757d;
+        white-space: nowrap;
+        margin-left: auto;
+    }
+
+    .food-actions {
+        display: flex;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .meal-meta {
+        font-size: var(--text-value);
+        color: #6c757d;
+        margin-top: 8px;
+    }
+
+    .nav-date-buttons {
+        gap: 10px;
+    }
+
+    .no-entries-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%);
+        border: 2px dashed #90caf9;
+    }
+
+    /* Symptom severity traffic lights */
+    .symptom-traffic-light {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 8px;
+        border: 1px solid rgba(0,0,0,0.2);
+        cursor: default;
+    }
+
+    .symptom-traffic-light.green {
+        background-color: #28a745;
+    }
+
+    .symptom-traffic-light.yellow {
+        background-color: #ffc107;
+    }
+
+    .symptom-traffic-light.red {
+        background-color: #dc3545;
+    }
+
+    /* Hide timeline time for symptom, bowel, and stress entries */
+    .timeline-item.symptom-entry .timeline-time,
+    .timeline-item.bowel-entry .timeline-time,
+    .timeline-item.stress-entry .timeline-time {
+        display: none;
+    }
+
+    .timeline-item.symptom-entry,
+    .timeline-item.bowel-entry,
+    .timeline-item.stress-entry {
+        padding-left: 0;
+    }
+
+    /* Symptom severity columns */
+    .symptom-severity-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+    }
+
+    .severity-column {
+        padding: 10px;
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .severity-column:last-child {
+        border-right: none;
+    }
+
+    .severity-column h6 {
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid;
+    }
+
+    .severity-column.green-column h6 {
+        color: #28a745;
+        border-bottom-color: #28a745;
+    }
+
+    .severity-column.yellow-column h6 {
+        color: #ffc107;
+        border-bottom-color: #ffc107;
+    }
+
+    .severity-column.red-column h6 {
+        color: #dc3545;
+        border-bottom-color: #dc3545;
+    }
+
+    .severity-column .symptom-item {
+        margin-bottom: 8px;
+    }
+
+    .meal-group-card {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="diary-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4); text-align: left; font-size: 0.95rem; padding-left: 2px;">
+                <i class="bi bi-book-half"></i> Diary
+            </h6>
+
+                <!-- Dashboard -->
+                <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 28px 0;"></div>
+
+            <!-- Quick Add Entry Buttons Container -->
+            <div style="background: #1A3636; border-radius: 8px; padding: 6px 4px; margin-left: -8px; margin-right: -8px;">
+                <a href="{{ url_for('diary.add_meal') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #28a745; background: rgba(40, 167, 69, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-egg-fried" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Meal</span>
+                </a>
+                <a href="{{ url_for('diary.add_symptom') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #dc3545; background: rgba(220, 53, 69, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-heart-pulse" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Symptom</span>
+                </a>
+                <a href="{{ url_for('diary.add_bowel') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #0dcaf0; background: rgba(13, 202, 240, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-clipboard-pulse" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Bowel</span>
+                </a>
+                <a href="{{ url_for('diary.add_stress') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #ffc107; background: rgba(255, 193, 7, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-emoji-frown" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Stress</span>
+                </a>
+                <a href="{{ url_for('diary.add_note') }}" class="btn btn-sm w-100 mb-0 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #6c757d; background: rgba(108, 117, 125, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-pencil-square" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Add Note</span>
+                </a>
+            </div>
+
+            <!-- Separator between entry buttons and navigation links -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 26px 0;"></div>
+
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4); text-align: left; margin-top: 14px; font-size: 0.72rem; padding-left: 2px;">
+                <i class="bi bi-link-45deg"></i> Quick Links
+            </h6>
+
+            <a href="{{ url_for('diary.index') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; background: transparent; color: #fff; text-align: left; padding-left: 5px;">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                    <i class="bi bi-calendar3" style="font-size: 10px;"></i>
+                </div>
+                <span>Back to Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- Date Navigation -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="{{ url_for('diary.day_view', date_string=(entry_date - timedelta(days=1)).strftime('%Y-%m-%d')) }}"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-chevron-left"></i> Previous Day
+            </a>
+
+            <h1 class="mb-0">
+                <i class="bi bi-calendar-day"></i>
+                {{ entry_date.strftime('%A, %B %d, %Y') }}
+            </h1>
+
+            <a href="{{ url_for('diary.day_view', date_string=(entry_date + timedelta(days=1)).strftime('%Y-%m-%d')) }}"
+               class="btn btn-outline-secondary">
+                Next Day <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+
+        {% if entries %}
+            <!-- Group meals by type -->
+            {% set meals_by_type = {} %}
+            {% set other_entries = [] %}
+            {% for entry in entries %}
+                {% if entry.entry_type == 'meal' and entry.meals %}
+                    {% set meal = entry.meals[0] %}
+                    {% set meal_type = meal.meal_type %}
+                    {% if meal_type not in meals_by_type %}
+                        {% set _ = meals_by_type.update({meal_type: []}) %}
+                    {% endif %}
+                    {% set _ = meals_by_type[meal_type].append(entry) %}
+                {% else %}
+                    {% set _ = other_entries.append(entry) %}
+                {% endif %}
+            {% endfor %}
+
+            <!-- Display Grouped Meals -->
+            {% for meal_type in ['Breakfast', 'Morning Snack', 'Lunch', 'Afternoon Snack', 'Dinner', 'Evening Snack', 'Snack'] %}
+                {% if meal_type in meals_by_type %}
+                    <div class="card timeline-card meal meal-group-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-egg-fried"></i> {{ meal_type }}
+                                </h5>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="text-value" style="font-weight: normal;">
+                                        {{ meals_by_type[meal_type][0].entry_time.strftime('%I:%M %p').lstrip('0') }}
+                                    </span>
+                                    <div class="d-flex gap-1">
+                                        {% set first_entry = meals_by_type[meal_type][0] %}
+                                        {% set first_meal = first_entry.meals[0] %}
+                                        {% set entry_ids = meals_by_type[meal_type] | map(attribute='id') | list | join(',') %}
+                                        {% if first_meal.recipe_id %}
+                                        <a href="{{ url_for('recipes.view_recipe', recipe_id=first_meal.recipe_id) }}" class="btn btn-sm btn-outline-light" target="_blank" title="View Recipe">
+                                            <i class="bi bi-book"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('diary.add_meal') }}?edit={{ entry_ids }}" class="btn btn-sm btn-outline-light" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ first_entry.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Recipe Photo (show first recipe photo if available) -->
+                            {% set first_meal = meals_by_type[meal_type][0].meals[0] %}
+                            {% if first_meal.recipe_id and first_meal.recipe and first_meal.recipe.image_path %}
+                                <div class="mb-3">
+                                    <img src="{{ url_for('static', filename=first_meal.recipe.image_path) }}" alt="{{ first_meal.recipe.name }}" style="max-width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px;">
+                                </div>
+                            {% endif %}
+
+                            <strong>Foods:</strong>
+                            <ul class="food-list">
+                                {% for entry in meals_by_type[meal_type] %}
+                                    {% set meal = entry.meals[0] %}
+                                    {% for meal_food in meal.meal_foods %}
+                                        <li>
+                                            <span class="food-name">
+                                                • {{ meal_food.food.name }}
+                                                {% if meal_food.portion_size %}
+                                                    <small class="text-muted">({{ meal_food.portion_size }})</small>
+                                                {% endif %}
+                                            </span>
+
+                                            <!-- View Food Info Button -->
+                                            <a href="{{ url_for('foods.detail', food_id=meal_food.food.id) }}" class="btn btn-sm btn-outline-info food-info-btn" title="View {{ meal_food.food.name }} details" target="_blank" style="padding: 0 4px; font-size: 0.6rem; line-height: 1; margin-left: 4px;">
+                                                <i class="bi bi-info-circle"></i>
+                                            </a>
+
+                                            <!-- FODMAP Traffic Light (based on serving type) -->
+                                            <div class="traffic-light-group">
+                                                {% set st = meal_food.serving_type or 'safe' %}
+                                                {% if st == 'high' %}
+                                                    {% set fructans = meal_food.food.high_fructans or 'Red' %}
+                                                    {% set gos = meal_food.food.high_gos or 'Red' %}
+                                                    {% set lactose = meal_food.food.high_lactose or 'Red' %}
+                                                    {% set fructose = meal_food.food.high_fructose or 'Red' %}
+                                                    {% set polyols = meal_food.food.high_polyols or 'Red' %}
+                                                    {% set sorbitol = meal_food.food.high_sorbitol or 'Red' %}
+                                                    {% set mannitol = meal_food.food.high_mannitol or 'Red' %}
+                                                {% elif st == 'moderate' %}
+                                                    {% set fructans = meal_food.food.moderate_fructans or 'Amber' %}
+                                                    {% set gos = meal_food.food.moderate_gos or 'Amber' %}
+                                                    {% set lactose = meal_food.food.moderate_lactose or 'Amber' %}
+                                                    {% set fructose = meal_food.food.moderate_fructose or 'Amber' %}
+                                                    {% set polyols = meal_food.food.moderate_polyols or 'Amber' %}
+                                                    {% set sorbitol = meal_food.food.moderate_sorbitol or 'Amber' %}
+                                                    {% set mannitol = meal_food.food.moderate_mannitol or 'Amber' %}
+                                                {% else %}
+                                                    {% set fructans = meal_food.food.safe_fructans or 'Green' %}
+                                                    {% set gos = meal_food.food.safe_gos or 'Green' %}
+                                                    {% set lactose = meal_food.food.safe_lactose or 'Green' %}
+                                                    {% set fructose = meal_food.food.safe_fructose or 'Green' %}
+                                                    {% set polyols = meal_food.food.safe_polyols or 'Green' %}
+                                                    {% set sorbitol = meal_food.food.safe_sorbitol or 'Green' %}
+                                                    {% set mannitol = meal_food.food.safe_mannitol or 'Green' %}
+                                                {% endif %}
+                                                {% set is_high_fodmap = (fructans == 'Red' or gos == 'Red' or lactose == 'Red' or fructose == 'Red' or polyols == 'Red' or sorbitol == 'Red' or mannitol == 'Red') %}
+                                                {% set is_moderate_fodmap = (fructans == 'Amber' or gos == 'Amber' or lactose == 'Amber' or fructose == 'Amber' or polyols == 'Amber' or sorbitol == 'Amber' or mannitol == 'Amber') %}
+                                                <span class="traffic-light-label text-value">FODMAP:</span>
+                                                <span class="traffic-light {% if is_high_fodmap %}red{% elif is_moderate_fodmap %}amber{% else %}green{% endif %}"
+                                                      title="FODMAP: {% if is_high_fodmap %}High{% elif is_moderate_fodmap %}Moderate{% else %}Low{% endif %} ({{ st }} serving)"></span>
+                                            </div>
+
+                                            <!-- Histamine Traffic Light (based on serving type) -->
+                                            <div class="traffic-light-group">
+                                                {% if st == 'high' %}
+                                                    {% set histamine_level = meal_food.food.high_histamine_level or 'High' %}
+                                                {% elif st == 'moderate' %}
+                                                    {% set histamine_level = meal_food.food.moderate_histamine_level or 'Medium' %}
+                                                {% else %}
+                                                    {% set histamine_level = meal_food.food.safe_histamine_level or 'Low' %}
+                                                {% endif %}
+                                                <span class="traffic-light-label text-value">Histamine:</span>
+                                                {% if histamine_level in ['High', 'Very High'] %}
+                                                    <span class="traffic-light red" title="Histamine: High ({{ st }} serving)"></span>
+                                                {% elif histamine_level in ['Moderate', 'Medium'] %}
+                                                    <span class="traffic-light amber" title="Histamine: Moderate ({{ st }} serving)"></span>
+                                                {% else %}
+                                                    <span class="traffic-light green" title="Histamine: Low ({{ st }} serving)"></span>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Nutrition Info (if available) -->
+                                            {% if meal_food.energy_kj is not none or meal_food.protein_g is not none %}
+                                            <span class="nutrition-badge" style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 4px; white-space: nowrap;">
+                                                {% if meal_food.energy_kj is not none %}{{ meal_food.energy_kj|int }}kJ{% endif %}
+                                                {% if meal_food.protein_g is not none %} | P:{{ meal_food.protein_g }}g{% endif %}
+                                                {% if meal_food.fat_g is not none %} | F:{{ meal_food.fat_g }}g{% endif %}
+                                                {% if meal_food.carbs_g is not none %} | C:{{ meal_food.carbs_g }}g{% endif %}
+                                            </span>
+                                            {% endif %}
+
+                                            <!-- Location and Preparation inline -->
+                                            <span class="food-meta-inline">
+                                                {% if meal.location %}{{ meal.location }}{% endif %}
+                                                {% if meal.location and meal.preparation %} | {% endif %}
+                                                {% if meal.preparation %}{{ meal.preparation }}{% endif %}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+
+                            <!-- Notes from all entries -->
+                            {% for entry in meals_by_type[meal_type] %}
+                                {% set meal = entry.meals[0] %}
+                                {% if meal.notes %}
+                                    <p class="mb-0 text-muted mt-1"><small><i class="bi bi-chat-left-text"></i> {{ meal.notes }}</small></p>
+                                {% endif %}
+                            {% endfor %}
+
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Display Other Entries in Timeline -->
+            {% if other_entries %}
+            <div class="timeline">
+                {% for entry in other_entries %}
+                    <div class="timeline-item {% if entry.entry_type == 'symptom' %}symptom-entry{% elif entry.entry_type == 'bowel' %}bowel-entry{% elif entry.entry_type == 'stress' %}stress-entry{% endif %}">
+                        {% if entry.entry_type not in ['bowel', 'stress'] %}
+                        <div class="timeline-time">
+                            {{ entry.entry_time.strftime('%H:%M') }}
+                        </div>
+                        {% endif %}
+
+                        <!-- MEAL CARD (shouldn't reach here but keeping for safety) -->
+                        {% if entry.entry_type == 'meal' and entry.meals %}
+                        {% set meal = entry.meals[0] %}
+                        <div class="card timeline-card meal">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        <span class="entry-icon"><i class="bi bi-egg-fried text-success"></i></span>
+                                        {{ meal.meal_type }}
+                                        {% if meal.recipe_id %}
+                                            <span class="badge bg-info">Recipe</span>
+                                        {% endif %}
+                                    </h5>
+                                    <div class="d-flex gap-1">
+                                        {% if meal.recipe_id %}
+                                        <a href="{{ url_for('recipes.view_recipe', recipe_id=meal.recipe_id) }}" class="btn btn-sm btn-outline-info" target="_blank" title="View Recipe">
+                                            <i class="bi bi-book"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('diary.add_meal') }}?edit={{ entry.id }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ entry.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <strong>Foods:</strong>
+                                <ul class="food-list">
+                                    {% for meal_food in meal.meal_foods %}
+                                        <li>
+                                            <span class="food-name">
+                                                • {{ meal_food.food.name }}
+                                                {% if meal_food.portion_size %}
+                                                    <small class="text-muted">({{ meal_food.portion_size }})</small>
+                                                {% endif %}
+                                            </span>
+
+                                            <!-- View Food Info Button -->
+                                            <a href="{{ url_for('foods.detail', food_id=meal_food.food.id) }}" class="btn btn-sm btn-outline-info food-info-btn" title="View {{ meal_food.food.name }} details" target="_blank" style="padding: 0 4px; font-size: 0.6rem; line-height: 1; margin-left: 4px;">
+                                                <i class="bi bi-info-circle"></i>
+                                            </a>
+
+                                            <!-- FODMAP Traffic Light (based on serving type) -->
+                                            <div class="traffic-light-group">
+                                                {% set st = meal_food.serving_type or 'safe' %}
+                                                {% if st == 'high' %}
+                                                    {% set fructans = meal_food.food.high_fructans or 'Red' %}
+                                                    {% set gos = meal_food.food.high_gos or 'Red' %}
+                                                    {% set lactose = meal_food.food.high_lactose or 'Red' %}
+                                                    {% set fructose = meal_food.food.high_fructose or 'Red' %}
+                                                    {% set polyols = meal_food.food.high_polyols or 'Red' %}
+                                                    {% set sorbitol = meal_food.food.high_sorbitol or 'Red' %}
+                                                    {% set mannitol = meal_food.food.high_mannitol or 'Red' %}
+                                                {% elif st == 'moderate' %}
+                                                    {% set fructans = meal_food.food.moderate_fructans or 'Amber' %}
+                                                    {% set gos = meal_food.food.moderate_gos or 'Amber' %}
+                                                    {% set lactose = meal_food.food.moderate_lactose or 'Amber' %}
+                                                    {% set fructose = meal_food.food.moderate_fructose or 'Amber' %}
+                                                    {% set polyols = meal_food.food.moderate_polyols or 'Amber' %}
+                                                    {% set sorbitol = meal_food.food.moderate_sorbitol or 'Amber' %}
+                                                    {% set mannitol = meal_food.food.moderate_mannitol or 'Amber' %}
+                                                {% else %}
+                                                    {% set fructans = meal_food.food.safe_fructans or 'Green' %}
+                                                    {% set gos = meal_food.food.safe_gos or 'Green' %}
+                                                    {% set lactose = meal_food.food.safe_lactose or 'Green' %}
+                                                    {% set fructose = meal_food.food.safe_fructose or 'Green' %}
+                                                    {% set polyols = meal_food.food.safe_polyols or 'Green' %}
+                                                    {% set sorbitol = meal_food.food.safe_sorbitol or 'Green' %}
+                                                    {% set mannitol = meal_food.food.safe_mannitol or 'Green' %}
+                                                {% endif %}
+                                                {% set is_high_fodmap = (fructans == 'Red' or gos == 'Red' or lactose == 'Red' or fructose == 'Red' or polyols == 'Red' or sorbitol == 'Red' or mannitol == 'Red') %}
+                                                {% set is_moderate_fodmap = (fructans == 'Amber' or gos == 'Amber' or lactose == 'Amber' or fructose == 'Amber' or polyols == 'Amber' or sorbitol == 'Amber' or mannitol == 'Amber') %}
+                                                <span class="traffic-light-label text-value">FODMAP:</span>
+                                                <span class="traffic-light {% if is_high_fodmap %}red{% elif is_moderate_fodmap %}amber{% else %}green{% endif %}"
+                                                      title="FODMAP: {% if is_high_fodmap %}High{% elif is_moderate_fodmap %}Moderate{% else %}Low{% endif %} ({{ st }} serving)"></span>
+                                            </div>
+
+                                            <!-- Histamine Traffic Light (based on serving type) -->
+                                            <div class="traffic-light-group">
+                                                {% if st == 'high' %}
+                                                    {% set histamine_level = meal_food.food.high_histamine_level or 'High' %}
+                                                {% elif st == 'moderate' %}
+                                                    {% set histamine_level = meal_food.food.moderate_histamine_level or 'Medium' %}
+                                                {% else %}
+                                                    {% set histamine_level = meal_food.food.safe_histamine_level or 'Low' %}
+                                                {% endif %}
+                                                <span class="traffic-light-label text-value">Histamine:</span>
+                                                {% if histamine_level in ['High', 'Very High'] %}
+                                                    <span class="traffic-light red" title="Histamine: High ({{ st }} serving)"></span>
+                                                {% elif histamine_level in ['Moderate', 'Medium'] %}
+                                                    <span class="traffic-light amber" title="Histamine: Moderate ({{ st }} serving)"></span>
+                                                {% else %}
+                                                    <span class="traffic-light green" title="Histamine: Low ({{ st }} serving)"></span>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Nutrition Info (if available) -->
+                                            {% if meal_food.energy_kj is not none or meal_food.protein_g is not none %}
+                                            <span class="nutrition-badge" style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 4px; white-space: nowrap;">
+                                                {% if meal_food.energy_kj is not none %}{{ meal_food.energy_kj|int }}kJ{% endif %}
+                                                {% if meal_food.protein_g is not none %} | P:{{ meal_food.protein_g }}g{% endif %}
+                                                {% if meal_food.fat_g is not none %} | F:{{ meal_food.fat_g }}g{% endif %}
+                                                {% if meal_food.carbs_g is not none %} | C:{{ meal_food.carbs_g }}g{% endif %}
+                                            </span>
+                                            {% endif %}
+
+                                            <!-- Location and Preparation inline -->
+                                            <span class="food-meta-inline">
+                                                {% if meal.location %}{{ meal.location }}{% endif %}
+                                                {% if meal.location and meal.preparation %} | {% endif %}
+                                                {% if meal.preparation %}{{ meal.preparation }}{% endif %}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+
+                                {% if meal.notes %}
+                                    <p class="mb-0 text-muted mt-1"><small><i class="bi bi-chat-left-text"></i> {{ meal.notes }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- SYMPTOM CARD -->
+                        {% if entry.entry_type == 'symptom' and entry.symptoms %}
+                        {% set symptom = entry.symptoms[0] %}
+                        <div class="card mb-4 timeline-card symptom">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-heart-pulse"></i> Symptoms
+                                        {% if symptom.duration %}
+                                            <span class="ms-2" style="font-size: 0.9rem; font-weight: normal;"><i class="bi bi-clock"></i> {{ symptom.duration }}</span>
+                                        {% endif %}
+                                    </h5>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-value" style="font-weight: normal;">
+                                            {{ entry.entry_time.strftime('%I:%M %p').lstrip('0') }}
+                                        </span>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('diary.add_symptom') }}?edit={{ entry.id }}" class="btn btn-sm btn-outline-light" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ entry.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% set green_symptoms = [] %}
+                                {% set yellow_symptoms = [] %}
+                                {% set red_symptoms = [] %}
+
+                                {% if symptom.bloating is not none %}
+                                    {% if symptom.bloating <= 3 %}
+                                        {% set _ = green_symptoms.append(('Bloating', 'bi-circle', symptom.bloating)) %}
+                                    {% elif symptom.bloating <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Bloating', 'bi-circle', symptom.bloating)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Bloating', 'bi-circle', symptom.bloating)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.pain is not none %}
+                                    {% if symptom.pain <= 3 %}
+                                        {% set _ = green_symptoms.append(('Pain', 'bi-bandaid', symptom.pain)) %}
+                                    {% elif symptom.pain <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Pain', 'bi-bandaid', symptom.pain)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Pain', 'bi-bandaid', symptom.pain)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.wind is not none %}
+                                    {% if symptom.wind <= 3 %}
+                                        {% set _ = green_symptoms.append(('Wind', 'bi-wind', symptom.wind)) %}
+                                    {% elif symptom.wind <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Wind', 'bi-wind', symptom.wind)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Wind', 'bi-wind', symptom.wind)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.nausea is not none %}
+                                    {% if symptom.nausea <= 3 %}
+                                        {% set _ = green_symptoms.append(('Nausea', 'bi-emoji-dizzy', symptom.nausea)) %}
+                                    {% elif symptom.nausea <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Nausea', 'bi-emoji-dizzy', symptom.nausea)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Nausea', 'bi-emoji-dizzy', symptom.nausea)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.heartburn is not none %}
+                                    {% if symptom.heartburn <= 3 %}
+                                        {% set _ = green_symptoms.append(('Heartburn', 'bi-fire', symptom.heartburn)) %}
+                                    {% elif symptom.heartburn <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Heartburn', 'bi-fire', symptom.heartburn)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Heartburn', 'bi-fire', symptom.heartburn)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.headache is not none %}
+                                    {% if symptom.headache <= 3 %}
+                                        {% set _ = green_symptoms.append(('Headache', 'bi-lightning', symptom.headache)) %}
+                                    {% elif symptom.headache <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Headache', 'bi-lightning', symptom.headache)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Headache', 'bi-lightning', symptom.headache)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.brain_fog is not none %}
+                                    {% if symptom.brain_fog <= 3 %}
+                                        {% set _ = green_symptoms.append(('Brain Fog', 'bi-cloud-fog', symptom.brain_fog)) %}
+                                    {% elif symptom.brain_fog <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Brain Fog', 'bi-cloud-fog', symptom.brain_fog)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Brain Fog', 'bi-cloud-fog', symptom.brain_fog)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.fatigue is not none %}
+                                    {% if symptom.fatigue <= 3 %}
+                                        {% set _ = green_symptoms.append(('Fatigue', 'bi-battery-half', symptom.fatigue)) %}
+                                    {% elif symptom.fatigue <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Fatigue', 'bi-battery-half', symptom.fatigue)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Fatigue', 'bi-battery-half', symptom.fatigue)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if symptom.sinus_issues is not none %}
+                                    {% if symptom.sinus_issues <= 3 %}
+                                        {% set _ = green_symptoms.append(('Sinus', 'bi-droplet', symptom.sinus_issues)) %}
+                                    {% elif symptom.sinus_issues <= 6 %}
+                                        {% set _ = yellow_symptoms.append(('Sinus', 'bi-droplet', symptom.sinus_issues)) %}
+                                    {% else %}
+                                        {% set _ = red_symptoms.append(('Sinus', 'bi-droplet', symptom.sinus_issues)) %}
+                                    {% endif %}
+                                {% endif %}
+
+                                <div class="symptom-severity-columns">
+                                    <!-- Green Column -->
+                                    <div class="severity-column green-column">
+                                        <h6><i class="bi bi-circle-fill text-label"></i> Low (1-3)</h6>
+                                        {% if green_symptoms %}
+                                            {% for name, icon, value in green_symptoms %}
+                                                <div class="symptom-item">
+                                                    <small>
+                                                        <span class="symptom-traffic-light green" title="{{ value }}/10" data-bs-toggle="tooltip"></span>
+                                                        <i class="bi {{ icon }}"></i> {{ name }}
+                                                    </small>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">None</small>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Yellow Column -->
+                                    <div class="severity-column yellow-column">
+                                        <h6><i class="bi bi-circle-fill text-label"></i> Moderate (4-6)</h6>
+                                        {% if yellow_symptoms %}
+                                            {% for name, icon, value in yellow_symptoms %}
+                                                <div class="symptom-item">
+                                                    <small>
+                                                        <span class="symptom-traffic-light yellow" title="{{ value }}/10" data-bs-toggle="tooltip"></span>
+                                                        <i class="bi {{ icon }}"></i> {{ name }}
+                                                    </small>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">None</small>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Red Column -->
+                                    <div class="severity-column red-column">
+                                        <h6><i class="bi bi-circle-fill text-label"></i> High (7-10)</h6>
+                                        {% if red_symptoms %}
+                                            {% for name, icon, value in red_symptoms %}
+                                                <div class="symptom-item">
+                                                    <small>
+                                                        <span class="symptom-traffic-light red" title="{{ value }}/10" data-bs-toggle="tooltip"></span>
+                                                        <i class="bi {{ icon }}"></i> {{ name }}
+                                                    </small>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">None</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% if symptom.notes %}
+                                    <p class="mb-0 mt-2 text-muted"><small><i class="bi bi-chat-left-text"></i> {{ symptom.notes }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- BOWEL MOVEMENT CARD -->
+                        {% if entry.entry_type == 'bowel' and entry.bowel_movements %}
+                        {% set bowel_movement = entry.bowel_movements[0] %}
+                        <div class="card timeline-card bowel mb-4">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-clipboard-pulse"></i> Bowel Movement
+                                        <span class="badge bg-light text-info ms-2">Type {{ bowel_movement.bristol_type }}</span>
+                                    </h5>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-value" style="font-weight: normal;">
+                                            {{ entry.entry_time.strftime('%I:%M %p').lstrip('0') }}
+                                        </span>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('diary.add_bowel') }}?edit={{ entry.id }}" class="btn btn-sm btn-outline-light" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ entry.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Two Column Layout -->
+                                <div class="row g-4">
+                                    <!-- Left Column: Bristol Stool Type Visual -->
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div style="font-size: 2rem; min-width: 50px; text-align: center; color:
+                                                {% if bowel_movement.bristol_type in [1, 2] %}#dc3545
+                                                {% elif bowel_movement.bristol_type in [3, 4] %}#28a745
+                                                {% else %}#fd7e14{% endif %};">
+                                                {% if bowel_movement.bristol_type == 1 %}&#9679;&#9679;
+                                                {% elif bowel_movement.bristol_type == 2 %}&#9679;&#9473;&#9473;
+                                                {% elif bowel_movement.bristol_type == 3 %}&#9473;&#9473;&#9473;
+                                                {% elif bowel_movement.bristol_type == 4 %}&#9473;&#9473;&#9473;
+                                                {% elif bowel_movement.bristol_type == 5 %}&#8226;&#8226;&#8226;
+                                                {% elif bowel_movement.bristol_type == 6 %}&#8776;&#8776;
+                                                {% elif bowel_movement.bristol_type == 7 %}&#8776;&#8776;&#8776;
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="mb-2">
+                                                    <strong>
+                                                        {% if bowel_movement.bristol_type == 1 %}Separate hard lumps, like nuts
+                                                        {% elif bowel_movement.bristol_type == 2 %}Sausage-shaped but lumpy
+                                                        {% elif bowel_movement.bristol_type == 3 %}Like a sausage with cracks on surface
+                                                        {% elif bowel_movement.bristol_type == 4 %}Like a sausage, smooth and soft
+                                                        {% elif bowel_movement.bristol_type == 5 %}Soft blobs with clear-cut edges
+                                                        {% elif bowel_movement.bristol_type == 6 %}Fluffy pieces with ragged edges
+                                                        {% elif bowel_movement.bristol_type == 7 %}Watery, no solid pieces
+                                                        {% endif %}
+                                                    </strong>
+                                                </div>
+                                                <span class="badge
+                                                    {% if bowel_movement.bristol_type == 1 %}bg-danger
+                                                    {% elif bowel_movement.bristol_type == 2 %}bg-warning text-dark
+                                                    {% elif bowel_movement.bristol_type in [3, 4] %}bg-success
+                                                    {% elif bowel_movement.bristol_type == 5 %}bg-warning text-dark
+                                                    {% elif bowel_movement.bristol_type == 6 %}bg-warning text-dark
+                                                    {% elif bowel_movement.bristol_type == 7 %}bg-danger
+                                                    {% endif %}">
+                                                    {% if bowel_movement.bristol_type == 1 %}Severe Constipation
+                                                    {% elif bowel_movement.bristol_type == 2 %}Mild Constipation
+                                                    {% elif bowel_movement.bristol_type == 3 %}Normal
+                                                    {% elif bowel_movement.bristol_type == 4 %}Normal (Ideal)
+                                                    {% elif bowel_movement.bristol_type == 5 %}Lacking Fiber
+                                                    {% elif bowel_movement.bristol_type == 6 %}Mild Diarrhea
+                                                    {% elif bowel_movement.bristol_type == 7 %}Severe Diarrhea
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vertical Separator -->
+                                    <div class="col-md-1 d-flex justify-content-center align-items-center" style="max-width: 40px;">
+                                        <div style="border-left: 1px solid rgba(255, 255, 255, 0.3); height: 100%; min-height: 60px;"></div>
+                                    </div>
+
+                                    <!-- Right Column: Additional Details -->
+                                    <div class="col-md-6">
+                                        <div class="d-flex flex-column gap-2">
+                                            {% if bowel_movement.urgency %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-lightning"></i>
+                                                <span class="traffic-light
+                                                    {% if bowel_movement.urgency in ['Extreme', 'Severe'] %}red
+                                                    {% elif bowel_movement.urgency == 'Moderate' %}amber
+                                                    {% else %}green{% endif %}"
+                                                    title="Urgency Level"></span>
+                                                <small><strong>Urgency:</strong> {{ bowel_movement.urgency }}</small>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if bowel_movement.completeness %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span class="traffic-light
+                                                    {% if bowel_movement.completeness == 'Complete' %}green
+                                                    {% elif bowel_movement.completeness == 'Mostly Complete' %}amber
+                                                    {% else %}red{% endif %}"
+                                                    title="Completeness"></span>
+                                                <small><strong>Completeness:</strong> {{ bowel_movement.completeness }}</small>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if bowel_movement.straining %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-activity"></i>
+                                                <span class="traffic-light
+                                                    {% if bowel_movement.straining in ['Severe', 'Moderate'] %}red
+                                                    {% elif bowel_movement.straining == 'Mild' %}amber
+                                                    {% else %}green{% endif %}"
+                                                    title="Straining Level"></span>
+                                                <small><strong>Straining:</strong> {{ bowel_movement.straining }}</small>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if bowel_movement.color %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-palette"></i>
+                                                <span class="traffic-light
+                                                    {% if bowel_movement.color in ['Brown', 'Dark Brown', 'Light Brown'] %}green
+                                                    {% elif bowel_movement.color in ['Green', 'Yellow'] %}amber
+                                                    {% else %}red{% endif %}"
+                                                    title="Color Assessment"></span>
+                                                <small><strong>Color:</strong> {{ bowel_movement.color }}</small>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if bowel_movement.blood_present %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                <span class="traffic-light red" title="Warning"></span>
+                                                <small><strong class="text-danger">Blood present</strong></small>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if bowel_movement.mucus_present %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                                <span class="traffic-light amber" title="Warning"></span>
+                                                <small><strong class="text-warning">Mucus present</strong></small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if bowel_movement.notes %}
+                                    <p class="mb-0 text-muted mt-3"><small><i class="bi bi-chat-left-text"></i> {{ bowel_movement.notes }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- STRESS CARD -->
+                        {% if entry.entry_type == 'stress' and entry.stress_logs %}
+                        {% set stress_log = entry.stress_logs[0] %}
+                        <div class="card timeline-card stress">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <span class="entry-icon"><i class="bi bi-emoji-frown"></i></span>
+                                        Stress Level: {{ stress_log.stress_level }}/10
+                                    </h5>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-value" style="font-weight: normal;">
+                                            {{ entry.entry_time.strftime('%I:%M %p').lstrip('0') }}
+                                        </span>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('diary.add_stress') }}?edit={{ entry.id }}" class="btn btn-sm btn-outline-light">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ entry.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if stress_log.stress_types %}
+                                    <p class="mb-1"><strong>Types:</strong> {{ stress_log.stress_types }}</p>
+                                {% endif %}
+                                {% if stress_log.physical_symptoms %}
+                                    <p class="mb-1"><strong>Physical symptoms:</strong> {{ stress_log.physical_symptoms }}</p>
+                                {% endif %}
+                                {% if stress_log.management_actions %}
+                                    <p class="mb-1"><strong>Actions taken:</strong> {{ stress_log.management_actions }}</p>
+                                {% endif %}
+                                {% if stress_log.notes %}
+                                    <p class="mb-0 text-muted"><small><i class="bi bi-chat-left-text"></i> {{ stress_log.notes }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- NOTE CARD -->
+                        {% if entry.entry_type == 'note' and entry.notes %}
+                        {% set note = entry.notes[0] %}
+                        <div class="card timeline-card note">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <span class="entry-icon"><i class="bi bi-pencil-square"></i></span>
+                                        {% if note.title %}
+                                            {{ note.title }}
+                                        {% else %}
+                                            Note
+                                        {% endif %}
+                                        {% if note.category %}
+                                            <span class="badge bg-light text-dark ms-2">{{ note.category }}</span>
+                                        {% endif %}
+                                    </h5>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('diary.add_note') }}?edit={{ entry.id }}" class="btn btn-sm btn-outline-light">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteEntryModal{{ entry.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if note.content %}
+                                    <p class="mb-1">{{ note.content }}</p>
+                                {% endif %}
+                                {% if note.mood %}
+                                    <p class="mb-1"><i class="bi bi-emoji-smile"></i> Mood: {{ note.mood }}</p>
+                                {% endif %}
+                                {% if note.tags %}
+                                    <p class="mb-0">
+                                        {% for tag in note.tags.split(',') %}
+                                            <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
+                                        {% endfor %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- No Entries -->
+            <div class="card no-entries-card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-calendar-x" style="font-size: 4rem; color: #90caf9;"></i>
+                    <h3 class="mt-3">No entries for this day</h3>
+                    <p class="text-muted">Start tracking by adding your first entry above</p>
+                </div>
+            </div>
+        {% endif %}
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div>
+    <!-- End Right Content Area -->
+</div>
+<!-- End Main Row -->
+
+<!-- Delete Entry Modals (placed outside cards to prevent hover interference) -->
+{% if entries %}
+    {% for entry in entries %}
+    <div class="modal fade" id="deleteEntryModal{{ entry.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h6 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0"><strong>Delete this {{ entry.entry_type }} entry?</strong></p>
+                    <p class="text-muted mb-0">This cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="POST" action="{{ url_for('diary.delete_entry', entry_id=entry.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips for symptom traffic lights
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

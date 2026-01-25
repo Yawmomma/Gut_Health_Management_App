@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Safe Foods - Gut Health App{% endblock %}
+
+{% macro get_worst_color(fodmap_values, histamine_level, dao_blocker, histamine_liberator) %}
+    {# Priority: Red > Amber > Green #}
+    {% set all_values = fodmap_values + [histamine_level, dao_blocker, histamine_liberator] %}
+    {# Check for Red/High/Yes first #}
+    {% if 'Red' in all_values or 'High' in all_values or 'Yes' in all_values %}
+        red
+    {# Then check for Amber/Medium #}
+    {% elif 'Amber' in all_values or 'Medium' in all_values %}
+        amber
+    {# Default to green #}
+    {% else %}
+        green
+    {% endif %}
+{% endmacro %}
+
+{% block extra_css %}
+<style>
+    .traffic-light-circle {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .traffic-light-circle.green {
+        background-color: #28a745;
+    }
+
+    .traffic-light-circle.amber {
+        background-color: #ffc107;
+    }
+
+    .traffic-light-circle.red {
+        background-color: #dc3545;
+    }
+
+    .overall-traffic-light {
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+    }
+
+    .serving-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .serving-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--text-label);
+    }
+
+    .card-title-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-h2"><i class="bi bi-shield-check text-success"></i> Safe Foods List</h1>
+            <a href="{{ url_for('foods.index') }}" class="btn btn-outline-secondary text-body">
+                <i class="bi bi-arrow-left"></i> Back to Food Guide
+            </a>
+        </div>
+
+        <div class="alert alert-success text-body">
+            <h5 class="text-title"><i class="bi bi-info-circle"></i> What Makes a Food "Safe"?</h5>
+            <p class="mb-0">These foods meet all the following criteria:</p>
+            <ul class="mb-0">
+                <li>All FODMAPs rated <strong>Green</strong> (Low)</li>
+                <li>Histamine level: <strong>Low</strong></li>
+                <li>Not a DAO blocker</li>
+                <li>Not a histamine liberator</li>
+            </ul>
+        </div>
+
+        {% if total_count > 0 %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-title">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Found {{ total_count }} safe food{{ 's' if total_count != 1 else '' }}
+                    </h5>
+                    <p class="text-muted mb-0 text-body">Foods are grouped by category below</p>
+                </div>
+            </div>
+
+            {% for category, foods in foods_by_category.items() %}
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0 text-title">
+                            <i class="bi bi-tag"></i> {{ category }}
+                            <span class="badge bg-light text-dark text-label">{{ foods|length }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for food in foods %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100 border-success">
+                                        <div class="card-body">
+                                            <!-- Calculate all three ratings first -->
+                                            {% set safe_fodmaps = [
+                                                food.safe_fructose or 'Green',
+                                                food.safe_sorbitol or 'Green',
+                                                food.safe_lactose or 'Green',
+                                                food.safe_gos or 'Green',
+                                                food.safe_fructans or 'Green',
+                                                food.safe_mannitol or 'Green',
+                                                food.safe_polyols or 'Green'
+                                            ] %}
+                                            {% set moderate_fodmaps = [
+                                                food.moderate_fructose or 'Amber',
+                                                food.moderate_sorbitol or 'Amber',
+                                                food.moderate_lactose or 'Amber',
+                                                food.moderate_gos or 'Amber',
+                                                food.moderate_fructans or 'Amber',
+                                                food.moderate_mannitol or 'Amber',
+                                                food.moderate_polyols or 'Amber'
+                                            ] %}
+                                            {% set high_fodmaps = [
+                                                food.high_fructose or 'Red',
+                                                food.high_sorbitol or 'Red',
+                                                food.high_lactose or 'Red',
+                                                food.high_gos or 'Red',
+                                                food.high_fructans or 'Red',
+                                                food.high_mannitol or 'Red',
+                                                food.high_polyols or 'Red'
+                                            ] %}
+
+                                            {% set safe_color = get_worst_color(safe_fodmaps, food.safe_histamine_level or 'Low', food.safe_dao_blocker or 'No', food.safe_histamine_liberator or 'No') %}
+                                            {% set moderate_color = get_worst_color(moderate_fodmaps, food.moderate_histamine_level or 'Medium', food.moderate_dao_blocker or 'No', food.moderate_histamine_liberator or 'No') %}
+                                            {% set high_color = get_worst_color(high_fodmaps, food.high_histamine_level or 'High', food.high_dao_blocker or 'Yes', food.high_histamine_liberator or 'Yes') %}
+
+                                            <!-- Determine which serving is "1 serve" and use its color for overall traffic light -->
+                                            {% if food.safe_serving_type == '1 serve' %}
+                                                {% set overall_color = safe_color %}
+                                            {% elif food.moderate_serving_type == '1 serve' %}
+                                                {% set overall_color = moderate_color %}
+                                            {% elif food.high_serving_type == '1 serve' %}
+                                                {% set overall_color = high_color %}
+                                            {% else %}
+                                                {# Default to moderate if no "1 serve" is specified #}
+                                                {% set overall_color = moderate_color %}
+                                            {% endif %}
+
+                                            <div class="card-title-row">
+                                                <!-- Overall traffic light on the left -->
+                                                <div class="overall-traffic-light">
+                                                    <span class="traffic-light-circle {{ overall_color }}" title="1 serve rating"></span>
+                                                </div>
+
+                                                <h6 class="card-title mb-0 text-value">
+                                                    <a href="{{ url_for('foods.detail', food_id=food.id) }}" class="text-decoration-none">
+                                                        {{ food.name }}
+                                                    </a>
+                                                </h6>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="badge bg-success text-label">Low FODMAP</span>
+                                                <span class="badge bg-success text-label">Low Histamine</span>
+                                            </div>
+
+                                            <div class="serving-info">
+                                                <!-- High Serving -->
+                                                <div class="serving-item">
+                                                    <span class="traffic-light-circle {{ high_color }}" title="High Serving"></span>
+                                                    <span class="text-muted">{{ food.high_serving.split('g')[0] if food.high_serving and 'g' in food.high_serving else food.high_serving if food.high_serving else 'N/A' }}g</span>
+                                                </div>
+
+                                                <!-- Moderate Serving -->
+                                                <div class="serving-item">
+                                                    <span class="traffic-light-circle {{ moderate_color }}" title="Moderate Serving"></span>
+                                                    <span class="text-muted">{{ food.moderate_serving.split('g')[0] if food.moderate_serving and 'g' in food.moderate_serving else food.moderate_serving if food.moderate_serving else 'N/A' }}g</span>
+                                                </div>
+
+                                                <!-- Safe Serving -->
+                                                <div class="serving-item">
+                                                    <span class="traffic-light-circle {{ safe_color }}" title="Safe Serving"></span>
+                                                    <span class="text-muted">{{ food.safe_serving.split('g')[0] if food.safe_serving and 'g' in food.safe_serving else food.safe_serving if food.safe_serving else 'N/A' }}g</span>
+                                                </div>
+                                            </div>
+
+                                            {% if food.preparation_notes %}
+                                                <p class="mb-0 mt-2">
+                                                    <small class="text-muted text-label">
+                                                        <i class="bi bi-info-circle"></i> {{ food.preparation_notes[:80] }}{% if food.preparation_notes|length > 80 %}...{% endif %}
+                                                    </small>
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ url_for('foods.detail', food_id=food.id) }}" class="btn btn-sm btn-outline-primary flex-fill text-body">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <button class="btn btn-sm btn-success flex-fill text-body" data-bs-toggle="modal" data-bs-target="#addToDiaryModal{{ food.id }}">
+                                                    <i class="bi bi-plus-circle"></i> Add to Diary
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick Add to Diary Modal -->
+                                    <div class="modal fade" id="addToDiaryModal{{ food.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form method="POST" action="{{ url_for('diary.add_meal') }}">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Add {{ food.name }} to Diary</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="meal_date{{ food.id }}" class="form-label"><strong>Date *</strong></label>
+                                                            <input type="date" class="form-control meal-date-input" id="meal_date{{ food.id }}" name="meal_date" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="meal_time{{ food.id }}" class="form-label"><strong>Time *</strong></label>
+                                                            <input type="time" class="form-control meal-time-input" id="meal_time{{ food.id }}" name="meal_time" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="meal_type{{ food.id }}" class="form-label"><strong>Meal Type *</strong></label>
+                                                            <select class="form-select" id="meal_type{{ food.id }}" name="meal_type" required>
+                                                                <option value="">Choose...</option>
+                                                                <option value="Breakfast">Breakfast</option>
+                                                                <option value="Morning Snack">Morning Snack</option>
+                                                                <option value="Lunch">Lunch</option>
+                                                                <option value="Afternoon Snack">Afternoon Snack</option>
+                                                                <option value="Dinner">Dinner</option>
+                                                                <option value="Evening Snack">Evening Snack</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="portion_size{{ food.id }}" class="form-label"><strong>Portion Size *</strong></label>
+                                                            <input type="text" class="form-control" id="portion_size{{ food.id }}" name="portions[]"
+                                                                   value="{{ food.safe_serving }}" placeholder="e.g., 100g, 1 cup" required>
+                                                        </div>
+                                                        <input type="hidden" name="food_ids[]" value="{{ food.id }}">
+                                                        <input type="hidden" name="location" value="Home">
+                                                        <input type="hidden" name="preparation" value="Fresh">
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-success">
+                                                            <i class="bi bi-plus-circle"></i> Add to Diary
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-circle text-warning" style="font-size: 4rem;"></i>
+                    <h3 class="mt-3 text-h2">No Safe Foods Found</h3>
+                    <p class="text-muted text-body">No foods in your library currently meet all the "safe" criteria.</p>
+                    <p class="text-muted text-body">Add foods to your library with all-green FODMAP ratings and low histamine levels.</p>
+                    <a href="{{ url_for('foods.add_food') }}" class="btn btn-primary mt-3 text-body">
+                        <i class="bi bi-plus-circle"></i> Add Food to Library
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Set default date and time to now for all modals
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+
+    // Set date to today
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
+    // Set time to current time
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeString = `${hours}:${minutes}`;
+
+    // Set all date and time inputs
+    document.querySelectorAll('.meal-date-input').forEach(input => {
+        input.value = dateString;
+    });
+
+    document.querySelectorAll('.meal-time-input').forEach(input => {
+        input.value = timeString;
+    });
+});
+</script>
+{% endblock %}

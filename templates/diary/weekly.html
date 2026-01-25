@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Summary - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .week-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .day-card {
+        border-left: 5px solid #dee2e6;
+        transition: all 0.3s;
+        margin-bottom: 15px;
+    }
+
+    .day-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .day-card.has-symptoms {
+        border-left-color: #dc3545;
+    }
+
+    .day-card.has-entries {
+        border-left-color: #28a745;
+    }
+
+    .day-card.today {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .stat-box {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+    }
+
+    .stat-box.meals { background: linear-gradient(135deg, #28a745, #20c997); }
+    .stat-box.symptoms { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+    .stat-box.bowel { background: linear-gradient(135deg, #0dcaf0, #0d6efd); }
+    .stat-box.stress { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+    .stat-box.notes { background: linear-gradient(135deg, #6c757d, #495057); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-11 mx-auto">
+        <!-- Week Header -->
+        <div class="week-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="bi bi-calendar-week"></i> Weekly Summary</h1>
+                    <h4 class="mb-0">{{ week_start.strftime('%B %d') }} - {{ week_end.strftime('%B %d, %Y') }}</h4>
+                </div>
+                <div>
+                    <a href="{{ url_for('diary.trends') }}" class="btn btn-light">
+                        <i class="bi bi-graph-up"></i> View Trends
+                    </a>
+                    <a href="{{ url_for('diary.index') }}" class="btn btn-outline-light">
+                        <i class="bi bi-calendar3"></i> Calendar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Week Stats -->
+            <div class="stats-grid">
+                <div class="stat-box meals">
+                    <h2>{{ week_stats.meals }}</h2>
+                    <small>Meals</small>
+                </div>
+                <div class="stat-box symptoms">
+                    <h2>{{ week_stats.symptoms }}</h2>
+                    <small>Symptoms</small>
+                </div>
+                <div class="stat-box bowel">
+                    <h2>{{ week_stats.bowel }}</h2>
+                    <small>Bowel Movements</small>
+                </div>
+                <div class="stat-box stress">
+                    <h2>{{ week_stats.stress }}</h2>
+                    <small>Stress Logs</small>
+                </div>
+                <div class="stat-box notes">
+                    <h2>{{ week_stats.notes }}</h2>
+                    <small>Notes</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Breakdown -->
+        <h3 class="mb-3"><i class="bi bi-list-check"></i> Daily Breakdown</h3>
+
+        {% for day_data in days_data %}
+        <div class="card day-card {% if day_data.symptoms > 0 %}has-symptoms{% elif day_data.total > 0 %}has-entries{% endif %} {% if day_data.date == today %}today{% endif %}">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h5 class="mb-1">
+                            <i class="bi bi-calendar-day"></i>
+                            {{ day_data.date.strftime('%A') }}
+                        </h5>
+                        <p class="text-muted mb-0">{{ day_data.date.strftime('%B %d, %Y') }}</p>
+                        {% if day_data.date == today %}
+                            <span class="badge bg-warning">Today</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row text-center">
+                            <div class="col">
+                                <h4 class="text-success mb-0">{{ day_data.meals }}</h4>
+                                <small class="text-muted">Meals</small>
+                            </div>
+                            <div class="col">
+                                <h4 class="text-danger mb-0">{{ day_data.symptoms }}</h4>
+                                <small class="text-muted">Symptoms</small>
+                            </div>
+                            <div class="col">
+                                <h4 class="text-info mb-0">{{ day_data.bowel }}</h4>
+                                <small class="text-muted">Bowel</small>
+                            </div>
+                            <div class="col">
+                                <h4 class="text-warning mb-0">{{ day_data.stress }}</h4>
+                                <small class="text-muted">Stress</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <a href="{{ url_for('diary.day_view', date_string=day_data.date.strftime('%Y-%m-%d')) }}"
+                           class="btn btn-primary">
+                            View Day <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Summary Insights -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Weekly Insights</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    {% if week_stats.total == 0 %}
+                    <li>No entries logged this week. Start tracking to see insights!</li>
+                    {% else %}
+                    <li>You logged <strong>{{ week_stats.total }} total entries</strong> this week</li>
+                    {% if week_stats.meals > 0 %}
+                    <li>Tracked <strong>{{ week_stats.meals }} meals</strong> - {{ "%.1f"|format(week_stats.meals / 7) }} meals per day on average</li>
+                    {% endif %}
+                    {% if week_stats.symptoms > 0 %}
+                    <li>Logged symptoms on <strong>{{ week_stats.symptoms }} occasions</strong></li>
+                    {% endif %}
+                    {% if week_stats.bowel > 0 %}
+                    <li>Recorded <strong>{{ week_stats.bowel }} bowel movements</strong></li>
+                    {% endif %}
+                    {% if week_stats.stress > 0 %}
+                    <li>Tracked stress <strong>{{ week_stats.stress }} times</strong></li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get today's date for comparison
+const today = new Date('{{ today }}');
+</script>
+{% endblock %}

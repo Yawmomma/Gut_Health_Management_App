@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}{% if existing_stress %}Edit Stress{% else %}Log Stress{% endif %} - Gut Health App{% endblock %}
+
+{% set stress_types_list = existing_stress.stress_types.split(',') if existing_stress and existing_stress.stress_types else [] %}
+{% set physical_symptoms_list = existing_stress.physical_symptoms.split(',') if existing_stress and existing_stress.physical_symptoms else [] %}
+{% set management_actions_list = existing_stress.management_actions.split(',') if existing_stress and existing_stress.management_actions else [] %}
+
+{% block extra_css %}
+<style>
+    .stress-slider-container {
+        margin: 20px 0;
+        padding: 20px;
+        background-color: #fff3cd;
+        border-radius: 8px;
+    }
+
+    .stress-slider {
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        outline: none;
+        -webkit-appearance: none;
+        background: linear-gradient(to right, #28a745, #ffc107, #fd7e14, #dc3545);
+    }
+
+    .stress-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #fd7e14;
+        cursor: pointer;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .stress-slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #fd7e14;
+        cursor: pointer;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .stress-value {
+        font-size: var(--text-h2);
+        font-weight: bold;
+        color: #fd7e14;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="bi bi-emoji-frown"></i> {% if existing_stress %}Edit Stress Entry{% else %}Log Stress Level{% endif %}</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="stress-form">
+                    <!-- Date and Time -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="stress_date" class="form-label"><strong>Date</strong></label>
+                            <input type="date" class="form-control" id="stress_date" name="stress_date"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_date.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stress_time" class="form-label"><strong>Time</strong></label>
+                            <input type="time" class="form-control" id="stress_time" name="stress_time"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_time.strftime('%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+
+                    <!-- Stress Level Slider -->
+                    <div class="stress-slider-container">
+                        <label class="form-label"><strong>Stress Level (0-10)</strong></label>
+                        <p class="text-muted small">0 = Completely relaxed, 10 = Maximum stress</p>
+                        <div class="stress-value" id="stress-value">{% if existing_stress %}{{ existing_stress.stress_level }}{% else %}5{% endif %}</div>
+                        <input type="range" class="stress-slider" id="stress_level" name="stress_level"
+                               min="0" max="10" value="{% if existing_stress %}{{ existing_stress.stress_level }}{% else %}5{% endif %}" step="1">
+                    </div>
+
+                    <!-- Stress Types -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Type of Stress (Check all that apply)</strong></label>
+                        <div class="checkbox-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Work" id="stress-work" {% if 'Work' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-work">Work</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Relationships" id="stress-relationships" {% if 'Relationships' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-relationships">Relationships</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Financial" id="stress-financial" {% if 'Financial' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-financial">Financial</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Health" id="stress-health" {% if 'Health' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-health">Health Concerns</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Family" id="stress-family" {% if 'Family' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-family">Family</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Time Pressure" id="stress-time" {% if 'Time Pressure' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-time">Time Pressure</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Social" id="stress-social" {% if 'Social' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-social">Social Situations</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="stress_types" value="Other" id="stress-other" {% if 'Other' in stress_types_list %}checked{% endif %}>
+                                <label class="form-check-label" for="stress-other">Other</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Symptoms -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Physical Symptoms (Check all that apply)</strong></label>
+                        <div class="checkbox-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Tension" id="phys-tension" {% if 'Tension' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-tension">Muscle Tension</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Rapid Heart" id="phys-heart" {% if 'Rapid Heart' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-heart">Rapid Heartbeat</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Shallow Breathing" id="phys-breathing" {% if 'Shallow Breathing' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-breathing">Shallow Breathing</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Sweating" id="phys-sweating" {% if 'Sweating' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-sweating">Sweating</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Digestive Issues" id="phys-digestive" {% if 'Digestive Issues' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-digestive">Digestive Issues</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Headache" id="phys-headache" {% if 'Headache' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-headache">Headache</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="Fatigue" id="phys-fatigue" {% if 'Fatigue' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-fatigue">Fatigue</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="physical_symptoms" value="None" id="phys-none" {% if 'None' in physical_symptoms_list %}checked{% endif %}>
+                                <label class="form-check-label" for="phys-none">None</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Management Actions -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>What did you do to manage it? (Check all that apply)</strong></label>
+                        <div class="checkbox-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Deep Breathing" id="mgmt-breathing" {% if 'Deep Breathing' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-breathing">Deep Breathing</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Meditation" id="mgmt-meditation" {% if 'Meditation' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-meditation">Meditation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Exercise" id="mgmt-exercise" {% if 'Exercise' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-exercise">Exercise</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Walk" id="mgmt-walk" {% if 'Walk' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-walk">Went for a Walk</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Talked to Someone" id="mgmt-talk" {% if 'Talked to Someone' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-talk">Talked to Someone</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Rest" id="mgmt-rest" {% if 'Rest' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-rest">Rested</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Distraction" id="mgmt-distraction" {% if 'Distraction' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-distraction">Distracted Myself</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="management_actions" value="Nothing" id="mgmt-nothing" {% if 'Nothing' in management_actions_list %}checked{% endif %}>
+                                <label class="form-check-label" for="mgmt-nothing">Nothing Yet</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duration Status -->
+                    <div class="mb-3">
+                        <label for="duration_status" class="form-label"><strong>Duration Status</strong></label>
+                        <select class="form-select" id="duration_status" name="duration_status">
+                            <option value="">Choose...</option>
+                            <option value="Just Started" {% if existing_stress and existing_stress.duration_status == 'Just Started' %}selected{% endif %}>Just Started</option>
+                            <option value="Ongoing" {% if existing_stress and existing_stress.duration_status == 'Ongoing' %}selected{% endif %}>Ongoing (Hours)</option>
+                            <option value="All Day" {% if existing_stress and existing_stress.duration_status == 'All Day' %}selected{% endif %}>All Day</option>
+                            <option value="Chronic" {% if existing_stress and existing_stress.duration_status == 'Chronic' %}selected{% endif %}>Chronic (Days/Weeks)</option>
+                        </select>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label"><strong>Notes (Optional)</strong></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"
+                                  placeholder="What triggered the stress? How are you feeling? Any other details...">{% if existing_stress %}{{ existing_stress.notes }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> {% if existing_stress %}Update Stress Log{% else %}Save Stress Log{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set current time on page load (only if not editing)
+window.addEventListener('load', function() {
+    {% if not existing_stress %}
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('stress_time').value = hours + ':' + minutes;
+    {% endif %}
+
+    // Initialize stress level color if editing
+    {% if existing_stress %}
+    const initialValue = {{ existing_stress.stress_level }};
+    const display = document.getElementById('stress-value');
+    if (initialValue <= 3) {
+        display.style.color = '#28a745';
+    } else if (initialValue <= 6) {
+        display.style.color = '#ffc107';
+    } else if (initialValue <= 8) {
+        display.style.color = '#fd7e14';
+    } else {
+        display.style.color = '#dc3545';
+    }
+    {% endif %}
+});
+
+// Update stress level display
+document.getElementById('stress_level').addEventListener('input', function() {
+    const value = this.value;
+    const display = document.getElementById('stress-value');
+    display.textContent = value;
+
+    // Update color based on stress level
+    if (value <= 3) {
+        display.style.color = '#28a745';
+    } else if (value <= 6) {
+        display.style.color = '#ffc107';
+    } else if (value <= 8) {
+        display.style.color = '#fd7e14';
+    } else {
+        display.style.color = '#dc3545';
+    }
+});
+</script>
+{% endblock %}

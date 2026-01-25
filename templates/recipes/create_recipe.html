@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+
+{% block title %}Create Recipe - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-h2"><i class="bi bi-plus-circle text-success"></i> Create Recipe</h1>
+            <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Recipes
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('recipes.create_recipe') }}" enctype="multipart/form-data">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Recipe Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label"><strong>Recipe Name *</strong></label>
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chicken Stir Fry">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="servings" class="form-label"><strong>Servings</strong></label>
+                            <input type="number" class="form-control" id="servings" name="servings" value="1" min="1">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label"><strong>Description</strong></label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of your recipe"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
+                        <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
+                        <small class="text-muted">Upload a photo of your recipe (PNG, JPG, JPEG, GIF, WEBP)</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prep_time" class="form-label"><strong>Prep Time</strong></label>
+                            <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 minutes">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cook_time" class="form-label"><strong>Cook Time</strong></label>
+                            <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 minutes">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-tags"></i> Recipe Classification</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label"><strong>Meal Type (Category)</strong></label>
+                            <select class="form-select" id="category" name="category" onchange="updateSubcategories()">
+                                <option value="">Select...</option>
+                                {% for meal_type in meal_types %}
+                                <option value="{{ meal_type }}">{{ meal_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="subcategory" class="form-label"><strong>Subcategory</strong></label>
+                            <select class="form-select" id="subcategory" name="subcategory">
+                                <option value="">Select...</option>
+                                {% for subcat in all_subcategories %}
+                                <option value="{{ subcat }}">{{ subcat }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Only applies to Salads and Sauces & Gravies</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cuisine" class="form-label"><strong>Cuisine / Origin</strong></label>
+                            <select class="form-select" id="cuisine" name="cuisine">
+                                <option value="">Select...</option>
+                                {% for cuisine in cuisines %}
+                                <option value="{{ cuisine }}">{{ cuisine }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="main_ingredient" class="form-label"><strong>Main Ingredient</strong></label>
+                            <select class="form-select" id="main_ingredient" name="main_ingredient">
+                                <option value="">Select...</option>
+                                {% for ingredient in main_ingredients %}
+                                <option value="{{ ingredient }}">{{ ingredient }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="preparation_method" class="form-label"><strong>Preparation Method</strong></label>
+                            <select class="form-select" id="preparation_method" name="preparation_method">
+                                <option value="">Select...</option>
+                                {% for method in preparation_methods %}
+                                <option value="{{ method }}">{{ method }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="difficulty" class="form-label"><strong>Difficulty Level</strong></label>
+                            <select class="form-select" id="difficulty" name="difficulty">
+                                <option value="">Select...</option>
+                                {% for level in difficulty_levels %}
+                                <option value="{{ level }}">{{ level }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="occasion" class="form-label"><strong>Occasion / Holiday</strong></label>
+                            <select class="form-select" id="occasion" name="occasion">
+                                <option value="">Select...</option>
+                                {% for occ in occasions %}
+                                <option value="{{ occ }}">{{ occ }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
+                        <div class="row">
+                            {% for dietary_need in dietary_needs %}
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}">
+                                    <label class="form-check-label" for="dietary_{{ loop.index }}">
+                                        {{ dietary_need }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tags" class="form-label"><strong>Custom Tags</strong></label>
+                        <input type="text" class="form-control" id="tags" name="tags" placeholder="Add additional tags (comma-separated)">
+                        <small class="text-muted">Optional custom tags beyond the categories above</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Suggested Tags Preview</strong></label>
+                        <div id="suggestedTagsPreview" class="p-3 bg-light border rounded">
+                            <small class="text-muted">Select categories above to see suggested tags. Click on any tag to remove it from your recipe.</small>
+                        </div>
+                        <small class="text-muted">These tags are automatically generated based on your selections above. Click a tag to exclude it.</small>
+                    </div>
+
+                    <!-- Hidden input to store removed tags -->
+                    <input type="hidden" id="removedTags" name="removed_tags" value="">
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bag"></i> Ingredients</h5>
+                </div>
+                <div class="card-body">
+                    <div id="ingredients-container">
+                        <!-- Ingredient rows will be added here -->
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-success" onclick="addIngredient()">
+                            <i class="bi bi-plus-circle"></i> Add Ingredient
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickAddFoodModal">
+                            <i class="bi bi-lightning"></i> Quick Add Food to Library
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="instructions" name="instructions" rows="8" placeholder="Step-by-step cooking instructions..."></textarea>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-sticky"></i> Notes</h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes, tips, or variations..."></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-circle"></i> Create Recipe
+                </button>
+                <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Add Food Modal -->
+<div class="modal fade" id="quickAddFoodModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-lightning"></i> Quick Add Food to Library</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="quickFoodName" class="form-label"><strong>Food Name *</strong></label>
+                    <input type="text" class="form-control" id="quickFoodName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="quickFoodCategory" class="form-label"><strong>Category *</strong></label>
+                    <select class="form-select" id="quickFoodCategory">
+                        <option value="Vegetables">Vegetables</option>
+                        <option value="Fruits">Fruits</option>
+                        <option value="Grains">Grains</option>
+                        <option value="Proteins">Proteins</option>
+                        <option value="Dairy">Dairy</option>
+                        <option value="Nuts & Seeds">Nuts & Seeds</option>
+                        <option value="Herbs & Spices">Herbs & Spices</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>Fructans</strong></label>
+                        <select class="form-select" id="quickFructans">
+                            <option value="Green">Green (Safe)</option>
+                            <option value="Amber">Amber (Moderate)</option>
+                            <option value="Red">Red (High)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>GOS</strong></label>
+                        <select class="form-select" id="quickGos">
+                            <option value="Green">Green (Safe)</option>
+                            <option value="Amber">Amber (Moderate)</option>
+                            <option value="Red">Red (High)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>Lactose</strong></label>
+                        <select class="form-select" id="quickLactose">
+                            <option value="Green">Green (Safe)</option>
+                            <option value="Amber">Amber (Moderate)</option>
+                            <option value="Red">Red (High)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><strong>Histamine Level</strong></label>
+                        <select class="form-select" id="quickHistamine">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="quickSafeServing" class="form-label"><strong>Safe Serving</strong></label>
+                        <input type="text" class="form-control" id="quickSafeServing" placeholder="e.g., 100g">
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <small><i class="bi bi-info-circle"></i> This creates a basic food entry. You can edit it later to add more detailed FODMAP information.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="quickAddFood()">
+                    <i class="bi bi-check-circle"></i> Add Food
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let ingredientCount = 0;
+
+// Foods data for search
+const foods = {{ foods | tojson | safe }};
+
+function addIngredient() {
+    ingredientCount++;
+    const container = document.getElementById('ingredients-container');
+    const ingredientDiv = document.createElement('div');
+    ingredientDiv.className = 'ingredient-row mb-3 p-3 border rounded';
+    ingredientDiv.id = `ingredient-${ingredientCount}`;
+    ingredientDiv.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-5 mb-2">
+                <label class="form-label text-label"><strong>Food</strong></label>
+                <select class="form-select food-select" name="food_ids[]" onchange="updateFoodInfo(${ingredientCount})">
+                    <option value="">Choose a food...</option>
+                    ${foods.map(food => `<option value="${food.id}">${food.name} (${food.category})</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="form-label text-label"><strong>Quantity</strong></label>
+                <input type="text" class="form-control" name="quantities[]" placeholder="e.g., 100g, 1 cup">
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="form-label text-label"><strong>Notes</strong></label>
+                <input type="text" class="form-control" name="ingredient_notes[]" placeholder="chopped, diced">
+            </div>
+            <div class="col-md-1 mb-2">
+                <label class="form-label small">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeIngredient(${ingredientCount})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div id="food-info-${ingredientCount}" class="mt-2"></div>
+    `;
+    container.appendChild(ingredientDiv);
+}
+
+function removeIngredient(id) {
+    const element = document.getElementById(`ingredient-${id}`);
+    element.remove();
+}
+
+function updateFoodInfo(ingredientId) {
+    const select = document.querySelector(`#ingredient-${ingredientId} .food-select`);
+    const foodId = parseInt(select.value);
+    const infoDiv = document.getElementById(`food-info-${ingredientId}`);
+
+    if (!foodId) {
+        infoDiv.innerHTML = '';
+        return;
+    }
+
+    const food = foods.find(f => f.id === foodId);
+    if (!food) return;
+
+    let fodmapBadges = '';
+    const fodmaps = ['fructans', 'gos', 'lactose', 'fructose', 'polyols', 'mannitol', 'sorbitol'];
+    fodmaps.forEach(fodmap => {
+        if (food[fodmap]) {
+            const color = food[fodmap].toLowerCase() === 'green' ? 'success' :
+                         food[fodmap].toLowerCase() === 'amber' ? 'warning' : 'danger';
+            fodmapBadges += `<span class="badge bg-${color} me-1">${fodmap}: ${food[fodmap]}</span>`;
+        }
+    });
+
+    let histamineBadge = '';
+    if (food.histamine_level) {
+        const color = food.histamine_level.toLowerCase() === 'low' ? 'success' :
+                     food.histamine_level.toLowerCase() === 'medium' ? 'warning' : 'danger';
+        histamineBadge = `<span class="badge bg-${color}">Histamine: ${food.histamine_level}</span>`;
+    }
+
+    infoDiv.innerHTML = `
+        <div class="alert alert-info mb-0 py-2">
+            <small>
+                ${fodmapBadges}
+                ${histamineBadge}
+            </small>
+        </div>
+    `;
+}
+
+// Add first ingredient on page load
+document.addEventListener('DOMContentLoaded', function() {
+    addIngredient();
+    updateSuggestedTags();
+
+    // Add event listeners to update tags preview
+    const tagFields = ['category', 'subcategory', 'cuisine', 'main_ingredient', 'preparation_method', 'difficulty', 'occasion'];
+    tagFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('change', updateSuggestedTags);
+        }
+    });
+
+    // Add listener for dietary needs checkboxes
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
+    dietaryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSuggestedTags);
+    });
+});
+
+// Track removed tags
+let removedTags = new Set();
+
+// Update suggested tags preview
+function updateSuggestedTags() {
+    const previewDiv = document.getElementById('suggestedTagsPreview');
+    const tags = [];
+
+    // Collect all selected values
+    const subcategory = document.getElementById('subcategory').value;
+    const cuisine = document.getElementById('cuisine').value;
+    const mainIngredient = document.getElementById('main_ingredient').value;
+    const prepMethod = document.getElementById('preparation_method').value;
+    const difficulty = document.getElementById('difficulty').value;
+    const occasion = document.getElementById('occasion').value;
+
+    // Add non-empty values
+    if (subcategory) tags.push(subcategory);
+    if (cuisine) tags.push(cuisine);
+    if (mainIngredient) tags.push(mainIngredient);
+    if (prepMethod) tags.push(prepMethod);
+    if (difficulty) tags.push(difficulty);
+    if (occasion) tags.push(occasion);
+
+    // Add selected dietary needs
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]:checked');
+    dietaryCheckboxes.forEach(checkbox => {
+        tags.push(checkbox.value);
+    });
+
+    // Display tags
+    if (tags.length === 0) {
+        previewDiv.innerHTML = '<small class="text-muted">Select categories above to see suggested tags. Click on any tag to remove it from your recipe.</small>';
+    } else {
+        previewDiv.innerHTML = tags.map(tag => {
+            const isRemoved = removedTags.has(tag);
+            const className = isRemoved ? 'badge bg-danger me-2 mb-2' : 'badge bg-secondary me-2 mb-2';
+            const style = isRemoved ? 'text-decoration: line-through; cursor: pointer;' : 'cursor: pointer;';
+            const icon = isRemoved ? '<i class="bi bi-plus-circle"></i> ' : '<i class="bi bi-x-circle"></i> ';
+            return `<span class="${className}" style="${style}" onclick="toggleTagRemoval('${tag}')">${icon}${tag}</span>`;
+        }).join('');
+    }
+
+    // Update hidden input with removed tags
+    document.getElementById('removedTags').value = Array.from(removedTags).join(',');
+}
+
+// Toggle tag removal
+function toggleTagRemoval(tag) {
+    if (removedTags.has(tag)) {
+        removedTags.delete(tag);
+    } else {
+        removedTags.add(tag);
+        // Also clear the actual form field when tag is removed
+        clearFormFieldForTag(tag);
+    }
+    updateSuggestedTags();
+}
+
+// Clear form field when a tag is removed
+function clearFormFieldForTag(tag) {
+    // Check if it's a dropdown field
+    const subcategory = document.getElementById('subcategory');
+    if (subcategory && subcategory.value === tag) {
+        subcategory.value = '';
+    }
+
+    const cuisine = document.getElementById('cuisine');
+    if (cuisine && cuisine.value === tag) {
+        cuisine.value = '';
+    }
+
+    const mainIngredient = document.getElementById('main_ingredient');
+    if (mainIngredient && mainIngredient.value === tag) {
+        mainIngredient.value = '';
+    }
+
+    const prepMethod = document.getElementById('preparation_method');
+    if (prepMethod && prepMethod.value === tag) {
+        prepMethod.value = '';
+    }
+
+    const difficulty = document.getElementById('difficulty');
+    if (difficulty && difficulty.value === tag) {
+        difficulty.value = '';
+    }
+
+    const occasion = document.getElementById('occasion');
+    if (occasion && occasion.value === tag) {
+        occasion.value = '';
+    }
+
+    // Check if it's a dietary needs checkbox
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
+    dietaryCheckboxes.forEach(checkbox => {
+        if (checkbox.value === tag && checkbox.checked) {
+            checkbox.checked = false;
+        }
+    });
+}
+
+// Update subcategory options based on selected category
+function updateSubcategories() {
+    const category = document.getElementById('category').value;
+    const subcategorySelect = document.getElementById('subcategory');
+
+    // Enable/disable subcategory based on category
+    if (category === 'Salads' || category === 'Sauces & Gravies') {
+        subcategorySelect.disabled = false;
+    } else {
+        subcategorySelect.disabled = true;
+        subcategorySelect.value = '';
+    }
+    updateSuggestedTags();
+}
+
+// Quick add food function
+async function quickAddFood() {
+    const name = document.getElementById('quickFoodName').value.trim();
+    if (!name) {
+        alert('Please enter a food name');
+        return;
+    }
+
+    const foodData = {
+        name: name,
+        category: document.getElementById('quickFoodCategory').value,
+        fructans: document.getElementById('quickFructans').value,
+        gos: document.getElementById('quickGos').value,
+        lactose: document.getElementById('quickLactose').value,
+        histamine_level: document.getElementById('quickHistamine').value,
+        safe_serving: document.getElementById('quickSafeServing').value
+    };
+
+    try {
+        const response = await fetch('/api/foods/quick-add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(foodData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Add the new food to the foods array
+            foods.push(result.food);
+
+            // Update all existing ingredient dropdowns
+            const allSelects = document.querySelectorAll('.food-select');
+            allSelects.forEach(select => {
+                const newOption = document.createElement('option');
+                newOption.value = result.food.id;
+                newOption.textContent = `${result.food.name} (${result.food.category})`;
+                select.appendChild(newOption);
+            });
+
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddFoodModal'));
+            modal.hide();
+
+            // Reset form fields
+            document.getElementById('quickFoodName').value = '';
+            document.getElementById('quickFoodCategory').value = 'Vegetables';
+            document.getElementById('quickFructans').value = 'Green';
+            document.getElementById('quickGos').value = 'Green';
+            document.getElementById('quickLactose').value = 'Green';
+            document.getElementById('quickHistamine').value = 'Low';
+            document.getElementById('quickSafeServing').value = '';
+
+            alert(`Food "${result.food.name}" added successfully!`);
+        } else {
+            alert('Error adding food: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while adding the food');
+    }
+}
+</script>
+{% endblock %}

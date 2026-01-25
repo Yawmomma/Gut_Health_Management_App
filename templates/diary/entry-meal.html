@@ -1,0 +1,926 @@
+{% extends "base.html" %}
+
+{% block title %}{% if existing_meal %}Edit{% else %}Log{% endif %} Meal - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .diary-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-body);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+
+    .food-row {
+        margin-bottom: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .food-row .form-label,
+    .serving-selection .form-label {
+        color: #2d5016 !important;
+    }
+
+    .serving-buttons .btn {
+        border: 2px solid transparent;
+        border-radius: 50% !important;
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        max-width: 16px !important;
+        max-height: 16px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        margin: 0 3px;
+        transition: all 0.3s ease;
+        padding: 0 !important;
+        font-size: 0;
+        position: relative;
+        line-height: 1;
+    }
+
+    /* Traffic light colors for unselected state */
+    .serving-buttons .btn-outline-success {
+        background-color: #28a745;
+    }
+
+    .serving-buttons .btn-outline-warning {
+        background-color: #ffc107;
+    }
+
+    .serving-buttons .btn-outline-danger {
+        background-color: #dc3545;
+    }
+
+    /* Active/selected state with border */
+    .serving-buttons .btn-outline-success.active {
+        border-color: #155724;
+        transform: scale(1.2);
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+    }
+
+    .serving-buttons .btn-outline-warning.active {
+        border-color: #856404;
+        transform: scale(1.2);
+        box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.3);
+    }
+
+    .serving-buttons .btn-outline-danger.active {
+        border-color: #721c24;
+        transform: scale(1.2);
+        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Hover effects */
+    .serving-buttons .btn:hover {
+        transform: scale(1.15);
+        cursor: pointer;
+        opacity: 0.9;
+    }
+
+    .serving-buttons .btn.active:hover {
+        transform: scale(1.2);
+    }
+
+    .serving-buttons {
+        display: inline-flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 3px;
+        flex-wrap: nowrap;
+        margin: 0;
+        margin-left: 10px;
+    }
+
+    .serving-selection {
+        display: flex !important;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .serving-selection .form-label {
+        margin-bottom: 0 !important;
+        display: inline-block;
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: var(--text-label);
+    }
+
+    .serving-info-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 10px;
+    }
+
+    .fodmap-badge, .histamine-badge {
+        font-size: var(--text-label);
+        padding: 1px 4px;
+        margin-right: 2px;
+    }
+
+    /* Source type selection styling */
+    .source-type-icons {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .source-type-icons input[type="radio"] {
+        display: none;
+    }
+
+    .source-type-icons label {
+        cursor: pointer;
+        padding: 4px 6px;
+        border: 1px solid #d4c5a9;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        background-color: #f5f0e8 !important;
+        color: #2d5016 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        min-width: 24px;
+        min-height: 24px;
+    }
+
+    .source-type-icons label i {
+        color: #2d5016 !important;
+        font-size: 0.7rem;
+    }
+
+    .source-type-icons label:hover {
+        background-color: #ede5d8 !important;
+        border-color: #b8a889;
+        transform: scale(1.05);
+    }
+
+    .source-type-icons input[type="radio"]:checked + label {
+        border-color: #2d5016 !important;
+        background-color: #e8dfce !important;
+        transform: scale(1.05);
+        box-shadow: 0 1px 4px rgba(45, 80, 22, 0.3);
+    }
+
+    .source-type-icons input[type="radio"]:checked + label.label-foods {
+        border-color: #2d5016 !important;
+        background-color: #e8dfce !important;
+    }
+
+    .source-type-icons input[type="radio"]:checked + label.label-recipe {
+        border-color: #2d5016 !important;
+        background-color: #e8dfce !important;
+    }
+
+    .source-type-icons input[type="radio"]:checked + label.label-saved-meal {
+        border-color: #2d5016 !important;
+        background-color: #e8dfce !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="diary-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> {% if existing_meal %}Edit{% else %}Log{% endif %} Meal</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons -->
+            <div style="padding-right: 12px;">
+                <button type="submit" form="meal-form" class="btn btn-sm btn-success w-100 mb-2" style="font-size: 0.7rem;">
+                    <i class="bi bi-save"></i> {% if existing_meal %}Update{% else %}Save{% endif %} Meal
+                </button>
+                <a href="{% if existing_entry %}{{ url_for('diary.day_view', date_string=existing_entry.entry_date.strftime('%Y-%m-%d')) }}{% else %}{{ url_for('diary.index') }}{% endif %}" class="btn btn-sm btn-secondary w-100 mb-2" style="font-size: 0.7rem;">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+
+                <!-- Separator -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;"></div>
+
+                <a href="javascript:history.back()" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <a href="{{ url_for('diary.index') }}" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-calendar3"></i> Calendar
+                </a>
+                {% if existing_entry %}
+                <a href="{{ url_for('diary.day_view', date_string=existing_entry.entry_date.strftime('%Y-%m-%d')) }}" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-calendar-day"></i> Day View
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <h1 class="mb-4"><i class="bi bi-egg-fried"></i> {% if existing_meal %}Edit{% else %}Log{% endif %} Meal Entry</h1>
+
+                <div class="card">
+            <div class="card-body">
+                <form method="POST" id="meal-form">
+                    <!-- Date and Time -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="meal_date" class="form-label"><strong>Date</strong></label>
+                            <input type="date" class="form-control" id="meal_date" name="meal_date"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_date.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="meal_time" class="form-label"><strong>Time</strong></label>
+                            <input type="time" class="form-control" id="meal_time" name="meal_time"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_time.strftime('%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+
+                    <!-- Meal Type and Source Type Selection - Two Columns -->
+                    <div class="row mb-4">
+                        <!-- Left Column: Meal Type -->
+                        <div class="col-md-6">
+                            <label for="meal_type" class="form-label"><strong>Meal Type</strong></label>
+                            <select class="form-select" id="meal_type" name="meal_type" required>
+                                <option value="">Choose...</option>
+                                <option value="Breakfast" {% if existing_meal and existing_meal.meal_type == 'Breakfast' %}selected{% endif %}>Breakfast</option>
+                                <option value="Lunch" {% if existing_meal and existing_meal.meal_type == 'Lunch' %}selected{% endif %}>Lunch</option>
+                                <option value="Dinner" {% if existing_meal and existing_meal.meal_type == 'Dinner' %}selected{% endif %}>Dinner</option>
+                                <option value="Snack" {% if existing_meal and existing_meal.meal_type == 'Snack' %}selected{% endif %}>Snack</option>
+                            </select>
+                        </div>
+
+                        <!-- Right Column: Source Type Selection -->
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>What are you logging?</strong></label>
+                            <div class="source-type-icons">
+                                <input type="radio" name="source_type" id="source_foods" value="foods" checked>
+                                <label for="source_foods" class="label-foods" title="Individual Foods" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="bi bi-egg-fried"></i>
+                                </label>
+
+                                <input type="radio" name="source_type" id="source_recipe" value="recipe">
+                                <label for="source_recipe" class="label-recipe" title="Recipe" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="bi bi-book"></i>
+                                </label>
+
+                                <input type="radio" name="source_type" id="source_saved_meal" value="saved_meal">
+                                <label for="source_saved_meal" class="label-saved-meal" title="Saved Meal" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="bi bi-bookmark-star"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recipe Selection (hidden by default) -->
+                    <div class="mb-3" id="recipe-selection" style="display: none;">
+                        <label for="recipe_id" class="form-label"><strong>Select Recipe</strong></label>
+                        <select class="form-select" id="recipe_id" name="recipe_id">
+                            <option value="">Choose a recipe...</option>
+                            {% for recipe in recipes %}
+                                <option value="{{ recipe.id }}" data-ingredients="{{ recipe.ingredients | length }}">
+                                    {{ recipe.name }}
+                                    {% if recipe.category %} ({{ recipe.category }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">All ingredients from the recipe will be added to this meal</small>
+                    </div>
+
+                    <!-- Saved Meal Selection (hidden by default) -->
+                    <div class="mb-3" id="saved-meal-selection" style="display: none;">
+                        <label for="saved_meal_id" class="form-label"><strong>Select Saved Meal</strong></label>
+                        <select class="form-select" id="saved_meal_id" name="saved_meal_id">
+                            <option value="">Choose a saved meal...</option>
+                            {% for saved_meal in saved_meals %}
+                                <option value="{{ saved_meal.id }}">
+                                    {{ saved_meal.name }}
+                                    {% if saved_meal.meal_type %} ({{ saved_meal.meal_type }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">All foods from the saved meal will be added</small>
+                    </div>
+
+                    <!-- Foods Section -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Foods</strong></label>
+                        <div id="foods-container">
+                            <!-- Food rows will be added here dynamically -->
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-food">
+                            <i class="bi bi-plus-circle"></i> Add Another Food
+                        </button>
+                    </div>
+
+                    <!-- Location and Preparation Method - Two Columns -->
+                    <div class="row mb-3">
+                        <!-- Left Column: Location -->
+                        <div class="col-md-6">
+                            <label for="location" class="form-label"><strong>Location</strong></label>
+                            <select class="form-select" id="location" name="location">
+                                <option value="Home" {% if not existing_meal or existing_meal.location == 'Home' %}selected{% endif %}>Home</option>
+                                <option value="Restaurant" {% if existing_meal and existing_meal.location == 'Restaurant' %}selected{% endif %}>Restaurant</option>
+                                <option value="Work" {% if existing_meal and existing_meal.location == 'Work' %}selected{% endif %}>Work</option>
+                                <option value="Travel" {% if existing_meal and existing_meal.location == 'Travel' %}selected{% endif %}>Travel</option>
+                                <option value="Other" {% if existing_meal and existing_meal.location == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Right Column: Preparation Method -->
+                        <div class="col-md-6">
+                            <label for="preparation" class="form-label"><strong>Preparation Method</strong></label>
+                            <select class="form-select" id="preparation" name="preparation">
+                                <option value="Fresh" {% if not existing_meal or existing_meal.preparation == 'Fresh' %}selected{% endif %}>Fresh</option>
+                                <option value="Leftover" {% if existing_meal and existing_meal.preparation == 'Leftover' %}selected{% endif %}>Leftover</option>
+                                <option value="Reheated" {% if existing_meal and existing_meal.preparation == 'Reheated' %}selected{% endif %}>Reheated</option>
+                                <option value="Restaurant" {% if existing_meal and existing_meal.preparation == 'Restaurant' %}selected{% endif %}>Restaurant</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label"><strong>Notes (Optional)</strong></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Any additional notes about this meal...">{% if existing_meal %}{{ existing_meal.notes }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- FODMAP & Histamine Summary -->
+                    <div class="alert alert-info" id="meal-summary" style="display: none;">
+                        <h6><i class="bi bi-info-circle"></i> Meal Summary</h6>
+                        <div id="summary-content"></div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div>
+    <!-- End Right Content Area -->
+</div>
+<!-- End Main Row -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let foodRowCount = 0;
+const allFoods = {{ foods | tojson | safe }};
+const allRecipes = {{ recipes | tojson | safe }};
+const allSavedMeals = {{ saved_meals | tojson | safe }};
+const existingMealFoods = {{ existing_meal_foods | tojson | safe }};
+
+// Handle source type selection
+document.querySelectorAll('input[name="source_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const foodsSection = document.getElementById('foods-container').parentElement;
+        const recipeSection = document.getElementById('recipe-selection');
+        const savedMealSection = document.getElementById('saved-meal-selection');
+
+        // Hide all sections
+        foodsSection.style.display = 'none';
+        recipeSection.style.display = 'none';
+        savedMealSection.style.display = 'none';
+
+        // Show selected section
+        if (this.value === 'foods') {
+            foodsSection.style.display = 'block';
+        } else if (this.value === 'recipe') {
+            recipeSection.style.display = 'block';
+        } else if (this.value === 'saved_meal') {
+            savedMealSection.style.display = 'block';
+        }
+    });
+});
+
+// Set current time on page load (only if not editing)
+window.addEventListener('load', function() {
+    {% if not existing_entry %}
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('meal_time').value = hours + ':' + minutes;
+    {% endif %}
+
+    // Load existing food rows or add one empty row
+    if (existingMealFoods.length > 0) {
+        existingMealFoods.forEach((mealFood, index) => {
+            addFoodRow(mealFood.food_id, mealFood.portion_size, mealFood.serving_type);
+        });
+    } else {
+        addFoodRow();
+    }
+
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Helper function to determine traffic light color based on FODMAP ratings
+function getFodmapTrafficLight(fodmap) {
+    if (!fodmap) return 'secondary';
+
+    const fodmapValues = Object.values(fodmap);
+    const hasRed = fodmapValues.some(v => v === 'Red');
+    const hasAmber = fodmapValues.some(v => v === 'Amber');
+
+    if (hasRed) return 'danger';
+    if (hasAmber) return 'warning';
+    return 'success';
+}
+
+// Helper function to determine traffic light color based on histamine
+function getHistamineTrafficLight(histamine) {
+    if (!histamine || !histamine.level) return 'secondary';
+
+    const level = histamine.level;
+    if (level === 'Very High' || level === 'High') return 'danger';
+    if (level === 'Moderate' || level === 'Medium') return 'warning';
+    return 'success';
+}
+
+// Create a food row
+function createFoodRow(foodId = null, portion = '', servingType = '') {
+    const row = document.createElement('div');
+    row.className = 'food-row';
+    row.setAttribute('data-row', foodRowCount);
+
+    let foodOptions = '<option value="">Select a food...</option>';
+    allFoods.forEach(food => {
+        const selected = (foodId && food.id == foodId) ? 'selected' : '';
+        foodOptions += `<option value="${food.id}" ${selected}>
+                        ${food.name} (${food.category})
+                    </option>`;
+    });
+
+    row.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <label class="form-label">Food</label>
+                <select class="form-select food-select" name="food_ids[]" data-row="${foodRowCount}">
+                    ${foodOptions}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Custom Portion</label>
+                <input type="text" class="form-control portion-input" name="portions[]"
+                       placeholder="Optional" value="${portion}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-danger btn-sm remove-food">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <input type="hidden" class="serving-type-input" name="serving_types[]" value="${servingType || ''}">
+        <div class="serving-selection mt-3" style="display: none;">
+            <label class="form-label">Select Serving Size:</label>
+            <div class="serving-buttons">
+                <!-- Serving buttons will be added here -->
+            </div>
+        </div>
+    `;
+
+    return row;
+}
+
+// Add food row
+function addFoodRow(foodId = null, portion = '', servingType = '') {
+    const container = document.getElementById('foods-container');
+    const newRow = createFoodRow(foodId, portion, servingType);
+    container.appendChild(newRow);
+
+    // Trigger food info display if food is selected
+    if (foodId) {
+        const select = newRow.querySelector('.food-select');
+        updateFoodInfo(select, servingType);
+    }
+
+    foodRowCount++;
+    updateRemoveButtons();
+}
+
+// Add food button click
+document.getElementById('add-food').addEventListener('click', function() {
+    addFoodRow();
+});
+
+// Remove food row
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-food')) {
+        const row = e.target.closest('.food-row');
+        row.remove();
+        updateRemoveButtons();
+        updateMealSummary();
+    }
+});
+
+// Update remove buttons
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.food-row');
+    rows.forEach((row, index) => {
+        const btn = row.querySelector('.remove-food');
+        btn.disabled = (rows.length === 1);
+    });
+}
+
+// Update food info when food is selected
+function updateFoodInfo(select, existingServingType = null) {
+    const foodRow = select.closest('.food-row');
+    const foodId = select.value;
+    const servingSelection = foodRow.querySelector('.serving-selection');
+    const servingButtons = foodRow.querySelector('.serving-buttons');
+    const servingTypeInput = foodRow.querySelector('.serving-type-input');
+    const infoDiv = foodRow.querySelector('.food-info');
+
+    if (!foodId) {
+        servingSelection.style.display = 'none';
+        if (infoDiv) infoDiv.innerHTML = '';
+        return;
+    }
+
+    // Find the selected food data
+    const food = allFoods.find(f => f.id == foodId);
+    if (!food) return;
+
+    // Show serving selection
+    servingSelection.style.display = 'block';
+
+    // Create serving size buttons with traffic lights
+    let buttonsHtml = '';
+    ['safe', 'moderate', 'high'].forEach(servingType => {
+        const serving = food.servings[servingType];
+        if (!serving || !serving.size) return;
+
+        const fodmapColor = getFodmapTrafficLight(serving.fodmap);
+        const histamineColor = getHistamineTrafficLight(serving.histamine);
+
+        // Use the worst color for the button
+        let btnColor = 'success';
+        if (fodmapColor === 'danger' || histamineColor === 'danger') {
+            btnColor = 'danger';
+        } else if (fodmapColor === 'warning' || histamineColor === 'warning') {
+            btnColor = 'warning';
+        }
+
+        const capitalizedType = servingType.charAt(0).toUpperCase() + servingType.slice(1);
+        buttonsHtml += `
+            <button type="button"
+                    class="btn btn-outline-${btnColor} serving-btn"
+                    data-serving="${servingType}"
+                    data-size="${serving.size}"
+                    data-fodmap-color="${fodmapColor}"
+                    data-histamine-color="${histamineColor}"
+                    title="${capitalizedType}: ${serving.size}"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top">
+            </button>
+        `;
+    });
+
+    servingButtons.innerHTML = buttonsHtml;
+
+    // Initialize tooltips for serving buttons
+    foodRow.querySelectorAll('.serving-btn[data-bs-toggle="tooltip"]').forEach(btn => {
+        new bootstrap.Tooltip(btn);
+    });
+
+    // Add click handlers to serving buttons
+    foodRow.querySelectorAll('.serving-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active from siblings
+            foodRow.querySelectorAll('.serving-btn').forEach(b => b.classList.remove('active'));
+            // Add active to clicked button
+            this.classList.add('active');
+
+            // Update the hidden serving type input
+            servingTypeInput.value = this.dataset.serving;
+
+            // Update the portion input with the serving size
+            const portionInput = foodRow.querySelector('.portion-input');
+            portionInput.value = this.dataset.size;
+
+            // Update info display
+            updateServingInfo(foodRow, food, this.dataset.serving);
+            updateMealSummary();
+        });
+    });
+
+    // Select the existing serving type if provided, otherwise default to safe
+    const servingToSelect = existingServingType || 'safe';
+    const btnToSelect = foodRow.querySelector(`.serving-btn[data-serving="${servingToSelect}"]`);
+    if (btnToSelect) {
+        btnToSelect.click();
+    } else {
+        // Fallback to safe if the specified serving type doesn't exist
+        const safeBtn = foodRow.querySelector('.serving-btn[data-serving="safe"]');
+        if (safeBtn) {
+            safeBtn.click();
+        }
+    }
+}
+
+// Update serving info display
+function updateServingInfo(foodRow, food, servingType) {
+    const servingSelection = foodRow.querySelector('.serving-selection');
+    const serving = food.servings[servingType];
+
+    if (!serving) return;
+
+    const fodmapColor = getFodmapTrafficLight(serving.fodmap);
+    const histamineColor = getHistamineTrafficLight(serving.histamine);
+
+    let fodmapText = 'Low FODMAP';
+    if (fodmapColor === 'danger') fodmapText = 'High FODMAP';
+    else if (fodmapColor === 'warning') fodmapText = 'Moderate FODMAP';
+
+    let histamineText = 'Low Histamine';
+    if (histamineColor === 'danger') histamineText = 'High Histamine';
+    else if (histamineColor === 'warning') histamineText = 'Moderate Histamine';
+
+    // Remove existing info if present
+    let existingInfo = servingSelection.querySelector('.serving-info-inline');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+
+    // Create inline info display with only histamine badge
+    let infoHtml = `<div class="serving-info-inline">`;
+    infoHtml += `<span class="badge bg-${histamineColor} histamine-badge">${histamineText}</span>`;
+    if (serving.note) {
+        infoHtml += `<span class="text-muted fst-italic small">${serving.note}</span>`;
+    }
+    infoHtml += `</div>`;
+
+    servingSelection.insertAdjacentHTML('beforeend', infoHtml);
+}
+
+// Food selection change
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('food-select')) {
+        updateFoodInfo(e.target);
+        updateMealSummary();
+    }
+});
+
+// Update meal summary
+function updateMealSummary() {
+    const foodRows = document.querySelectorAll('.food-row');
+    let greenFodmap = 0, amberFodmap = 0, redFodmap = 0;
+    let greenHistamine = 0, amberHistamine = 0, redHistamine = 0;
+    let totalFoods = 0;
+
+    foodRows.forEach(row => {
+        const select = row.querySelector('.food-select');
+        const activeBtn = row.querySelector('.serving-btn.active');
+
+        if (!select.value || !activeBtn) return;
+
+        totalFoods++;
+        const fodmapColor = activeBtn.dataset.fodmapColor;
+        const histamineColor = activeBtn.dataset.histamineColor;
+
+        // Count FODMAP traffic lights
+        if (fodmapColor === 'success') greenFodmap++;
+        else if (fodmapColor === 'warning') amberFodmap++;
+        else if (fodmapColor === 'danger') redFodmap++;
+
+        // Count histamine traffic lights
+        if (histamineColor === 'success') greenHistamine++;
+        else if (histamineColor === 'warning') amberHistamine++;
+        else if (histamineColor === 'danger') redHistamine++;
+    });
+
+    const summaryDiv = document.getElementById('meal-summary');
+    const contentDiv = document.getElementById('summary-content');
+
+    if (totalFoods > 0) {
+        let summary = '<div class="row">';
+
+        // FODMAP Summary with traffic lights
+        summary += '<div class="col-md-6">';
+        summary += '<p class="mb-2"><strong><i class="bi bi-lightbulb"></i> FODMAP Status:</strong></p>';
+        summary += '<div class="d-flex gap-2 mb-2">';
+        if (greenFodmap > 0) {
+            summary += `<span class="badge bg-success">🟢 ${greenFodmap} Green</span>`;
+        }
+        if (amberFodmap > 0) {
+            summary += `<span class="badge bg-warning text-dark">🟡 ${amberFodmap} Amber</span>`;
+        }
+        if (redFodmap > 0) {
+            summary += `<span class="badge bg-danger">🔴 ${redFodmap} Red</span>`;
+        }
+        summary += '</div>';
+        summary += '</div>';
+
+        // Histamine Summary with traffic lights
+        summary += '<div class="col-md-6">';
+        summary += '<p class="mb-2"><strong><i class="bi bi-activity"></i> Histamine Status:</strong></p>';
+        summary += '<div class="d-flex gap-2 mb-2">';
+        if (greenHistamine > 0) {
+            summary += `<span class="badge bg-success">🟢 ${greenHistamine} Green</span>`;
+        }
+        if (amberHistamine > 0) {
+            summary += `<span class="badge bg-warning text-dark">🟡 ${amberHistamine} Amber</span>`;
+        }
+        if (redHistamine > 0) {
+            summary += `<span class="badge bg-danger">🔴 ${redHistamine} Red</span>`;
+        }
+        summary += '</div>';
+        summary += '</div>';
+        summary += '</div>';
+
+        // Warnings
+        if (redFodmap > 0 || amberFodmap > 1) {
+            summary += '<div class="alert alert-warning py-2 px-3 mb-0 mt-2">';
+            summary += '<i class="bi bi-exclamation-triangle"></i> ';
+            if (redFodmap > 0) {
+                summary += `<strong>Caution:</strong> ${redFodmap} high FODMAP food(s) detected. `;
+            }
+            if (amberFodmap > 1) {
+                summary += `Multiple moderate FODMAP foods may trigger symptoms. `;
+            }
+            summary += 'Monitor your reaction carefully.';
+            summary += '</div>';
+        }
+
+        if (redHistamine > 0 || amberHistamine > 1) {
+            summary += '<div class="alert alert-warning py-2 px-3 mb-0 mt-2">';
+            summary += '<i class="bi bi-exclamation-triangle"></i> ';
+            if (redHistamine > 0) {
+                summary += `<strong>Caution:</strong> ${redHistamine} high histamine food(s) detected. `;
+            }
+            if (amberHistamine > 1) {
+                summary += `Multiple moderate histamine foods may accumulate. `;
+            }
+            summary += 'Be aware of potential reactions.';
+            summary += '</div>';
+        }
+
+        contentDiv.innerHTML = summary;
+        summaryDiv.style.display = 'block';
+        summaryDiv.className = 'alert alert-info';
+
+        // Change alert color based on content
+        if (redFodmap > 0 || redHistamine > 0) {
+            summaryDiv.className = 'alert alert-danger';
+        } else if (amberFodmap > 1 || amberHistamine > 1) {
+            summaryDiv.className = 'alert alert-warning';
+        } else if (greenFodmap === totalFoods && greenHistamine === totalFoods) {
+            summaryDiv.className = 'alert alert-success';
+        }
+    } else {
+        summaryDiv.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

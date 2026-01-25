@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Log Symptoms - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .symptom-slider-group {
+        margin-bottom: 15px;
+        padding: 12px 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-right: 2px solid #2d5016;
+    }
+
+    .symptom-slider-group:nth-child(even) {
+        border-right: none;
+    }
+
+    .slider-container {
+        margin-top: 8px;
+    }
+
+    .slider-value {
+        font-size: var(--text-h2);
+        font-weight: bold;
+        color: #2d5016;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    .symptom-slider {
+        width: 100%;
+        height: 6px;
+        border-radius: 5px;
+        outline: none;
+        -webkit-appearance: none;
+    }
+
+    .symptom-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #2d5016;
+        cursor: pointer;
+    }
+
+    .symptom-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #2d5016;
+        cursor: pointer;
+        border: none;
+    }
+
+    .symptom-sliders-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .symptom-slider-group .form-label {
+        color: #2d5016 !important;
+        font-size: var(--text-value);
+    }
+
+    .symptom-icon {
+        font-size: 1.2rem;
+        margin-right: 8px;
+        color: #2d5016;
+    }
+
+    /* Color coding for severity */
+    .severity-0-2 { background: linear-gradient(to right, #28a745, #28a745); }
+    .severity-3-5 { background: linear-gradient(to right, #28a745, #ffc107); }
+    .severity-6-8 { background: linear-gradient(to right, #ffc107, #fd7e14); }
+    .severity-9-10 { background: linear-gradient(to right, #fd7e14, #dc3545); }
+
+    /* Symptom summary traffic lights */
+    .symptom-summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px 30px;
+        margin-top: 10px;
+    }
+
+    .symptom-summary-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .traffic-light-circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .traffic-light-green {
+        background-color: #28a745;
+    }
+
+    .traffic-light-yellow {
+        background-color: #ffc107;
+    }
+
+    .traffic-light-red {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="bi bi-heart-pulse"></i> {% if existing_symptom %}Edit Symptom Entry{% else %}Log Symptoms{% endif %}</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="symptom-form">
+                    <!-- Date and Time -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="symptom_date" class="form-label"><strong>Date</strong></label>
+                            <input type="date" class="form-control" id="symptom_date" name="symptom_date"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_date.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="symptom_time" class="form-label"><strong>Time</strong></label>
+                            <input type="time" class="form-control" id="symptom_time" name="symptom_time"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_time.strftime('%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+
+                    <!-- Symptoms Section -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="bi bi-sliders"></i> Rate Your Symptoms (0-10 scale)</h5>
+                        <p class="text-muted small">0 = No symptoms, 10 = Worst possible</p>
+
+                        <div class="symptom-sliders-grid">
+                        <!-- Bloating -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-circle"></i></span>
+                                    <strong>Bloating</strong>
+                                </label>
+                                <span class="slider-value" id="bloating-value">{% if existing_symptom %}{{ existing_symptom.bloating }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="bloating" id="bloating"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.bloating }}{% else %}0{% endif %}" step="1"
+                                       data-target="bloating-value">
+                            </div>
+                        </div>
+
+                        <!-- Pain -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-bandaid"></i></span>
+                                    <strong>Abdominal Pain</strong>
+                                </label>
+                                <span class="slider-value" id="pain-value">{% if existing_symptom %}{{ existing_symptom.pain }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="pain" id="pain"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.pain }}{% else %}0{% endif %}" step="1"
+                                       data-target="pain-value">
+                            </div>
+                        </div>
+
+                        <!-- Wind/Gas -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-wind"></i></span>
+                                    <strong>Wind/Gas</strong>
+                                </label>
+                                <span class="slider-value" id="wind-value">{% if existing_symptom %}{{ existing_symptom.wind }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="wind" id="wind"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.wind }}{% else %}0{% endif %}" step="1"
+                                       data-target="wind-value">
+                            </div>
+                        </div>
+
+                        <!-- Nausea -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-emoji-dizzy"></i></span>
+                                    <strong>Nausea</strong>
+                                </label>
+                                <span class="slider-value" id="nausea-value">{% if existing_symptom %}{{ existing_symptom.nausea }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="nausea" id="nausea"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.nausea }}{% else %}0{% endif %}" step="1"
+                                       data-target="nausea-value">
+                            </div>
+                        </div>
+
+                        <!-- Heartburn -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-fire"></i></span>
+                                    <strong>Heartburn/Reflux</strong>
+                                </label>
+                                <span class="slider-value" id="heartburn-value">{% if existing_symptom %}{{ existing_symptom.heartburn }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="heartburn" id="heartburn"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.heartburn }}{% else %}0{% endif %}" step="1"
+                                       data-target="heartburn-value">
+                            </div>
+                        </div>
+
+                        <!-- Headache -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-lightning"></i></span>
+                                    <strong>Headache</strong>
+                                </label>
+                                <span class="slider-value" id="headache-value">{% if existing_symptom %}{{ existing_symptom.headache }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="headache" id="headache"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.headache }}{% else %}0{% endif %}" step="1"
+                                       data-target="headache-value">
+                            </div>
+                        </div>
+
+                        <!-- Brain Fog -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-cloud-fog"></i></span>
+                                    <strong>Brain Fog</strong>
+                                </label>
+                                <span class="slider-value" id="brain_fog-value">{% if existing_symptom %}{{ existing_symptom.brain_fog }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="brain_fog" id="brain_fog"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.brain_fog }}{% else %}0{% endif %}" step="1"
+                                       data-target="brain_fog-value">
+                            </div>
+                        </div>
+
+                        <!-- Fatigue -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-battery-half"></i></span>
+                                    <strong>Fatigue</strong>
+                                </label>
+                                <span class="slider-value" id="fatigue-value">{% if existing_symptom %}{{ existing_symptom.fatigue }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="fatigue" id="fatigue"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.fatigue }}{% else %}0{% endif %}" step="1"
+                                       data-target="fatigue-value">
+                            </div>
+                        </div>
+
+                        <!-- Sinus Issues -->
+                        <div class="symptom-slider-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">
+                                    <span class="symptom-icon"><i class="bi bi-droplet"></i></span>
+                                    <strong>Sinus Issues</strong>
+                                </label>
+                                <span class="slider-value" id="sinus_issues-value">{% if existing_symptom %}{{ existing_symptom.sinus_issues }}{% else %}0{% endif %}</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" class="symptom-slider severity-0-2"
+                                       name="sinus_issues" id="sinus_issues"
+                                       min="0" max="10" value="{% if existing_symptom %}{{ existing_symptom.sinus_issues }}{% else %}0{% endif %}" step="1"
+                                       data-target="sinus_issues-value">
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Severity and Duration -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="severity" class="form-label"><strong>Overall Severity</strong></label>
+                            <select class="form-select" id="severity" name="severity" required>
+                                <option value="">Choose...</option>
+                                <option value="Mild" {% if existing_symptom and existing_symptom.severity == 'Mild' %}selected{% endif %}>Mild - Noticeable but manageable</option>
+                                <option value="Moderate" {% if existing_symptom and existing_symptom.severity == 'Moderate' %}selected{% endif %}>Moderate - Uncomfortable, affecting activities</option>
+                                <option value="Severe" {% if existing_symptom and existing_symptom.severity == 'Severe' %}selected{% endif %}>Severe - Very distressing, hard to function</option>
+                                <option value="Extreme" {% if existing_symptom and existing_symptom.severity == 'Extreme' %}selected{% endif %}>Extreme - Debilitating, cannot function</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="duration" class="form-label"><strong>How long have symptoms lasted?</strong></label>
+                            <select class="form-select" id="duration" name="duration">
+                                <option value="">Choose...</option>
+                                <option value="Less than 1 hour" {% if existing_symptom and existing_symptom.duration == 'Less than 1 hour' %}selected{% endif %}>Less than 1 hour</option>
+                                <option value="1-2 hours" {% if existing_symptom and existing_symptom.duration == '1-2 hours' %}selected{% endif %}>1-2 hours</option>
+                                <option value="2-4 hours" {% if existing_symptom and existing_symptom.duration == '2-4 hours' %}selected{% endif %}>2-4 hours</option>
+                                <option value="4-6 hours" {% if existing_symptom and existing_symptom.duration == '4-6 hours' %}selected{% endif %}>4-6 hours</option>
+                                <option value="6-12 hours" {% if existing_symptom and existing_symptom.duration == '6-12 hours' %}selected{% endif %}>6-12 hours</option>
+                                <option value="12-24 hours" {% if existing_symptom and existing_symptom.duration == '12-24 hours' %}selected{% endif %}>12-24 hours</option>
+                                <option value="More than 24 hours" {% if existing_symptom and existing_symptom.duration == 'More than 24 hours' %}selected{% endif %}>More than 24 hours</option>
+                                <option value="Ongoing" {% if existing_symptom and existing_symptom.duration == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label"><strong>Notes (Optional)</strong></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Any triggers you noticed? What were you doing? Any other details...">{% if existing_symptom %}{{ existing_symptom.notes }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- Symptom Summary -->
+                    <div class="alert alert-info" id="symptom-summary" style="display: none;">
+                        <h6><i class="bi bi-info-circle"></i> Symptom Summary</h6>
+                        <div id="summary-content"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> {% if existing_symptom %}Update Symptoms{% else %}Save Symptoms{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set current time on page load (only if not editing)
+window.addEventListener('load', function() {
+    {% if not existing_symptom %}
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('symptom_time').value = hours + ':' + minutes;
+    {% endif %}
+
+    // Initialize slider colors based on existing values
+    document.querySelectorAll('.symptom-slider').forEach(slider => {
+        const value = parseInt(slider.value);
+        const targetId = slider.getAttribute('data-target');
+        const valueDisplay = document.getElementById(targetId);
+
+        // Update slider color based on severity
+        slider.className = 'symptom-slider';
+        if (value <= 2) {
+            slider.classList.add('severity-0-2');
+            valueDisplay.style.color = '#28a745';
+        } else if (value <= 5) {
+            slider.classList.add('severity-3-5');
+            valueDisplay.style.color = '#ffc107';
+        } else if (value <= 8) {
+            slider.classList.add('severity-6-8');
+            valueDisplay.style.color = '#fd7e14';
+        } else {
+            slider.classList.add('severity-9-10');
+            valueDisplay.style.color = '#dc3545';
+        }
+    });
+
+    {% if existing_symptom %}
+    // Show summary if editing
+    updateSymptomSummary();
+    {% endif %}
+});
+
+// Update slider values and colors
+document.querySelectorAll('.symptom-slider').forEach(slider => {
+    slider.addEventListener('input', function() {
+        const targetId = this.getAttribute('data-target');
+        const valueDisplay = document.getElementById(targetId);
+        const value = parseInt(this.value);
+
+        // Update display value
+        valueDisplay.textContent = value;
+
+        // Update slider color based on severity
+        this.className = 'symptom-slider';
+        if (value <= 2) {
+            this.classList.add('severity-0-2');
+            valueDisplay.style.color = '#28a745';
+        } else if (value <= 5) {
+            this.classList.add('severity-3-5');
+            valueDisplay.style.color = '#ffc107';
+        } else if (value <= 8) {
+            this.classList.add('severity-6-8');
+            valueDisplay.style.color = '#fd7e14';
+        } else {
+            this.classList.add('severity-9-10');
+            valueDisplay.style.color = '#dc3545';
+        }
+
+        updateSymptomSummary();
+    });
+});
+
+// Update symptom summary
+function updateSymptomSummary() {
+    const sliders = document.querySelectorAll('.symptom-slider');
+    const activeSymptoms = [];
+    let maxValue = 0;
+
+    sliders.forEach(slider => {
+        const value = parseInt(slider.value);
+        if (value > 0) {
+            const name = slider.id.replace('_', ' ');
+            const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+            activeSymptoms.push({ name: capitalizedName, value: value });
+            if (value > maxValue) maxValue = value;
+        }
+    });
+
+    const summaryDiv = document.getElementById('symptom-summary');
+    const contentDiv = document.getElementById('summary-content');
+
+    if (activeSymptoms.length > 0) {
+        let summary = '<p class="mb-2"><strong>Active Symptoms:</strong> ' + activeSymptoms.length + '</p>';
+        summary += '<div class="symptom-summary-grid">';
+
+        // Sort by severity
+        activeSymptoms.sort((a, b) => b.value - a.value);
+
+        activeSymptoms.forEach(symptom => {
+            let trafficLightClass = '';
+
+            if (symptom.value <= 3) {
+                trafficLightClass = 'traffic-light-green';
+            } else if (symptom.value <= 6) {
+                trafficLightClass = 'traffic-light-yellow';
+            } else {
+                trafficLightClass = 'traffic-light-red';
+            }
+
+            summary += '<div class="symptom-summary-item">';
+            summary += '<div class="traffic-light-circle ' + trafficLightClass + '"></div>';
+            summary += '<span><strong>' + symptom.name + ':</strong> ' + symptom.value + '/10</span>';
+            summary += '</div>';
+        });
+
+        summary += '</div>';
+
+        if (maxValue >= 7) {
+            summary += '<p class="mb-0 mt-3 text-danger"><i class="bi bi-exclamation-triangle"></i> High severity symptoms detected - consider medical attention if persistent</p>';
+        }
+
+        contentDiv.innerHTML = summary;
+        summaryDiv.style.display = 'block';
+    } else {
+        summaryDiv.style.display = 'none';
+    }
+}
+
+// Form validation - at least one symptom must be > 0
+document.getElementById('symptom-form').addEventListener('submit', function(e) {
+    const sliders = document.querySelectorAll('.symptom-slider');
+    let hasSymptom = false;
+
+    sliders.forEach(slider => {
+        if (parseInt(slider.value) > 0) {
+            hasSymptom = true;
+        }
+    });
+
+    if (!hasSymptom) {
+        e.preventDefault();
+        alert('Please rate at least one symptom above 0, or cancel to go back.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

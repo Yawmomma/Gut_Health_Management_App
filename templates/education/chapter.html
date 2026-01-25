@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}{{ content.title }} - Gut Health App{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<style>
+    /* Sidebar Navigation Styles */
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .education-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-body);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+
+    /* Style images in markdown content */
+    .card-body img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 15px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card-body p {
+        line-height: 1.6;
+    }
+
+    /* In-chapter search highlighting */
+    mark.search-highlight {
+        background-color: #ffc107;
+        color: #1A3636;
+        padding: 2px 4px;
+        border-radius: 2px;
+    }
+    mark.search-highlight.current {
+        background-color: #ff6b35;
+        color: white;
+        font-weight: 600;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation + Search -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="education-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-book"></i> Education</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- In-Chapter Search -->
+            <div style="padding-right: 12px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-search"></i> Search Chapter</h6>
+                <div class="input-group input-group-sm mb-2">
+                    <input type="text" id="chapter-search-input" class="form-control text-label" placeholder="Find in chapter..." style="font-size: var(--text-label);">
+                    <button class="btn btn-outline-light text-label" type="button" id="search-btn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <button class="btn btn-outline-light text-label" type="button" id="clear-search-btn" style="display: none;">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div id="search-controls" style="display: none;">
+                    <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-sm btn-outline-light flex-fill text-label" id="prev-match">
+                            <i class="bi bi-chevron-up"></i> Prev
+                        </button>
+                        <button class="btn btn-sm btn-outline-light flex-fill text-label" id="next-match">
+                            <i class="bi bi-chevron-down"></i> Next
+                        </button>
+                    </div>
+                    <p class="text-label text-center mb-0" style="color: #D6BD98;" id="search-status">0 matches</p>
+                </div>
+            </div>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons -->
+            <div style="padding-right: 12px;">
+                <a href="{{ url_for('education.index') }}" class="btn btn-sm btn-success w-100 mb-2 text-label">
+                    <i class="bi bi-arrow-left"></i> Back to Contents
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- Chapter Header -->
+                <div class="mb-4">
+                    {% set is_subchapter = '.' in content.chapter_number|string %}
+                    <span class="badge {% if is_subchapter %}bg-info{% else %}bg-secondary{% endif %} mb-2">
+                        {% if is_subchapter %}
+                        <i class="bi bi-chevron-right" style="font-size: 0.6rem;"></i>
+                        {% endif %}
+                        Chapter {{ content.chapter_number }}
+                    </span>
+                    <span class="badge bg-info mb-2">{{ content.section }}</span>
+                    <h1 class="text-h2 mb-0">{{ content.title }}</h1>
+                </div>
+
+                <!-- Chapter Content -->
+                <div class="card">
+                    <div class="card-body" id="chapter-content">
+                        {{ content.content|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// In-chapter search functionality
+let currentMatches = [];
+let currentMatchIndex = -1;
+const searchInput = document.getElementById('chapter-search-input');
+const searchBtn = document.getElementById('search-btn');
+const clearSearchBtn = document.getElementById('clear-search-btn');
+const searchControls = document.getElementById('search-controls');
+const searchStatus = document.getElementById('search-status');
+const chapterContent = document.getElementById('chapter-content');
+const prevBtn = document.getElementById('prev-match');
+const nextBtn = document.getElementById('next-match');
+
+// Store original content
+const originalContent = chapterContent.innerHTML;
+
+// Search on button click or Enter key
+searchBtn.addEventListener('click', performSearch);
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') performSearch();
+});
+
+// Clear search
+clearSearchBtn.addEventListener('click', clearSearch);
+
+function performSearch() {
+    const searchTerm = searchInput.value.trim();
+    if (!searchTerm) return;
+
+    // Clear previous highlights
+    clearSearch();
+
+    // Restore original content and search
+    chapterContent.innerHTML = originalContent;
+
+    // Find and highlight matches
+    const walker = document.createTreeWalker(
+        chapterContent,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+
+    const nodesToReplace = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+        const text = node.nodeValue;
+        const regex = new RegExp(searchTerm, 'gi');
+        if (regex.test(text)) {
+            nodesToReplace.push(node);
+        }
+    }
+
+    // Replace text nodes with highlighted versions
+    nodesToReplace.forEach(node => {
+        const text = node.nodeValue;
+        const regex = new RegExp(searchTerm, 'gi');
+        const matches = [...text.matchAll(regex)];
+
+        if (matches.length > 0) {
+            const span = document.createElement('span');
+            let lastIndex = 0;
+            let html = '';
+
+            matches.forEach(match => {
+                html += text.substring(lastIndex, match.index);
+                html += `<mark class="search-highlight">${match[0]}</mark>`;
+                lastIndex = match.index + match[0].length;
+            });
+            html += text.substring(lastIndex);
+
+            span.innerHTML = html;
+            node.parentNode.replaceChild(span, node);
+        }
+    });
+
+    // Collect all highlights
+    currentMatches = Array.from(chapterContent.querySelectorAll('mark.search-highlight'));
+
+    if (currentMatches.length > 0) {
+        currentMatchIndex = 0;
+        highlightCurrentMatch();
+        searchControls.style.display = 'block';
+        clearSearchBtn.style.display = 'inline-block';
+        updateSearchStatus();
+    } else {
+        searchStatus.textContent = '0 matches';
+        searchControls.style.display = 'block';
+        clearSearchBtn.style.display = 'inline-block';
+    }
+}
+
+function clearSearch() {
+    chapterContent.innerHTML = originalContent;
+    currentMatches = [];
+    currentMatchIndex = -1;
+    searchControls.style.display = 'none';
+    clearSearchBtn.style.display = 'none';
+    searchInput.value = '';
+}
+
+function highlightCurrentMatch() {
+    if (currentMatches.length === 0) return;
+
+    // Remove current highlight from all
+    currentMatches.forEach(mark => mark.classList.remove('current'));
+
+    // Add current highlight
+    currentMatches[currentMatchIndex].classList.add('current');
+
+    // Scroll to current match
+    currentMatches[currentMatchIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+
+    updateSearchStatus();
+}
+
+function updateSearchStatus() {
+    if (currentMatches.length > 0) {
+        searchStatus.textContent = `${currentMatchIndex + 1} of ${currentMatches.length}`;
+    } else {
+        searchStatus.textContent = '0 matches';
+    }
+}
+
+// Navigation buttons
+prevBtn.addEventListener('click', () => {
+    if (currentMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex - 1 + currentMatches.length) % currentMatches.length;
+    highlightCurrentMatch();
+});
+
+nextBtn.addEventListener('click', () => {
+    if (currentMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex + 1) % currentMatches.length;
+    highlightCurrentMatch();
+});
+
+// Keyboard shortcuts (Tab for next, Shift+Tab for previous when search is active)
+document.addEventListener('keydown', (e) => {
+    if (currentMatches.length === 0) return;
+
+    if (e.key === 'Tab' && searchInput !== document.activeElement) {
+        e.preventDefault();
+        if (e.shiftKey) {
+            prevBtn.click();
+        } else {
+            nextBtn.click();
+        }
+    }
+});
+</script>
+{% endblock %}

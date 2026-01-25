@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gut Health App{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .watch-item {
+        transition: background 0.2s ease;
+    }
+    .watch-item:hover {
+        background: rgba(214, 189, 152, 0.1) !important;
+    }
+    .sidebar-column {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        min-height: 100%;
+    }
+    .dashboard-sidebar {
+        position: sticky;
+        top: 50px;
+        padding: 12px;
+        padding-top: 28px;
+    }
+    .main-content-area {
+        border-left: 3px solid #8BA48B;
+        padding-left: 30px;
+        min-height: 100%;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .section-title-thin {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(214, 189, 152, 0.5);
+        text-align: left;
+    }
+    .section-divider {
+        border-bottom: 1px solid rgba(214, 189, 152, 0.5);
+        margin: 25px 0;
+    }
+    .watch-list-box {
+        background-color: var(--bg-elevated);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    }
+    .quick-actions-container {
+        padding-right: 12px;
+        margin-top: 10px;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .quick-action-btn-outline {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: transparent !important;
+        border: 1px solid #1A3636 !important;
+        color: #fff !important;
+    }
+    .quick-action-btn-outline:hover {
+        transform: translateY(-1px);
+        background-color: rgba(26, 54, 54, 0.3) !important;
+    }
+    .date-header {
+        font-size: var(--text-value);
+        font-weight: 600;
+        color: #D6BD98;
+        margin-bottom: 15px;
+    }
+    .watch-section-label {
+        font-size: var(--text-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 12px;
+        margin-bottom: 6px;
+        padding-left: 4px;
+    }
+</style>
+
+<!-- Spacer to match other pages' vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Dashboard Navigation -->
+    <div class="col-lg-2 col-md-3 sidebar-column">
+        <div class="dashboard-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-speedometer2"></i> Dashboard</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Quick Actions in Sidebar -->
+            <div class="quick-actions-container">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
+
+                <!-- Diary Logging -->
+                <div class="d-flex flex-column gap-2 mb-2">
+                    <a href="{{ url_for('diary.add_meal') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-egg-fried me-1"></i> Log Meal
+                    </a>
+                    <a href="{{ url_for('diary.add_symptom') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-bandaid me-1"></i> Log Symptoms
+                    </a>
+                    <a href="{{ url_for('diary.add_bowel') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-clipboard-pulse me-1"></i> Log Bowel
+                    </a>
+                </div>
+
+                <!-- Thin separator -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 0;"></div>
+
+                <!-- Create Actions -->
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
+                        <i class="bi bi-journal-plus me-1"></i> Add Recipe
+                    </a>
+                    <a href="{{ url_for('recipes.create_meal') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
+                        <i class="bi bi-plus-circle me-1"></i> Create Meal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- Date Header -->
+                <div class="date-header">
+                    <i class="bi bi-calendar-event"></i> {{ current_date.strftime('%A, %B %d, %Y') }}
+                </div>
+
+                <!-- Watch List Section -->
+                <div class="watch-list-box mb-4">
+                    <h6 class="section-title-thin" style="border-bottom-color: #D6BD98; color: #ffc107;"><i class="bi bi-exclamation-triangle"></i> Watch List</h6>
+
+                    {% if high_risk_foods or moderate_risk_foods %}
+                    <p class="text-muted text-label mb-3">Foods with moderate/high FODMAP or histamine levels logged in the last 7 days.</p>
+
+                    <!-- HIGH RISK FOODS LIST -->
+                    {% if high_risk_foods and high_risk_foods|length > 0 %}
+                    <div style="background: rgba(220, 53, 69, 0.16); border-radius: 6px; padding: 10px; margin-bottom: 15px;">
+                        <div class="watch-section-label" style="color: #dc3545; margin-top: 0; border-bottom: 1px solid rgba(220, 53, 69, 0.3); padding-bottom: 6px;">
+                            <i class="bi bi-exclamation-circle-fill"></i> High Risk ({{ high_risk_foods|length }})
+                        </div>
+                        <div class="d-flex flex-column gap-1 mt-2">
+                            {% for item in high_risk_foods %}
+                            <a href="{{ url_for('diary.day_view', date_string=item.diary_date_string) }}" class="text-decoration-none">
+                                <div class="watch-item d-flex justify-content-between align-items-center py-1 px-2" style="border-left: 3px solid #dc3545; border-radius: 3px; background: rgba(255,255,255,0.5);">
+                                    <div>
+                                        <span class="text-value" style="font-weight: 500;">{{ item.food.name }}</span>
+                                        <small class="text-muted ms-1" class="text-body">{{ item.food.category }}</small>
+                                        {% if item.portion_size %}
+                                        <small class="text-micro" style="color: #D6BD98; margin-left: 6px;">({{ item.portion_size }})</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        {% if item.logged_date %}
+                                        <small class="text-muted" class="text-body">{{ item.logged_date.strftime('%b %d') }}</small>
+                                        {% endif %}
+                                        <span class="badge" class="text-micro" style="background-color: #dc3545; color: #fff; padding: 1px 4px;">
+                                            High
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- MODERATE RISK FOODS LIST -->
+                    {% if moderate_risk_foods and moderate_risk_foods|length > 0 %}
+                    <div style="background: rgba(255, 193, 7, 0.06); border-radius: 6px; padding: 10px;">
+                        <div class="watch-section-label" style="color: #ffc107; margin-top: 0; border-bottom: 1px solid rgba(255, 193, 7, 0.3); padding-bottom: 6px;">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Moderate Risk ({{ moderate_risk_foods|length }})
+                        </div>
+                        <div class="d-flex flex-column gap-1 mt-2">
+                            {% for item in moderate_risk_foods %}
+                            <a href="{{ url_for('diary.day_view', date_string=item.diary_date_string) }}" class="text-decoration-none">
+                                <div class="watch-item d-flex justify-content-between align-items-center py-1 px-2" style="border-left: 3px solid #ffc107; border-radius: 3px; background: rgba(255,255,255,0.5);">
+                                    <div>
+                                        <span class="text-value" style="font-weight: 500;">{{ item.food.name }}</span>
+                                        <small class="text-muted ms-1" class="text-body">{{ item.food.category }}</small>
+                                        {% if item.portion_size %}
+                                        <small class="text-micro" style="color: #D6BD98; margin-left: 6px;">({{ item.portion_size }})</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        {% if item.logged_date %}
+                                        <small class="text-muted" class="text-body">{{ item.logged_date.strftime('%b %d') }}</small>
+                                        {% endif %}
+                                        <span class="badge" class="text-micro" style="background-color: #ffc107; color: #1A3636; padding: 1px 4px;">
+                                            Moderate
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="text-center py-2">
+                        <i class="bi bi-check-circle" style="font-size: 1.2rem; color: #28a745;"></i>
+                        <p class="text-muted text-body mt-1 mb-0">No concerning foods logged in the last 7 days.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Database Integrity Check - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-11 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="{{ url_for('settings.index') }}" class="btn btn-outline-secondary mb-2 text-label">
+                    <i class="bi bi-arrow-left"></i> Back to Settings
+                </a>
+                <h1 class="text-h2"><i class="bi bi-shield-check text-primary"></i> Database Integrity Check</h1>
+            </div>
+            <button class="btn btn-primary btn-sm text-label" onclick="window.location.reload();">
+                <i class="bi bi-arrow-clockwise"></i> Run Check
+            </button>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body" style="padding: 10px;">
+                <p class="text-body mb-0"><i class="bi bi-info-circle"></i> This tool scans your database for orphaned records and data integrity issues. Issues marked as "warning" or "info" can be automatically fixed.</p>
+            </div>
+        </div>
+
+        {% if issues %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark" style="padding: 10px;">
+                    <h5 class="text-body mb-0"><i class="bi bi-exclamation-triangle"></i> Issues Found: {{ issues|length }}</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 text-label">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Issue Type</th>
+                                    <th style="width: 10%; text-align: center;">Count</th>
+                                    <th style="width: 45%;">Description</th>
+                                    <th style="width: 15%; text-align: center;">Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in issues %}
+                                    <tr>
+                                        <td><strong>{{ issue.type }}</strong></td>
+                                        <td style="text-align: center;"><span class="badge bg-secondary">{{ issue.count }}</span></td>
+                                        <td>
+                                            {{ issue.description }}
+                                            {% if issue.details %}
+                                                <div class="mt-1">
+                                                    <small class="text-muted">Examples: {{ issue.details|join(', ') }}{% if issue.count > 10 %}...{% endif %}</small>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            {% if issue.severity == 'danger' %}
+                                                <span class="badge bg-danger">Critical</span>
+                                            {% elif issue.severity == 'warning' %}
+                                                <span class="badge bg-warning text-dark">Warning</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Info</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer" style="padding: 10px;">
+                    <form method="POST" onsubmit="return confirm('Fix all auto-fixable issues? This will delete orphaned records and cannot be undone.');">
+                        <input type="hidden" name="action" value="fix">
+                        <button type="submit" class="btn btn-success btn-sm text-label">
+                            <i class="bi bi-tools"></i> Auto-Fix Orphaned Records
+                        </button>
+                        <small class="text-muted ms-2">This will fix warning and info level issues only. Critical issues require manual intervention.</small>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-warning" style="padding: 10px;">
+                <h6 class="text-title"><i class="bi bi-exclamation-triangle"></i> About Critical Issues</h6>
+                <p class="text-body mb-0">Records with <strong>Critical</strong> severity point to deleted Food items. These cannot be auto-fixed and require manual review. You may need to either restore the deleted Food item or manually delete the affected records.</p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    <h3 class="text-title mt-3">Database Integrity Check Passed</h3>
+                    <p class="text-muted text-body mb-0">No issues found. Your database is healthy!</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white" style="padding: 10px;">
+                <h6 class="text-label mb-0"><i class="bi bi-info-circle"></i> What This Tool Checks</h6>
+            </div>
+            <div class="card-body" style="padding: 10px;">
+                <ul class="text-body mb-0" style="line-height: 1.8;">
+                    <li><strong>Orphaned Meal-Food Links:</strong> MealFood records with no parent Meal</li>
+                    <li><strong>Orphaned Recipe Ingredients:</strong> RecipeIngredient records with no parent Recipe</li>
+                    <li><strong>Orphaned Saved Meal Items:</strong> SavedMealItem records with no parent SavedMeal</li>
+                    <li><strong>Empty Diary Entries:</strong> DiaryEntry records with no related content (meals, symptoms, etc.)</li>
+                    <li><strong>Invalid Food References:</strong> Meal/Recipe/SavedMeal records pointing to deleted Food items</li>
+                    <li><strong>Orphaned Photo Files:</strong> Image files in uploads folder with no database record</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+
+{% block title %}Search Foods - Gut Health App{% endblock %}
+
+{% macro get_worst_color(fodmap_values, histamine_level, dao_blocker, histamine_liberator) -%}
+    {# Priority: Red > Amber > Green #}
+    {%- set all_values = fodmap_values + [histamine_level, dao_blocker, histamine_liberator] -%}
+    {# Check for Red/High/Yes first #}
+    {%- if 'Red' in all_values or 'High' in all_values or 'Yes' in all_values -%}
+red
+    {#- Then check for Amber/Medium -#}
+    {%- elif 'Amber' in all_values or 'Medium' in all_values -%}
+amber
+    {#- Default to green -#}
+    {%- else -%}
+green
+    {%- endif -%}
+{%- endmacro %}
+
+{% block extra_css %}
+<style>
+    .traffic-light-circle {
+        width: 14px;
+        height: 14px;
+        min-width: 14px;
+        min-height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .traffic-light-circle.green {
+        background-color: #28a745;
+    }
+
+    .traffic-light-circle.amber {
+        background-color: #ffc107;
+    }
+
+    .traffic-light-circle.red {
+        background-color: #dc3545;
+    }
+
+    .overall-traffic-light {
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        min-width: 20px;
+        max-width: 20px;
+        flex-shrink: 0;
+    }
+
+    .serving-column {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        text-align: center;
+        width: 110px;
+        min-width: 110px;
+        max-width: 110px;
+        border-right: 1px solid #dee2e6;
+        padding: 0 6px;
+    }
+
+    .serving-column:last-child {
+        border-right: none;
+    }
+
+    .serving-size-text {
+        font-size: var(--text-label);
+        color: #6c757d;
+        white-space: nowrap;
+        min-width: 40px;
+        text-align: left;
+    }
+
+    .servings-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-left: 10px;
+        gap: 0;
+        flex-shrink: 0;
+    }
+
+    .filter-header {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        background-color: #1A3636;
+        border: 1px solid #1A3636;
+        border-radius: 0.375rem;
+        margin-bottom: 8px;
+        gap: 0;
+    }
+
+    .filter-column {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 130px;
+        min-width: 130px;
+        max-width: 130px;
+        padding: 0 8px;
+        border-right: 1px solid #677D6A;
+    }
+
+    .filter-column:last-child {
+        border-right: none;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .filter-btn {
+        width: 16px;
+        height: 16px;
+        min-width: 16px;
+        min-height: 16px;
+        border-radius: 50%;
+        border: 2px solid #6c757d;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .filter-btn:hover {
+        transform: scale(1.2);
+        border-width: 3px;
+    }
+
+    .filter-btn.active {
+        border-width: 3px;
+        border-color: #000;
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+    }
+
+    .filter-btn.green {
+        background-color: #28a745;
+    }
+
+    .filter-btn.amber {
+        background-color: #ffc107;
+    }
+
+    .filter-btn.red {
+        background-color: #dc3545;
+    }
+
+    .filter-label {
+        font-size: var(--text-label);
+        font-weight: 600;
+        color: #D6BD98;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .food-item {
+        transition: opacity 0.2s;
+    }
+
+    .food-item.hidden {
+        display: none !important;
+    }
+
+    .food-item h5 {
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: var(--text-value) !important;
+    }
+
+    .food-item a {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Sidebar navigation hover effects */
+    .foods-sidebar a:hover {
+        transform: translateX(3px);
+        background-color: rgba(214, 189, 152, 0.2) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Spacer to match dashboard vertical alignment -->
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+<div class="row g-0">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-2 col-md-3 foods-sidebar" style="background: linear-gradient(135deg, #8BA48B 0%, #677D6A 100%); padding: 12px; padding-top: 28px; position: sticky; top: 50px; align-self: flex-start;">
+
+        <div>
+            <!-- Section Title -->
+            <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid rgba(245, 245, 245, 0.3);">
+                <h6 class="text-title" style="color: #F5F5F5; margin: 0; font-weight: 600;">
+                    <i class="bi bi-{% if category %}tag{% else %}search{% endif %}" style="font-size: 0.9rem;"></i> {% if category %}{{ category }} Foods{% else %}Food Search{% endif %}
+                </h6>
+            </div>
+
+            <!-- Navigation Links -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                <a href="{{ url_for('index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-house-door" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('foods.index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-book" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Food Guide</span>
+                </a>
+
+                <a href="{{ url_for('diary.index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-journal-text" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Diary</span>
+                </a>
+
+                <a href="{{ url_for('recipes.index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-egg-fried" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Recipes</span>
+                </a>
+
+                <a href="{{ url_for('education.index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-mortarboard" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Education</span>
+                </a>
+
+                <a href="{{ url_for('settings.index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-gear" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Settings</span>
+                </a>
+
+                <a href="{{ url_for('settings.help_index') }}" style="display: flex; align-items: center; gap: 8px; color: #F5F5F5; text-decoration: none; padding: 6px 8px; border-radius: 6px; transition: all 0.2s;">
+                    <div style="width: 24px; height: 24px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-question-circle" style="font-size: 12px; color: #F5F5F5;"></i>
+                    </div>
+                    <span class="text-label" style="font-weight: 500;">Help & Support</span>
+                </a>
+            </div>
+
+            <!-- Separator line -->
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Search Form -->
+            <div style="padding-right: 12px; margin-bottom: 12px;">
+                <form action="{{ url_for('foods.search') }}" method="get" id="searchForm">
+                    {% if category %}
+                    <input type="hidden" name="category" value="{{ category }}">
+                    {% endif %}
+                    <div style="margin-bottom: 6px;">
+                        <input type="text" name="q" id="searchInput" class="form-control form-control-sm text-label" placeholder="{% if category %}Search {{ category }}...{% else %}Search foods...{% endif %}" value="{{ query }}" style="background: rgba(255,255,255,0.9);">
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-light btn-sm text-label" type="submit" style="padding: 3px 8px; flex: 1;">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                        {% if query %}
+                        <button class="btn btn-outline-light btn-sm text-label" type="button" id="clearSearchSidebar" title="Clear" style="padding: 3px 8px;">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
+                {% if category %}
+                <a href="{{ url_for('foods.index') }}" class="btn btn-outline-light btn-sm text-body" style="width: 100%;">
+                    <i class="bi bi-arrow-left"></i> Back to Food Guide
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('foods.add_food') }}" class="btn btn-success btn-sm text-body" style="width: 100%;">
+                    <i class="bi bi-plus-circle"></i> Add Custom Food
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-lg-10 col-md-9" style="padding-left: 30px; min-height: 100%;">
+        <div class="row">
+            <div class="col-md-9">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    {% if category %}
+        <h1 class="text-h2"><i class="bi bi-tag"></i> {{ category }} Foods</h1>
+    {% else %}
+        <h1 class="text-h2"><i class="bi bi-search"></i> Food Search</h1>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clearBtnSidebar = document.getElementById('clearSearchSidebar');
+    if (clearBtnSidebar) {
+        clearBtnSidebar.addEventListener('click', function() {
+            window.location.href = "{{ url_for('foods.search') }}{% if category %}?category={{ category }}{% endif %}";
+        });
+    }
+
+    // Traffic light filter functionality
+    const filters = {
+        high: new Set(),
+        moderate: new Set(),
+        safe: new Set()
+    };
+
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const foodItems = document.querySelectorAll('.food-item');
+    const visibleCountEl = document.getElementById('visibleCount');
+
+    function updateVisibleCount() {
+        const visibleItems = document.querySelectorAll('.food-item:not(.hidden)');
+        if (visibleCountEl) {
+            visibleCountEl.textContent = visibleItems.length;
+        }
+    }
+
+    function applyFilters() {
+        foodItems.forEach(item => {
+            const highColor = item.dataset.highColor;
+            const moderateColor = item.dataset.moderateColor;
+            const safeColor = item.dataset.safeColor;
+
+            // Check if any filters are active
+            const hasActiveFilters = filters.high.size > 0 || filters.moderate.size > 0 || filters.safe.size > 0;
+
+            // If no filters are active, show all items
+            if (!hasActiveFilters) {
+                item.classList.remove('hidden');
+                return;
+            }
+
+            let show = true;
+
+            // If filters are active for high column, check if this item matches
+            if (filters.high.size > 0 && !filters.high.has(highColor)) {
+                show = false;
+            }
+
+            // If filters are active for moderate column, check if this item matches
+            if (filters.moderate.size > 0 && !filters.moderate.has(moderateColor)) {
+                show = false;
+            }
+
+            // If filters are active for safe column, check if this item matches
+            if (filters.safe.size > 0 && !filters.safe.has(safeColor)) {
+                show = false;
+            }
+
+            if (show) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+
+        updateVisibleCount();
+    }
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filterType = this.dataset.filter; // high, moderate, or safe
+            const color = this.dataset.color; // green, amber, or red
+
+            // Toggle the filter
+            if (filters[filterType].has(color)) {
+                filters[filterType].delete(color);
+                this.classList.remove('active');
+            } else {
+                filters[filterType].add(color);
+                this.classList.add('active');
+            }
+
+            applyFilters();
+        });
+    });
+
+    // Initialize visible count on page load
+    updateVisibleCount();
+});
+</script>
+
+{% if query or category %}
+    {% if query %}
+    <h3 class="text-h2" style="margin-bottom: 10px;">
+        Search Results for "{{ query }}"{% if category %} in {{ category }}{% endif %}
+    </h3>
+    {% endif %}
+    {% if foods %}
+        <p class="text-muted text-body" style="margin-bottom: 8px;">Found <span id="visibleCount">{{ foods|length }}</span> of {{ foods|length }} food(s)</p>
+
+        <!-- Filter Header -->
+        <div class="filter-header">
+            <!-- Overall traffic light spacer -->
+            <div style="width: 25px; min-width: 25px; margin-right: 10px;"></div>
+
+            <!-- Food name spacer -->
+            <div style="width: 280px; min-width: 280px; max-width: 280px; flex-shrink: 0;"></div>
+
+            <!-- Filters container aligned with serving columns -->
+            <div style="display: flex; justify-content: flex-start; align-items: center; margin-left: 10px; gap: 0; flex-shrink: 0;">
+                <!-- High Serving Filter -->
+                <div class="filter-column">
+                    <div class="filter-buttons">
+                        <div class="filter-btn green" data-filter="high" data-color="green" title="Show Green (Low FODMAP)"></div>
+                        <div class="filter-btn amber" data-filter="high" data-color="amber" title="Show Amber (Moderate FODMAP)"></div>
+                        <div class="filter-btn red" data-filter="high" data-color="red" title="Show Red (High FODMAP)"></div>
+                    </div>
+                    <div class="filter-label">High</div>
+                </div>
+
+                <!-- Moderate Serving Filter -->
+                <div class="filter-column">
+                    <div class="filter-buttons">
+                        <div class="filter-btn green" data-filter="moderate" data-color="green" title="Show Green (Low FODMAP)"></div>
+                        <div class="filter-btn amber" data-filter="moderate" data-color="amber" title="Show Amber (Moderate FODMAP)"></div>
+                        <div class="filter-btn red" data-filter="moderate" data-color="red" title="Show Red (High FODMAP)"></div>
+                    </div>
+                    <div class="filter-label">Moderate</div>
+                </div>
+
+                <!-- Safe Serving Filter -->
+                <div class="filter-column">
+                    <div class="filter-buttons">
+                        <div class="filter-btn green" data-filter="safe" data-color="green" title="Show Green (Low FODMAP)"></div>
+                        <div class="filter-btn amber" data-filter="safe" data-color="amber" title="Show Amber (Moderate FODMAP)"></div>
+                        <div class="filter-btn red" data-filter="safe" data-color="red" title="Show Red (High FODMAP)"></div>
+                    </div>
+                    <div class="filter-label">Safe</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="list-group">
+            {% for food in foods %}
+                <!-- Calculate all three ratings first -->
+                        {% set safe_fodmaps = [
+                            food.safe_fructose or 'Green',
+                            food.safe_sorbitol or 'Green',
+                            food.safe_lactose or 'Green',
+                            food.safe_gos or 'Green',
+                            food.safe_fructans or 'Green',
+                            food.safe_mannitol or 'Green',
+                            food.safe_polyols or 'Green'
+                        ] %}
+                        {% set moderate_fodmaps = [
+                            food.moderate_fructose or 'Amber',
+                            food.moderate_sorbitol or 'Amber',
+                            food.moderate_lactose or 'Amber',
+                            food.moderate_gos or 'Amber',
+                            food.moderate_fructans or 'Amber',
+                            food.moderate_mannitol or 'Amber',
+                            food.moderate_polyols or 'Amber'
+                        ] %}
+                        {% set high_fodmaps = [
+                            food.high_fructose or 'Red',
+                            food.high_sorbitol or 'Red',
+                            food.high_lactose or 'Red',
+                            food.high_gos or 'Red',
+                            food.high_fructans or 'Red',
+                            food.high_mannitol or 'Red',
+                            food.high_polyols or 'Red'
+                        ] %}
+
+                        <!-- Calculate traffic light color for each serving -->
+                        {% set safe_color = get_worst_color(safe_fodmaps, food.safe_histamine_level or 'Low', food.safe_dao_blocker or 'No', food.safe_histamine_liberator or 'No') %}
+                        {% set moderate_color = get_worst_color(moderate_fodmaps, food.moderate_histamine_level or 'Medium', food.moderate_dao_blocker or 'No', food.moderate_histamine_liberator or 'No') %}
+                        {% set high_color = get_worst_color(high_fodmaps, food.high_histamine_level or 'High', food.high_dao_blocker or 'Yes', food.high_histamine_liberator or 'Yes') %}
+
+                        <!-- Determine which serving is "1 serve" and use its color for overall traffic light -->
+                        {% if food.safe_serving_type == '1 serve' %}
+                            {% set overall_color = safe_color %}
+                        {% elif food.moderate_serving_type == '1 serve' %}
+                            {% set overall_color = moderate_color %}
+                        {% elif food.high_serving_type == '1 serve' %}
+                            {% set overall_color = high_color %}
+                        {% else %}
+                            {# Default to moderate if no "1 serve" is specified #}
+                            {% set overall_color = moderate_color %}
+                        {% endif %}
+
+                <div class="list-group-item list-group-item-action food-item" style="padding: 0;"
+                     data-high-color="{{ high_color }}"
+                     data-moderate-color="{{ moderate_color }}"
+                     data-safe-color="{{ safe_color }}"
+                     data-food-name="{{ food.name }}">
+                    <div class="d-flex justify-content-between align-items-center" style="width: 100%;">
+                    <a href="{{ url_for('foods.detail', food_id=food.id) }}" class="d-flex align-items-center" style="text-decoration: none; color: inherit; flex: 1; padding: 6px 8px; gap: 0;">
+                        <!-- Overall traffic light on the left -->
+                        <div class="overall-traffic-light">
+                            <span class="traffic-light-circle {{ overall_color }}" title="1 serve rating"></span>
+                        </div>
+
+                        <h5 class="mb-0 text-value" style="width: 240px; min-width: 240px; max-width: 240px; flex-shrink: 0;">{{ food.name }}</h5>
+
+                        <div class="servings-container">
+                            <!-- High Serving -->
+                            <div class="serving-column">
+                                <span class="traffic-light-circle {{ high_color }}" title="High Serving"></span>
+                                <span class="serving-size-text">{{ food.high_serving.split('g')[0] if food.high_serving and 'g' in food.high_serving else food.high_serving if food.high_serving else 'N/A' }}g</span>
+                            </div>
+
+                            <!-- Moderate Serving -->
+                            <div class="serving-column">
+                                <span class="traffic-light-circle {{ moderate_color }}" title="Moderate Serving"></span>
+                                <span class="serving-size-text">{{ food.moderate_serving.split('g')[0] if food.moderate_serving and 'g' in food.moderate_serving else food.moderate_serving if food.moderate_serving else 'N/A' }}g</span>
+                            </div>
+
+                            <!-- Safe Serving -->
+                            <div class="serving-column">
+                                <span class="traffic-light-circle {{ safe_color }}" title="Safe Serving"></span>
+                                <span class="serving-size-text">{{ food.safe_serving.split('g')[0] if food.safe_serving and 'g' in food.safe_serving else food.safe_serving if food.safe_serving else 'N/A' }}g</span>
+                            </div>
+                        </div>
+
+                        <i class="bi bi-chevron-right text-label" style="margin-left: auto;"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-light text-label" style="padding: 2px 5px; margin-right: 6px;" title="Delete {{ food.name }}" data-bs-toggle="modal" data-bs-target="#deleteFoodModal{{ food.id }}">
+                        <i class="bi bi-trash text-body"></i>
+                    </button>
+                    </div>
+                </div>
+
+                <!-- Delete Food Confirmation Modal -->
+                <div class="modal fade" id="deleteFoodModal{{ food.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h6 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-0 text-title"><strong>Delete "{{ food.name }}"?</strong></p>
+                                <p class="text-muted mb-0 text-body">This cannot be undone.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form method="POST" action="{{ url_for('foods.delete_food', food_id=food.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-body" style="padding: 8px 12px;">
+            <i class="bi bi-exclamation-triangle"></i>
+            {% if query and category %}
+                No foods found for "{{ query }}" in {{ category }} category. Try a different search term.
+            {% elif query %}
+                No foods found for "{{ query }}". Try a different search term.
+            {% else %}
+                No foods found in {{ category }} category.
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info" style="padding: 10px 12px;">
+        <h5 class="text-title"><i class="bi bi-info-circle"></i> Search Tips</h5>
+        <ul class="mb-0 text-body" style="line-height: 1.6;">
+            <li>Search by food name (e.g., "banana", "chicken", "rice")</li>
+            <li>Database contains 36 foods with complete FODMAP and histamine information</li>
+            <li>Click on any food to see detailed information</li>
+        </ul>
+    </div>
+{% endif %}
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+{% endblock %}

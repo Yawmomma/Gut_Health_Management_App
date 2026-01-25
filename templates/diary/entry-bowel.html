@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block title %}{% if existing_bowel %}Edit{% else %}Log{% endif %} Bowel Movement - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bristol-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .bristol-type {
+        border: 3px solid #1A3636;
+        border-radius: 10px;
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #D6BD98;
+    }
+
+    .bristol-type:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .bristol-type.selected {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
+        box-shadow: 0 5px 15px rgba(13,110,253,0.3);
+    }
+
+    .bristol-type.selected .bristol-number,
+    .bristol-type.selected .bristol-description {
+        color: #1A3636 !important;
+    }
+
+    .bristol-type input[type="radio"] {
+        display: none;
+    }
+
+    .bristol-icon {
+        font-size: 2rem;
+        min-width: 50px;
+        text-align: center;
+    }
+
+    .bristol-number {
+        font-size: var(--text-h2);
+        font-weight: bold;
+        color: #1A3636;
+        min-width: 80px;
+    }
+
+    .bristol-description {
+        font-size: var(--text-value);
+        color: #1A3636;
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .bristol-status {
+        font-size: var(--text-value);
+        font-weight: 600;
+        min-width: 120px;
+        text-align: right;
+        color: #1A3636;
+    }
+
+    /* Color coding for Bristol types */
+    .type-1, .type-2 { border-left: 5px solid #dc3545; }
+    .type-3, .type-4 { border-left: 5px solid #28a745; }
+    .type-5, .type-6, .type-7 { border-left: 5px solid #fd7e14; }
+
+    .urgency-indicator {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+    }
+
+    /* Additional Details Styling */
+    .option-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .option-button {
+        border: 2px solid #1A3636;
+        border-radius: 8px;
+        padding: 12px 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #D6BD98;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .option-button:hover {
+        border-color: #0d6efd;
+        background-color: #e3caa5;
+    }
+
+    .option-button.selected {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
+        font-weight: 500;
+    }
+
+    .option-button input[type="radio"],
+    .option-button input[type="checkbox"] {
+        display: none;
+    }
+
+    .option-button .option-icon {
+        font-size: 1.2rem;
+        min-width: 25px;
+        text-align: center;
+    }
+
+    .option-button .option-text {
+        flex: 1;
+        font-size: var(--text-value);
+        color: #1A3636 !important;
+    }
+
+    .option-button .option-detail {
+        font-size: var(--text-title);
+        color: #1A3636 !important;
+    }
+
+    .option-button .option-detail.text-danger {
+        color: #dc3545 !important;
+    }
+
+    .checkbox-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 2px solid #1A3636;
+        border-radius: 8px;
+        padding: 12px 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #D6BD98;
+    }
+
+    .checkbox-option .option-text {
+        color: #1A3636 !important;
+    }
+
+    .checkbox-option .text-danger {
+        color: #dc3545 !important;
+    }
+
+    .checkbox-option:hover {
+        border-color: #0d6efd;
+        background-color: #e3caa5;
+    }
+
+    .checkbox-option.checked {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+
+    .checkbox-option input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .section-label {
+        font-weight: 600;
+        font-size: var(--text-value);
+        margin-bottom: 10px;
+        color: #1A3636;
+    }
+
+    /* Align columns */
+    .left-column-content {
+        margin-top: 43px;
+    }
+
+    .left-column-content .bristol-chart {
+        margin-top: 60px;
+    }
+
+    .right-column-content {
+        margin-top: 43px;
+    }
+
+    /* Column layout adjustments */
+    .two-column-layout .col-left {
+        flex: 0 0 48%;
+        max-width: 48%;
+    }
+
+    .two-column-layout .col-right {
+        flex: 0 0 40%;
+        max-width: 40%;
+        margin-left: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="bi bi-clipboard-pulse"></i> {% if existing_bowel %}Edit{% else %}Log{% endif %} Bowel Movement</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="bowel-form">
+                    <!-- Date and Time -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="bowel_date" class="form-label"><strong>Date</strong></label>
+                            <input type="date" class="form-control" id="bowel_date" name="bowel_date"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_date.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="bowel_time" class="form-label"><strong>Time</strong></label>
+                            <input type="time" class="form-control" id="bowel_time" name="bowel_time"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_time.strftime('%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+
+                    <!-- Two Column Layout -->
+                    <div class="row two-column-layout">
+                        <!-- Left Column: Bristol Stool Chart -->
+                        <div class="col-md-6 col-left">
+                            <div class="left-column-content">
+                                <h5 class="mb-3"><i class="bi bi-diagram-3"></i> Bristol Stool Chart</h5>
+
+                                <div class="bristol-chart">
+                                <!-- Type 1 -->
+                                <label class="bristol-type type-1" for="type-1">
+                                    <input type="radio" name="bristol_type" id="type-1" value="1" {% if existing_bowel and existing_bowel.bristol_type == 1 %}checked{% endif %} required>
+                                    <div class="bristol-number">Type 1</div>
+                                    <div class="bristol-icon">&#9679;&#9679;</div>
+                                    <div class="bristol-description">Separate hard lumps, like nuts</div>
+                                    <small class="bristol-status text-danger">Severe Constipation</small>
+                                </label>
+
+                                <!-- Type 2 -->
+                                <label class="bristol-type type-2" for="type-2">
+                                    <input type="radio" name="bristol_type" id="type-2" value="2" {% if existing_bowel and existing_bowel.bristol_type == 2 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 2</div>
+                                    <div class="bristol-icon">&#9679;&#9473;&#9473;</div>
+                                    <div class="bristol-description">Sausage-shaped but lumpy</div>
+                                    <small class="bristol-status text-warning">Mild Constipation</small>
+                                </label>
+
+                                <!-- Type 3 -->
+                                <label class="bristol-type type-3" for="type-3">
+                                    <input type="radio" name="bristol_type" id="type-3" value="3" {% if existing_bowel and existing_bowel.bristol_type == 3 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 3</div>
+                                    <div class="bristol-icon">&#9473;&#9473;&#9473;</div>
+                                    <div class="bristol-description">Like a sausage with cracks on surface</div>
+                                    <small class="bristol-status text-success">Normal</small>
+                                </label>
+
+                                <!-- Type 4 -->
+                                <label class="bristol-type type-4" for="type-4">
+                                    <input type="radio" name="bristol_type" id="type-4" value="4" {% if existing_bowel and existing_bowel.bristol_type == 4 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 4</div>
+                                    <div class="bristol-icon">&#9473;&#9473;&#9473;</div>
+                                    <div class="bristol-description">Like a sausage, smooth and soft</div>
+                                    <small class="bristol-status text-success">Normal (Ideal)</small>
+                                </label>
+
+                                <!-- Type 5 -->
+                                <label class="bristol-type type-5" for="type-5">
+                                    <input type="radio" name="bristol_type" id="type-5" value="5" {% if existing_bowel and existing_bowel.bristol_type == 5 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 5</div>
+                                    <div class="bristol-icon">&#8226;&#8226;&#8226;</div>
+                                    <div class="bristol-description">Soft blobs with clear-cut edges</div>
+                                    <small class="bristol-status text-warning">Lacking Fiber</small>
+                                </label>
+
+                                <!-- Type 6 -->
+                                <label class="bristol-type type-6" for="type-6">
+                                    <input type="radio" name="bristol_type" id="type-6" value="6" {% if existing_bowel and existing_bowel.bristol_type == 6 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 6</div>
+                                    <div class="bristol-icon">&#8776;&#8776;</div>
+                                    <div class="bristol-description">Fluffy pieces with ragged edges</div>
+                                    <small class="bristol-status text-warning">Mild Diarrhea</small>
+                                </label>
+
+                                <!-- Type 7 -->
+                                <label class="bristol-type type-7" for="type-7">
+                                    <input type="radio" name="bristol_type" id="type-7" value="7" {% if existing_bowel and existing_bowel.bristol_type == 7 %}checked{% endif %}>
+                                    <div class="bristol-number">Type 7</div>
+                                    <div class="bristol-icon">&#8776;&#8776;&#8776;</div>
+                                    <div class="bristol-description">Watery, no solid pieces</div>
+                                    <small class="bristol-status text-danger">Severe Diarrhea</small>
+                                </label>
+                            </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Other Options -->
+                        <div class="col-md-6 col-right">
+                            <div class="right-column-content">
+                                <h5 class="mb-3">Additional Details</h5>
+
+                                <!-- Urgency -->
+                            <div class="mb-3">
+                                <div class="section-label">Urgency Level</div>
+                                <div class="option-group">
+                                    <label class="option-button" for="urgency-none">
+                                        <input type="radio" name="urgency" id="urgency-none" value="None" {% if existing_bowel and existing_bowel.urgency == 'None' %}checked{% endif %}>
+                                        <span class="option-icon">😌</span>
+                                        <span class="option-text">None <span class="option-detail">- Comfortable timing</span></span>
+                                    </label>
+                                    <label class="option-button" for="urgency-mild">
+                                        <input type="radio" name="urgency" id="urgency-mild" value="Mild" {% if existing_bowel and existing_bowel.urgency == 'Mild' %}checked{% endif %}>
+                                        <span class="option-icon">🙂</span>
+                                        <span class="option-text">Mild <span class="option-detail">- Could wait if needed</span></span>
+                                    </label>
+                                    <label class="option-button" for="urgency-moderate">
+                                        <input type="radio" name="urgency" id="urgency-moderate" value="Moderate" {% if existing_bowel and existing_bowel.urgency == 'Moderate' %}checked{% endif %}>
+                                        <span class="option-icon">😐</span>
+                                        <span class="option-text">Moderate <span class="option-detail">- Needed to go soon</span></span>
+                                    </label>
+                                    <label class="option-button" for="urgency-severe">
+                                        <input type="radio" name="urgency" id="urgency-severe" value="Severe" {% if existing_bowel and existing_bowel.urgency == 'Severe' %}checked{% endif %}>
+                                        <span class="option-icon">😰</span>
+                                        <span class="option-text">Severe <span class="option-detail">- Had to rush</span></span>
+                                    </label>
+                                    <label class="option-button" for="urgency-extreme">
+                                        <input type="radio" name="urgency" id="urgency-extreme" value="Extreme" {% if existing_bowel and existing_bowel.urgency == 'Extreme' %}checked{% endif %}>
+                                        <span class="option-icon">😱</span>
+                                        <span class="option-text">Extreme <span class="option-detail">- Could barely make it</span></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Completeness -->
+                            <div class="mb-3">
+                                <div class="section-label">Feeling of Completeness</div>
+                                <div class="option-group">
+                                    <label class="option-button" for="completeness-complete">
+                                        <input type="radio" name="completeness" id="completeness-complete" value="Complete" {% if existing_bowel and existing_bowel.completeness == 'Complete' %}checked{% endif %}>
+                                        <span class="option-icon">✅</span>
+                                        <span class="option-text">Complete <span class="option-detail">- Felt fully empty</span></span>
+                                    </label>
+                                    <label class="option-button" for="completeness-mostly">
+                                        <input type="radio" name="completeness" id="completeness-mostly" value="Mostly Complete" {% if existing_bowel and existing_bowel.completeness == 'Mostly Complete' %}checked{% endif %}>
+                                        <span class="option-icon">👍</span>
+                                        <span class="option-text">Mostly Complete <span class="option-detail">- Mostly satisfied</span></span>
+                                    </label>
+                                    <label class="option-button" for="completeness-incomplete">
+                                        <input type="radio" name="completeness" id="completeness-incomplete" value="Incomplete" {% if existing_bowel and existing_bowel.completeness == 'Incomplete' %}checked{% endif %}>
+                                        <span class="option-icon">❌</span>
+                                        <span class="option-text">Incomplete <span class="option-detail">- Still felt full</span></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Straining -->
+                            <div class="mb-3">
+                                <div class="section-label">Straining Required</div>
+                                <div class="option-group">
+                                    <label class="option-button" for="straining-none">
+                                        <input type="radio" name="straining" id="straining-none" value="None" {% if existing_bowel and existing_bowel.straining == 'None' %}checked{% endif %}>
+                                        <span class="option-icon">😊</span>
+                                        <span class="option-text">None <span class="option-detail">- Very easy</span></span>
+                                    </label>
+                                    <label class="option-button" for="straining-mild">
+                                        <input type="radio" name="straining" id="straining-mild" value="Mild" {% if existing_bowel and existing_bowel.straining == 'Mild' %}checked{% endif %}>
+                                        <span class="option-icon">🙂</span>
+                                        <span class="option-text">Mild <span class="option-detail">- Slight effort</span></span>
+                                    </label>
+                                    <label class="option-button" for="straining-moderate">
+                                        <input type="radio" name="straining" id="straining-moderate" value="Moderate" {% if existing_bowel and existing_bowel.straining == 'Moderate' %}checked{% endif %}>
+                                        <span class="option-icon">😓</span>
+                                        <span class="option-text">Moderate <span class="option-detail">- Noticeable effort</span></span>
+                                    </label>
+                                    <label class="option-button" for="straining-severe">
+                                        <input type="radio" name="straining" id="straining-severe" value="Severe" {% if existing_bowel and existing_bowel.straining == 'Severe' %}checked{% endif %}>
+                                        <span class="option-icon">😣</span>
+                                        <span class="option-text">Severe <span class="option-detail">- Difficult, took a while</span></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Warning Signs -->
+                            <div class="mb-3">
+                                <div class="section-label">Warning Signs</div>
+                                <div class="option-group">
+                                    <label class="checkbox-option" for="blood_present">
+                                        <input class="form-check-input" type="checkbox" id="blood_present" name="blood_present" {% if existing_bowel and existing_bowel.blood_present %}checked{% endif %}>
+                                        <span class="option-icon text-danger"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                                        <span class="option-text text-danger"><strong>Blood present</strong></span>
+                                    </label>
+                                    <label class="checkbox-option" for="mucus_present">
+                                        <input class="form-check-input" type="checkbox" id="mucus_present" name="mucus_present" {% if existing_bowel and existing_bowel.mucus_present %}checked{% endif %}>
+                                        <span class="option-icon">⚠️</span>
+                                        <span class="option-text">Mucus present</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Color -->
+                            <div class="mb-3">
+                                <div class="section-label">Color</div>
+                                <div class="option-group">
+                                    <label class="option-button" for="color-brown">
+                                        <input type="radio" name="color" id="color-brown" value="Brown" {% if existing_bowel and existing_bowel.color == 'Brown' %}checked{% endif %}>
+                                        <span class="option-icon">🟤</span>
+                                        <span class="option-text">Brown <span class="option-detail">(Normal)</span></span>
+                                    </label>
+                                    <label class="option-button" for="color-dark-brown">
+                                        <input type="radio" name="color" id="color-dark-brown" value="Dark Brown" {% if existing_bowel and existing_bowel.color == 'Dark Brown' %}checked{% endif %}>
+                                        <span class="option-icon">⚫</span>
+                                        <span class="option-text">Dark Brown</span>
+                                    </label>
+                                    <label class="option-button" for="color-light-brown">
+                                        <input type="radio" name="color" id="color-light-brown" value="Light Brown" {% if existing_bowel and existing_bowel.color == 'Light Brown' %}checked{% endif %}>
+                                        <span class="option-icon">🟡</span>
+                                        <span class="option-text">Light Brown</span>
+                                    </label>
+                                    <label class="option-button" for="color-green">
+                                        <input type="radio" name="color" id="color-green" value="Green" {% if existing_bowel and existing_bowel.color == 'Green' %}checked{% endif %}>
+                                        <span class="option-icon">🟢</span>
+                                        <span class="option-text">Green</span>
+                                    </label>
+                                    <label class="option-button" for="color-yellow">
+                                        <input type="radio" name="color" id="color-yellow" value="Yellow" {% if existing_bowel and existing_bowel.color == 'Yellow' %}checked{% endif %}>
+                                        <span class="option-icon">🟡</span>
+                                        <span class="option-text">Yellow</span>
+                                    </label>
+                                    <label class="option-button" for="color-black">
+                                        <input type="radio" name="color" id="color-black" value="Black" {% if existing_bowel and existing_bowel.color == 'Black' %}checked{% endif %}>
+                                        <span class="option-icon">⚫</span>
+                                        <span class="option-text">Black <span class="option-detail text-danger">(See doctor if persistent)</span></span>
+                                    </label>
+                                    <label class="option-button" for="color-red">
+                                        <input type="radio" name="color" id="color-red" value="Red" {% if existing_bowel and existing_bowel.color == 'Red' %}checked{% endif %}>
+                                        <span class="option-icon">🔴</span>
+                                        <span class="option-text">Red <span class="option-detail text-danger">(See doctor)</span></span>
+                                    </label>
+                                    <label class="option-button" for="color-pale">
+                                        <input type="radio" name="color" id="color-pale" value="Pale/Clay" {% if existing_bowel and existing_bowel.color == 'Pale/Clay' %}checked{% endif %}>
+                                        <span class="option-icon">⚪</span>
+                                        <span class="option-text">Pale/Clay colored <span class="option-detail text-danger">(See doctor)</span></span>
+                                    </label>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label"><strong>Notes (Optional)</strong></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Any pain? Unusual smell? Other observations...">{% if existing_bowel %}{{ existing_bowel.notes }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- Warning Alert -->
+                    <div class="alert alert-warning" id="warning-alert" style="display: none;">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Medical Attention Recommended</h6>
+                        <div id="warning-content"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> Save Entry
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set current time on page load (only if not editing)
+window.addEventListener('load', function() {
+    {% if not existing_entry %}
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('bowel_time').value = hours + ':' + minutes;
+    {% endif %}
+
+    // Apply selected class to pre-checked radio buttons
+    document.querySelectorAll('.bristol-type input[type="radio"]:checked').forEach(radio => {
+        radio.closest('.bristol-type').classList.add('selected');
+    });
+
+    document.querySelectorAll('.option-button input[type="radio"]:checked').forEach(radio => {
+        radio.closest('.option-button').classList.add('selected');
+    });
+
+    // Apply checked class to pre-checked checkboxes
+    document.querySelectorAll('.checkbox-option input[type="checkbox"]:checked').forEach(checkbox => {
+        checkbox.closest('.checkbox-option').classList.add('checked');
+    });
+
+    // Update warnings on page load to show any pre-existing selections
+    updateWarnings();
+});
+
+// Bristol type selection
+document.querySelectorAll('.bristol-type').forEach(card => {
+    card.addEventListener('click', function() {
+        // Remove selected class from all
+        document.querySelectorAll('.bristol-type').forEach(c => c.classList.remove('selected'));
+
+        // Add selected class to clicked
+        this.classList.add('selected');
+
+        // Check the radio button
+        this.querySelector('input[type="radio"]').checked = true;
+
+        updateWarnings();
+    });
+});
+
+// Option button selection (for urgency, completeness, straining, color)
+document.querySelectorAll('.option-button').forEach(button => {
+    button.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        const groupName = radio.name;
+
+        // Remove selected class from all buttons in the same group
+        document.querySelectorAll(`input[name="${groupName}"]`).forEach(input => {
+            input.closest('.option-button').classList.remove('selected');
+        });
+
+        // Add selected class to clicked button
+        this.classList.add('selected');
+
+        // Check the radio button
+        radio.checked = true;
+
+        updateWarnings();
+    });
+});
+
+// Checkbox option handling (for warning signs)
+document.querySelectorAll('.checkbox-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+        // Don't trigger if clicking directly on the checkbox
+        if (e.target.type === 'checkbox') return;
+
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+
+        // Toggle checked class
+        if (checkbox.checked) {
+            this.classList.add('checked');
+        } else {
+            this.classList.remove('checked');
+        }
+
+        updateWarnings();
+    });
+});
+
+// Handle direct checkbox clicks
+document.querySelectorAll('.checkbox-option input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const option = this.closest('.checkbox-option');
+        if (this.checked) {
+            option.classList.add('checked');
+        } else {
+            option.classList.remove('checked');
+        }
+        updateWarnings();
+    });
+});
+
+// Update warnings based on selections
+function updateWarnings() {
+    const warnings = [];
+
+    // Check Bristol type
+    const bristolType = document.querySelector('input[name="bristol_type"]:checked');
+    if (bristolType) {
+        const type = parseInt(bristolType.value);
+        if (type === 1) {
+            warnings.push('Type 1 indicates severe constipation. Consider increasing fiber and water intake.');
+        } else if (type === 2) {
+            warnings.push('Type 2 indicates mild constipation. Increase fiber and fluids.');
+        } else if (type === 7) {
+            warnings.push('Type 7 indicates severe diarrhea. Stay hydrated and seek medical advice if persistent.');
+        } else if (type === 6) {
+            warnings.push('Type 6 indicates mild diarrhea. Monitor hydration.');
+        }
+    }
+
+    // Check blood
+    if (document.getElementById('blood_present').checked) {
+        warnings.push('Blood in stool requires medical evaluation. Contact your doctor.');
+    }
+
+    // Check color
+    const colorInput = document.querySelector('input[name="color"]:checked');
+    if (colorInput) {
+        const color = colorInput.value;
+        if (color === 'Black') {
+            warnings.push('Black stool can indicate bleeding in the upper GI tract. See a doctor if persistent.');
+        } else if (color === 'Red') {
+            warnings.push('Red stool may indicate bleeding. Seek medical attention.');
+        } else if (color === 'Pale/Clay') {
+            warnings.push('Pale or clay-colored stool may indicate liver or bile duct issues. See a doctor.');
+        }
+    }
+
+    // Display warnings
+    const alertDiv = document.getElementById('warning-alert');
+    const contentDiv = document.getElementById('warning-content');
+
+    if (warnings.length > 0) {
+        let html = '<ul class="mb-0">';
+        warnings.forEach(warning => {
+            html += '<li>' + warning + '</li>';
+        });
+        html += '</ul>';
+        contentDiv.innerHTML = html;
+        alertDiv.style.display = 'block';
+    } else {
+        alertDiv.style.display = 'none';
+    }
+}
+
+// Note: Warning updates are now handled by the option-button and checkbox-option click handlers above
+</script>
+{% endblock %}

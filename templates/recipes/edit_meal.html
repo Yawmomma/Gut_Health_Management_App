@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Saved Meal - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-h2"><i class="bi bi-pencil text-warning"></i> Edit Saved Meal</h1>
+            <a href="{{ url_for('recipes.my_meals') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to My Meals
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('recipes.edit_meal', meal_id=meal.id) }}" enctype="multipart/form-data">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Meal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label"><strong>Meal Name *</strong></label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   value="{{ meal.name }}" placeholder="e.g., Usual Breakfast, Work Lunch">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="meal_type" class="form-label"><strong>Meal Type</strong></label>
+                            <select class="form-select" id="meal_type" name="meal_type">
+                                <option value="">Choose...</option>
+                                <option value="Breakfast" {% if meal.meal_type == 'Breakfast' %}selected{% endif %}>Breakfast</option>
+                                <option value="Lunch" {% if meal.meal_type == 'Lunch' %}selected{% endif %}>Lunch</option>
+                                <option value="Dinner" {% if meal.meal_type == 'Dinner' %}selected{% endif %}>Dinner</option>
+                                <option value="Snack" {% if meal.meal_type == 'Snack' %}selected{% endif %}>Snack</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label"><strong>Description</strong></label>
+                        <textarea class="form-control" id="description" name="description" rows="2"
+                                  placeholder="Optional notes about this meal">{{ meal.description if meal.description else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meal_photo" class="form-label"><strong>Meal Photo</strong></label>
+                        {% if meal.image_path %}
+                        <div class="mb-2">
+                            <img src="{{ meal.image_path }}" alt="Current meal photo" style="max-height: 150px;" class="img-thumbnail">
+                            <p class="text-muted small mb-0">Upload a new photo to replace the current one</p>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="meal_photo" name="meal_photo" accept="image/*">
+                        <small class="text-muted">Upload a photo of your meal (PNG, JPG, JPEG, GIF, WEBP)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bag"></i> Foods in This Meal</h5>
+                </div>
+                <div class="card-body">
+                    <div id="foods-container">
+                        <!-- Food rows will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-outline-success" onclick="addFood()">
+                        <i class="bi bi-plus-circle"></i> Add Food
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-warning btn-lg">
+                    <i class="bi bi-check-circle"></i> Update Meal
+                </button>
+                <a href="{{ url_for('recipes.my_meals') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let foodCount = 0;
+
+// Foods data for search
+const foods = {{ foods | tojson | safe }};
+
+// Existing meal items
+const existingMealItems = {{ meal_items | tojson | safe }};
+
+function addFood(existingFood = null) {
+    foodCount++;
+    const container = document.getElementById('foods-container');
+    const foodDiv = document.createElement('div');
+    foodDiv.className = 'food-row mb-3 p-3 border rounded';
+    foodDiv.id = `food-${foodCount}`;
+
+    const selectedFoodId = existingFood ? existingFood.food_id : '';
+    const portionSize = existingFood ? existingFood.portion_size : '';
+
+    foodDiv.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-7 mb-2">
+                <label class="form-label text-label"><strong>Food</strong></label>
+                <select class="form-select food-select" name="food_ids[]" onchange="updateFoodInfo(${foodCount})">
+                    <option value="">Choose a food...</option>
+                    ${foods.map(food => `<option value="${food.id}" ${food.id === selectedFoodId ? 'selected' : ''}>${food.name} (${food.category})</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label class="form-label text-label"><strong>Portion Size</strong></label>
+                <input type="text" class="form-control" name="portions[]" placeholder="e.g., 100g, 1 cup" value="${portionSize}">
+            </div>
+            <div class="col-md-1 mb-2">
+                <label class="form-label small">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeFood(${foodCount})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div id="food-info-${foodCount}" class="mt-2"></div>
+    `;
+    container.appendChild(foodDiv);
+
+    // Update food info if there's a pre-selected food
+    if (selectedFoodId) {
+        updateFoodInfo(foodCount);
+    }
+}
+
+function removeFood(id) {
+    const element = document.getElementById(`food-${id}`);
+    element.remove();
+}
+
+function updateFoodInfo(foodId) {
+    const select = document.querySelector(`#food-${foodId} .food-select`);
+    const foodIdValue = parseInt(select.value);
+    const infoDiv = document.getElementById(`food-info-${foodId}`);
+
+    if (!foodIdValue) {
+        infoDiv.innerHTML = '';
+        return;
+    }
+
+    const food = foods.find(f => f.id === foodIdValue);
+    if (!food) return;
+
+    let fodmapBadges = '';
+    const fodmaps = ['fructans', 'gos', 'lactose', 'fructose', 'polyols', 'mannitol', 'sorbitol'];
+    fodmaps.forEach(fodmap => {
+        if (food[fodmap]) {
+            const color = food[fodmap].toLowerCase() === 'green' ? 'success' :
+                         food[fodmap].toLowerCase() === 'amber' ? 'warning' : 'danger';
+            fodmapBadges += `<span class="badge bg-${color} me-1">${fodmap}: ${food[fodmap]}</span>`;
+        }
+    });
+
+    let histamineBadge = '';
+    if (food.histamine_level) {
+        const color = food.histamine_level.toLowerCase() === 'low' ? 'success' :
+                     food.histamine_level.toLowerCase() === 'medium' ? 'warning' : 'danger';
+        histamineBadge = `<span class="badge bg-${color}">Histamine: ${food.histamine_level}</span>`;
+    }
+
+    infoDiv.innerHTML = `
+        <div class="alert alert-info mb-0 py-2">
+            <small>
+                ${fodmapBadges}
+                ${histamineBadge}
+                ${food.safe_serving ? `<br><span class="text-muted">Safe serving: ${food.safe_serving}</span>` : ''}
+            </small>
+        </div>
+    `;
+}
+
+// Load existing meal items on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (existingMealItems.length > 0) {
+        existingMealItems.forEach(item => {
+            addFood(item);
+        });
+    } else {
+        // Add one empty food row if no existing items
+        addFood();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Recipe - {{ recipe.name }} - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-h2"><i class="bi bi-pencil text-warning"></i> Edit Recipe</h1>
+            <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Recipe
+            </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('recipes.edit_recipe', recipe_id=recipe.id) }}" enctype="multipart/form-data">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Recipe Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label"><strong>Recipe Name *</strong></label>
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chicken Stir Fry" value="{{ recipe.name }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="servings" class="form-label"><strong>Servings</strong></label>
+                            <input type="number" class="form-control" id="servings" name="servings" value="{{ recipe.servings }}" min="1">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label"><strong>Description</strong></label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of your recipe">{{ recipe.description or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
+                        {% if recipe.image_path %}
+                            <div class="mb-2">
+                                <img src="{{ url_for('static', filename=recipe.image_path) }}" alt="{{ recipe.name }}" style="max-width: 200px; max-height: 200px; object-fit: cover;" class="img-thumbnail">
+                                <p class="text-muted small mb-0">Current photo (upload a new one to replace)</p>
+                            </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
+                        <small class="text-muted">Upload a photo of your recipe (PNG, JPG, JPEG, GIF, WEBP)</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prep_time" class="form-label"><strong>Prep Time</strong></label>
+                            <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 minutes" value="{{ recipe.prep_time or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cook_time" class="form-label"><strong>Cook Time</strong></label>
+                            <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 minutes" value="{{ recipe.cook_time or '' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-tags"></i> Recipe Classification</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label"><strong>Meal Type (Category)</strong></label>
+                            <select class="form-select" id="category" name="category" onchange="updateSubcategories()">
+                                <option value="">Select...</option>
+                                {% for meal_type in meal_types %}
+                                <option value="{{ meal_type }}" {% if recipe.category == meal_type %}selected{% endif %}>{{ meal_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="subcategory" class="form-label"><strong>Subcategory</strong></label>
+                            <select class="form-select" id="subcategory" name="subcategory">
+                                <option value="">Select...</option>
+                                {% for subcat in all_subcategories %}
+                                <option value="{{ subcat }}" {% if recipe.subcategory == subcat %}selected{% endif %}>{{ subcat }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Only applies to Salads and Sauces & Gravies</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cuisine" class="form-label"><strong>Cuisine / Origin</strong></label>
+                            <select class="form-select" id="cuisine" name="cuisine">
+                                <option value="">Select...</option>
+                                {% for cuisine in cuisines %}
+                                <option value="{{ cuisine }}" {% if recipe.cuisine == cuisine %}selected{% endif %}>{{ cuisine }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="main_ingredient" class="form-label"><strong>Main Ingredient</strong></label>
+                            <select class="form-select" id="main_ingredient" name="main_ingredient">
+                                <option value="">Select...</option>
+                                {% for ingredient in main_ingredients %}
+                                <option value="{{ ingredient }}" {% if recipe.main_ingredient == ingredient %}selected{% endif %}>{{ ingredient }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="preparation_method" class="form-label"><strong>Preparation Method</strong></label>
+                            <select class="form-select" id="preparation_method" name="preparation_method">
+                                <option value="">Select...</option>
+                                {% for method in preparation_methods %}
+                                <option value="{{ method }}" {% if recipe.preparation_method == method %}selected{% endif %}>{{ method }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="difficulty" class="form-label"><strong>Difficulty Level</strong></label>
+                            <select class="form-select" id="difficulty" name="difficulty">
+                                <option value="">Select...</option>
+                                {% for level in difficulty_levels %}
+                                <option value="{{ level }}" {% if recipe.difficulty == level %}selected{% endif %}>{{ level }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="occasion" class="form-label"><strong>Occasion / Holiday</strong></label>
+                            <select class="form-select" id="occasion" name="occasion">
+                                <option value="">Select...</option>
+                                {% for occ in occasions %}
+                                <option value="{{ occ }}" {% if recipe.occasion == occ %}selected{% endif %}>{{ occ }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
+                        {% if recipe.dietary_needs %}
+                            {% set selected_dietary_needs = recipe.dietary_needs.split(',') %}
+                        {% else %}
+                            {% set selected_dietary_needs = [] %}
+                        {% endif %}
+                        <div class="row">
+                            {% for dietary_need in dietary_needs %}
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="form-check">
+                                    {% set is_selected = false %}
+                                    {% for selected in selected_dietary_needs %}
+                                        {% if selected.strip() == dietary_need.strip() %}
+                                            {% set is_selected = true %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}" {% if is_selected %}checked{% endif %}>
+                                    <label class="form-check-label" for="dietary_{{ loop.index }}">
+                                        {{ dietary_need }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tags" class="form-label"><strong>Custom Tags</strong></label>
+                        <input type="text" class="form-control" id="tags" name="tags" placeholder="Add additional tags (comma-separated)" value="{{ recipe.tags or '' }}">
+                        <small class="text-muted">Optional custom tags beyond the categories above</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Suggested Tags Preview</strong></label>
+                        <div id="suggestedTagsPreview" class="p-3 bg-light border rounded">
+                            <small class="text-muted">Select categories above to see suggested tags. Click on any tag to remove it from your recipe.</small>
+                        </div>
+                        <small class="text-muted">These tags are automatically generated based on your selections above. Click a tag to exclude it.</small>
+                    </div>
+
+                    <!-- Hidden input to store removed tags -->
+                    <input type="hidden" id="removedTags" name="removed_tags" value="">
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bag"></i> Ingredients</h5>
+                </div>
+                <div class="card-body">
+                    <div id="ingredients-container">
+                        <!-- Ingredient rows will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-outline-success" onclick="addIngredient()">
+                        <i class="bi bi-plus-circle"></i> Add Ingredient
+                    </button>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="instructions" name="instructions" rows="8" placeholder="Step-by-step cooking instructions...">{{ recipe.instructions or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-sticky"></i> Notes</h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes, tips, or variations...">{{ recipe.notes or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-circle"></i> Update Recipe
+                </button>
+                <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let ingredientCount = 0;
+
+// Foods data for search
+const foods = {{ foods | tojson | safe }};
+
+// Existing ingredients
+const existingIngredients = {{ ingredients | tojson | safe }};
+
+function addIngredient(foodId = null, quantity = '', notes = '') {
+    ingredientCount++;
+    const container = document.getElementById('ingredients-container');
+    const ingredientDiv = document.createElement('div');
+    ingredientDiv.className = 'ingredient-row mb-3 p-3 border rounded';
+    ingredientDiv.id = `ingredient-${ingredientCount}`;
+    ingredientDiv.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-5 mb-2">
+                <label class="form-label text-label"><strong>Food</strong></label>
+                <select class="form-select food-select" name="food_ids[]" onchange="updateFoodInfo(${ingredientCount})">
+                    <option value="">Choose a food...</option>
+                    ${foods.map(food => `<option value="${food.id}" ${foodId == food.id ? 'selected' : ''}>${food.name} (${food.category})</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="form-label text-label"><strong>Quantity</strong></label>
+                <input type="text" class="form-control" name="quantities[]" placeholder="e.g., 100g, 1 cup" value="${quantity}">
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="form-label text-label"><strong>Notes</strong></label>
+                <input type="text" class="form-control" name="ingredient_notes[]" placeholder="chopped, diced" value="${notes}">
+            </div>
+            <div class="col-md-1 mb-2">
+                <label class="form-label small">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeIngredient(${ingredientCount})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div id="food-info-${ingredientCount}" class="mt-2"></div>
+    `;
+    container.appendChild(ingredientDiv);
+
+    // Update food info if a food is selected
+    if (foodId) {
+        updateFoodInfo(ingredientCount);
+    }
+}
+
+function removeIngredient(id) {
+    const element = document.getElementById(`ingredient-${id}`);
+    element.remove();
+}
+
+function updateFoodInfo(ingredientId) {
+    const select = document.querySelector(`#ingredient-${ingredientId} .food-select`);
+    const foodId = parseInt(select.value);
+    const infoDiv = document.getElementById(`food-info-${ingredientId}`);
+
+    if (!foodId) {
+        infoDiv.innerHTML = '';
+        return;
+    }
+
+    const food = foods.find(f => f.id === foodId);
+    if (!food) return;
+
+    let fodmapBadges = '';
+    const fodmaps = ['fructans', 'gos', 'lactose', 'fructose', 'polyols', 'mannitol', 'sorbitol'];
+    fodmaps.forEach(fodmap => {
+        if (food[fodmap]) {
+            const color = food[fodmap].toLowerCase() === 'green' ? 'success' :
+                         food[fodmap].toLowerCase() === 'amber' ? 'warning' : 'danger';
+            fodmapBadges += `<span class="badge bg-${color} me-1">${fodmap}: ${food[fodmap]}</span>`;
+        }
+    });
+
+    let histamineBadge = '';
+    if (food.histamine_level) {
+        const color = food.histamine_level.toLowerCase() === 'low' ? 'success' :
+                     food.histamine_level.toLowerCase() === 'medium' ? 'warning' : 'danger';
+        histamineBadge = `<span class="badge bg-${color}">Histamine: ${food.histamine_level}</span>`;
+    }
+
+    infoDiv.innerHTML = `
+        <div class="alert alert-info mb-0 py-2">
+            <small>
+                ${fodmapBadges}
+                ${histamineBadge}
+            </small>
+        </div>
+    `;
+}
+
+// Track removed tags
+let removedTags = new Set();
+
+// Update suggested tags preview
+function updateSuggestedTags() {
+    const previewDiv = document.getElementById('suggestedTagsPreview');
+    const tags = [];
+
+    // Collect all selected values
+    const subcategory = document.getElementById('subcategory').value;
+    const cuisine = document.getElementById('cuisine').value;
+    const mainIngredient = document.getElementById('main_ingredient').value;
+    const prepMethod = document.getElementById('preparation_method').value;
+    const difficulty = document.getElementById('difficulty').value;
+    const occasion = document.getElementById('occasion').value;
+
+    // Add non-empty values
+    if (subcategory) tags.push(subcategory);
+    if (cuisine) tags.push(cuisine);
+    if (mainIngredient) tags.push(mainIngredient);
+    if (prepMethod) tags.push(prepMethod);
+    if (difficulty) tags.push(difficulty);
+    if (occasion) tags.push(occasion);
+
+    // Add selected dietary needs
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]:checked');
+    dietaryCheckboxes.forEach(checkbox => {
+        tags.push(checkbox.value);
+    });
+
+    // Display tags
+    if (tags.length === 0) {
+        previewDiv.innerHTML = '<small class="text-muted">Select categories above to see suggested tags. Click on any tag to remove it from your recipe.</small>';
+    } else {
+        previewDiv.innerHTML = tags.map(tag => {
+            const isRemoved = removedTags.has(tag);
+            const className = isRemoved ? 'badge bg-danger me-2 mb-2' : 'badge bg-secondary me-2 mb-2';
+            const style = isRemoved ? 'text-decoration: line-through; cursor: pointer;' : 'cursor: pointer;';
+            const icon = isRemoved ? '<i class="bi bi-plus-circle"></i> ' : '<i class="bi bi-x-circle"></i> ';
+            return `<span class="${className}" style="${style}" onclick="toggleTagRemoval('${tag}')">${icon}${tag}</span>`;
+        }).join('');
+    }
+
+    // Update hidden input with removed tags
+    document.getElementById('removedTags').value = Array.from(removedTags).join(',');
+}
+
+// Toggle tag removal
+function toggleTagRemoval(tag) {
+    if (removedTags.has(tag)) {
+        removedTags.delete(tag);
+    } else {
+        removedTags.add(tag);
+        // Also clear the actual form field when tag is removed
+        clearFormFieldForTag(tag);
+    }
+    updateSuggestedTags();
+}
+
+// Clear form field when a tag is removed
+function clearFormFieldForTag(tag) {
+    // Check if it's a dropdown field
+    const subcategory = document.getElementById('subcategory');
+    if (subcategory && subcategory.value === tag) {
+        subcategory.value = '';
+    }
+
+    const cuisine = document.getElementById('cuisine');
+    if (cuisine && cuisine.value === tag) {
+        cuisine.value = '';
+    }
+
+    const mainIngredient = document.getElementById('main_ingredient');
+    if (mainIngredient && mainIngredient.value === tag) {
+        mainIngredient.value = '';
+    }
+
+    const prepMethod = document.getElementById('preparation_method');
+    if (prepMethod && prepMethod.value === tag) {
+        prepMethod.value = '';
+    }
+
+    const difficulty = document.getElementById('difficulty');
+    if (difficulty && difficulty.value === tag) {
+        difficulty.value = '';
+    }
+
+    const occasion = document.getElementById('occasion');
+    if (occasion && occasion.value === tag) {
+        occasion.value = '';
+    }
+
+    // Check if it's a dietary needs checkbox
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
+    dietaryCheckboxes.forEach(checkbox => {
+        if (checkbox.value === tag && checkbox.checked) {
+            checkbox.checked = false;
+        }
+    });
+}
+
+// Load existing ingredients on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (existingIngredients && existingIngredients.length > 0) {
+        existingIngredients.forEach(ing => {
+            addIngredient(ing.food_id, ing.quantity || '', ing.notes || '');
+        });
+    } else {
+        // Add at least one empty ingredient row
+        addIngredient();
+    }
+
+    // Initialize subcategory state
+    updateSubcategories();
+
+    // Initialize tags preview
+    updateSuggestedTags();
+
+    // Add event listeners to update tags preview
+    const tagFields = ['category', 'subcategory', 'cuisine', 'main_ingredient', 'preparation_method', 'difficulty', 'occasion'];
+    tagFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('change', updateSuggestedTags);
+        }
+    });
+
+    // Add listener for dietary needs checkboxes
+    const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
+    dietaryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSuggestedTags);
+    });
+});
+
+// Update subcategory options based on selected category
+function updateSubcategories() {
+    const category = document.getElementById('category').value;
+    const subcategorySelect = document.getElementById('subcategory');
+
+    // Enable/disable subcategory based on category
+    if (category === 'Salads' || category === 'Sauces & Gravies') {
+        subcategorySelect.disabled = false;
+    } else {
+        subcategorySelect.disabled = true;
+        subcategorySelect.value = '';
+    }
+    updateSuggestedTags();
+}
+</script>
+{% endblock %}

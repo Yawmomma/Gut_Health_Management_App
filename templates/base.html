@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200, initial-scale=1.0, user-scalable=yes">
+    <title>{% block title %}Gut Health Management App{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Custom CSS with Culinary Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <style>
+        /* Typography system using CSS custom properties */
+        h1 {
+            font-size: var(--text-h2) !important;
+        }
+        h2 {
+            font-size: var(--text-title) !important;
+        }
+        h3 {
+            font-size: var(--text-body) !important;
+        }
+        h4 {
+            font-size: var(--text-label) !important;
+        }
+        h5 {
+            font-size: var(--text-label) !important;
+        }
+        h6 {
+            font-size: var(--text-micro) !important;
+        }
+
+        /* Base body text */
+        body {
+            font-size: var(--text-body) !important;
+            line-height: var(--lh-normal) !important;
+        }
+
+        /* Compact navbar */
+        .navbar {
+            padding: 0.35rem 1rem !important;
+        }
+        .navbar-brand {
+            font-size: var(--text-h2) !important;
+        }
+
+        /* Compact cards */
+        .card-body {
+            padding: 0.75rem !important;
+        }
+        .card-header {
+            padding: 0.5rem 0.75rem !important;
+            font-size: var(--text-title) !important;
+        }
+        .card-title {
+            font-size: var(--text-title) !important;
+        }
+        .card-text {
+            font-size: var(--text-body) !important;
+        }
+
+        /* Compact form elements */
+        .form-control, .form-select {
+            font-size: var(--text-body) !important;
+            padding: 0.3rem 0.5rem !important;
+        }
+        .form-label {
+            font-size: var(--text-label) !important;
+            margin-bottom: 0.25rem !important;
+        }
+        .btn {
+            font-size: var(--text-body) !important;
+            padding: 0.3rem 0.6rem !important;
+        }
+        .btn-sm {
+            font-size: var(--text-label) !important;
+        }
+
+        /* Compact alerts */
+        .alert {
+            padding: 0.5rem 0.75rem !important;
+            font-size: var(--text-body) !important;
+        }
+        .alert h4 {
+            font-size: var(--text-title) !important;
+        }
+
+        /* Compact tables */
+        .table {
+            font-size: var(--text-body) !important;
+            line-height: var(--lh-table) !important;
+        }
+        .table td, .table th {
+            padding: 0.4rem 0.5rem !important;
+        }
+
+        /* Reduce container max-width for tighter layout */
+        .container {
+            max-width: 1100px !important;
+        }
+
+        /* Comfortable density mode adjustments */
+        :root[data-density="comfortable"] .table td,
+        :root[data-density="comfortable"] .table th {
+            padding: 0.6rem 0.5rem !important;
+        }
+        :root[data-density="comfortable"] .card-body {
+            padding: 1rem !important;
+        }
+        :root[data-density="comfortable"] .btn {
+            padding: 0.4rem 0.8rem !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+
+    <!-- Load density mode preference before page renders -->
+    <script>
+        // Apply saved density mode immediately to prevent flash of unstyled content
+        (function() {
+            const savedMode = localStorage.getItem('density-mode') || 'compact';
+            if (savedMode === 'comfortable') {
+                document.documentElement.setAttribute('data-density', 'comfortable');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar sticky-top" style="background-color: #D6BD98; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1rem 1rem;">
+        <div class="container-fluid d-flex justify-content-center">
+            <a class="navbar-brand m-0" href="{{ url_for('main.dashboard') }}" style="color: #1A3636; font-size: 2.5rem; font-weight: 700; text-align: center; letter-spacing: 0.5px;">
+                <i class="bi bi-heart-pulse" style="font-size: 2.2rem; vertical-align: -3px;"></i> Gut Health App
+            </a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; 2026 Gut Health Management App | Your Personal Health Companion</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Socket.IO for live reload (development only) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/livereload.js') }}"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

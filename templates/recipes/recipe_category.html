@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} Recipes - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-11 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-outline-secondary mb-2">
+                    <i class="bi bi-arrow-left"></i> Back to My Recipes
+                </a>
+                <h1 class="mb-0 text-h2">
+                    <i class="bi bi-folder text-primary"></i> {{ category }}
+                </h1>
+                <p class="text-muted mb-0">{{ recipes|length }} recipe{{ 's' if recipes|length != 1 else '' }}</p>
+            </div>
+            <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Create Recipe
+            </a>
+        </div>
+
+        {% if recipes %}
+            <!-- Search and Filter Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Search in {{ category }}</label>
+                            <input type="text"
+                                   id="searchInput"
+                                   class="form-control"
+                                   placeholder="Search by name, description, or ingredients...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Filter by Tag</label>
+                            <select id="tagFilter" class="form-select">
+                                <option value="">All Tags</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <span id="recipeCount">{{ recipes|length }}</span> recipe(s) found
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipe List -->
+            <div class="recipe-list">
+                {% for recipe in recipes %}
+                    <div class="card mb-3">
+                        <div class="card-body p-3">
+                            <div class="d-flex gap-3">
+                                <!-- Recipe Photo -->
+                                <div class="flex-shrink-0">
+                                    <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}">
+                                        {% if recipe.image_path %}
+                                            <img src="{{ url_for('static', filename=recipe.image_path) }}"
+                                                 alt="{{ recipe.name }}"
+                                                 class="rounded"
+                                                 style="width: 120px; height: 120px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                                 style="width: 120px; height: 120px;">
+                                                <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                    </a>
+                                </div>
+
+                                <!-- Recipe Details -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h5 class="mb-1 text-value">
+                                                <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}"
+                                                   class="text-decoration-none text-dark">
+                                                    {{ recipe.name }}
+                                                </a>
+                                            </h5>
+                                            {% if recipe.category %}
+                                                <span class="badge bg-primary me-1">{{ recipe.category }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}"
+                                               class="btn btn-sm btn-outline-primary" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('recipes.edit_recipe', recipe_id=recipe.id) }}"
+                                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteRecipeModal{{ recipe.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    {% if recipe.description %}
+                                        <p class="text-muted text-body mb-2">
+                                            {{ recipe.description[:120] }}{% if recipe.description|length > 120 %}...{% endif %}
+                                        </p>
+                                    {% endif %}
+
+                                    <!-- Recipe Info in compact format -->
+                                    <div class="d-flex flex-wrap gap-3 text-body text-muted mb-2">
+                                        {% if recipe.servings %}
+                                            <span><i class="bi bi-people"></i> {{ recipe.servings }} serving{{ 's' if recipe.servings != 1 else '' }}</span>
+                                        {% endif %}
+                                        {% if recipe.prep_time %}
+                                            <span><i class="bi bi-clock"></i> Prep: {{ recipe.prep_time }}</span>
+                                        {% endif %}
+                                        {% if recipe.cook_time %}
+                                            <span><i class="bi bi-fire"></i> Cook: {{ recipe.cook_time }}</span>
+                                        {% endif %}
+                                        <span><i class="bi bi-bag"></i> {{ recipe.ingredients|length }} ingredient{{ 's' if recipe.ingredients|length != 1 else '' }}</span>
+                                    </div>
+
+                                    <!-- Tags on separate line -->
+                                    {% set all_tags = recipe.get_all_tags() %}
+                                    {% if all_tags %}
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for tag in all_tags %}
+                                                <span class="badge bg-secondary bg-opacity-75 fw-normal small">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delete Recipe Confirmation Modal -->
+                        <div class="modal fade" id="deleteRecipeModal{{ recipe.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-sm">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-danger text-white">
+                                        <h6 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h6>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="mb-0 text-value"><strong>Delete "{{ recipe.name }}"?</strong></p>
+                                        <p class="text-muted mb-0 text-title">This cannot be undone.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="POST" action="{{ url_for('recipes.delete_recipe', recipe_id=recipe.id) }}" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Informational Container at Bottom -->
+            <div class="alert alert-info mt-4">
+                <h5><i class="bi bi-info-circle"></i> About {{ category }} Recipes</h5>
+                <p class="mb-0">These recipes are categorized as {{ category }}. Each recipe tracks all ingredients with their FODMAP and histamine information, helping you plan safe meals.</p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-folder" style="font-size: 4rem; color: #6c757d;"></i>
+                    <h3 class="mt-3">No {{ category }} Recipes Yet</h3>
+                    <p class="text-muted">Create your first {{ category }} recipe to get started!</p>
+                    <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-success mt-3">
+                        <i class="bi bi-plus-circle"></i> Create Recipe
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if recipes %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tagFilter = document.getElementById('tagFilter');
+    const recipeCards = document.querySelectorAll('.recipe-list .card');
+    const recipeCount = document.getElementById('recipeCount');
+
+    // Collect all unique tags from recipes
+    const allTags = new Set();
+    recipeCards.forEach(card => {
+        const badges = card.querySelectorAll('.badge.bg-secondary');
+        badges.forEach(badge => {
+            allTags.add(badge.textContent.trim());
+        });
+    });
+
+    // Populate tag filter dropdown
+    const sortedTags = Array.from(allTags).sort();
+    sortedTags.forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag;
+        option.textContent = tag;
+        tagFilter.appendChild(option);
+    });
+
+    // Filter function
+    function filterRecipes() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedTag = tagFilter.value.toLowerCase();
+        let visibleCount = 0;
+
+        recipeCards.forEach(card => {
+            const recipeName = card.querySelector('h5 a').textContent.toLowerCase();
+            const description = card.querySelector('.text-muted.small')?.textContent.toLowerCase() || '';
+            const ingredients = card.querySelector('.bi-bag')?.parentElement.textContent.toLowerCase() || '';
+            const categoryBadge = card.querySelector('.badge.bg-primary')?.textContent.toLowerCase() || '';
+            const tags = Array.from(card.querySelectorAll('.badge.bg-secondary')).map(b => b.textContent.trim().toLowerCase());
+
+            // Check search term
+            const matchesSearch = searchTerm === '' ||
+                                recipeName.includes(searchTerm) ||
+                                description.includes(searchTerm) ||
+                                ingredients.includes(searchTerm) ||
+                                categoryBadge.includes(searchTerm);
+
+            // Check tag filter
+            const matchesTag = selectedTag === '' || tags.includes(selectedTag);
+
+            // Show/hide card
+            if (matchesSearch && matchesTag) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update count
+        recipeCount.textContent = visibleCount;
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', filterRecipes);
+    tagFilter.addEventListener('change', filterRecipes);
+});
+</script>
+{% endif %}
+
+{% endblock %}

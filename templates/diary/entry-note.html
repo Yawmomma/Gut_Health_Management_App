@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{% if existing_note %}Edit Note{% else %}Add Note{% endif %} - Gut Health App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="bi bi-pencil-square"></i> {% if existing_note %}Edit General Note{% else %}Add General Note{% endif %}</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="note-form">
+                    <!-- Date and Time -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="note_date" class="form-label"><strong>Date</strong></label>
+                            <input type="date" class="form-control" id="note_date" name="note_date"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_date.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="note_time" class="form-label"><strong>Time</strong></label>
+                            <input type="time" class="form-control" id="note_time" name="note_time"
+                                   value="{% if existing_entry %}{{ existing_entry.entry_time.strftime('%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="mb-3">
+                        <label for="category" class="form-label"><strong>Category</strong></label>
+                        <select class="form-select form-select-lg" id="category" name="category" required>
+                            <option value="">Choose...</option>
+                            <option value="General" {% if existing_note and existing_note.category == 'General' %}selected{% endif %}>General Observation</option>
+                            <option value="Pattern" {% if existing_note and existing_note.category == 'Pattern' %}selected{% endif %}>Pattern Noticed</option>
+                            <option value="Medication" {% if existing_note and existing_note.category == 'Medication' %}selected{% endif %}>Medication/Supplement</option>
+                            <option value="Exercise" {% if existing_note and existing_note.category == 'Exercise' %}selected{% endif %}>Exercise/Activity</option>
+                            <option value="Sleep" {% if existing_note and existing_note.category == 'Sleep' %}selected{% endif %}>Sleep Quality</option>
+                            <option value="Trigger" {% if existing_note and existing_note.category == 'Trigger' %}selected{% endif %}>Possible Trigger</option>
+                            <option value="Success" {% if existing_note and existing_note.category == 'Success' %}selected{% endif %}>Success/Improvement</option>
+                            <option value="Question" {% if existing_note and existing_note.category == 'Question' %}selected{% endif %}>Question for Doctor</option>
+                            <option value="Other" {% if existing_note and existing_note.category == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label"><strong>Title</strong></label>
+                        <input type="text" class="form-control form-control-lg" id="title" name="title"
+                               placeholder="Brief title for this note..." required maxlength="100"
+                               value="{% if existing_note %}{{ existing_note.title }}{% endif %}">
+                    </div>
+
+                    <!-- Content -->
+                    <div class="mb-3">
+                        <label for="content" class="form-label"><strong>Note Content</strong></label>
+                        <textarea class="form-control" id="content" name="content" rows="8"
+                                  placeholder="Write your detailed note here..." required>{% if existing_note %}{{ existing_note.content }}{% endif %}</textarea>
+                        <div class="form-text">Be as detailed as you like - patterns, observations, questions, etc.</div>
+                    </div>
+
+                    <!-- Mood -->
+                    <div class="mb-3">
+                        <label for="mood" class="form-label"><strong>Current Mood (Optional)</strong></label>
+                        <select class="form-select" id="mood" name="mood">
+                            <option value="">Not specified</option>
+                            <option value="Happy" {% if existing_note and existing_note.mood == 'Happy' %}selected{% endif %}>😊 Happy</option>
+                            <option value="Calm" {% if existing_note and existing_note.mood == 'Calm' %}selected{% endif %}>😌 Calm</option>
+                            <option value="Neutral" {% if existing_note and existing_note.mood == 'Neutral' %}selected{% endif %}>😐 Neutral</option>
+                            <option value="Tired" {% if existing_note and existing_note.mood == 'Tired' %}selected{% endif %}>😴 Tired</option>
+                            <option value="Anxious" {% if existing_note and existing_note.mood == 'Anxious' %}selected{% endif %}>😰 Anxious</option>
+                            <option value="Frustrated" {% if existing_note and existing_note.mood == 'Frustrated' %}selected{% endif %}>😤 Frustrated</option>
+                            <option value="Sad" {% if existing_note and existing_note.mood == 'Sad' %}selected{% endif %}>😢 Sad</option>
+                            <option value="Hopeful" {% if existing_note and existing_note.mood == 'Hopeful' %}selected{% endif %}>🌟 Hopeful</option>
+                        </select>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mb-3">
+                        <label for="tags" class="form-label"><strong>Tags (Optional)</strong></label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               placeholder="Add tags separated by commas (e.g., breakfast, weekend, restaurant)"
+                               value="{% if existing_note %}{{ existing_note.tags }}{% endif %}">
+                        <div class="form-text">Tags help you find and group related notes later</div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('diary.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> {% if existing_note %}Update Note{% else %}Save Note{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set current time on page load (only if not editing)
+window.addEventListener('load', function() {
+    {% if not existing_note %}
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('note_time').value = hours + ':' + minutes;
+    {% endif %}
+});
+</script>
+{% endblock %}
