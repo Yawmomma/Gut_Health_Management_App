@@ -3,9 +3,6 @@
 {% block title %}Educational Content - Gut Health App{% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <style>
     .sidebar-nav-item {
         transition: transform 0.2s ease;
@@ -17,19 +14,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .education-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 12px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-body);
@@ -98,9 +98,9 @@
 </style>
 
 <!-- Main Layout with Sidebar -->
-<div class="row g-0">
+<div class="row g-0" style="margin-top: -1.5rem;">
     <!-- Left Sidebar: Navigation + Upload -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="education-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-book"></i> Education</h6>
 
@@ -264,7 +264,7 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area pt-3">
 <!-- Header -->
 <div class="row align-items-center mb-4">
     <div class="col-md-9">

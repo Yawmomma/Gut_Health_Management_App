@@ -3,9 +3,6 @@
 {% block title %}Help & Support - Gut Health App{% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <style>
     .sidebar-nav-item {
         transition: transform 0.2s ease;
@@ -17,19 +14,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .help-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 12px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-body);
@@ -65,12 +65,96 @@
         background-color: rgba(214, 189, 152, 0.1) !important;
         border-left-color: var(--gold);
     }
+    .help-doc-toggle {
+        background: transparent;
+        border: none;
+        padding: 0;
+        text-align: left;
+    }
+    .help-doc-toggle:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    .help-doc-content {
+        padding: 6px 8px 10px 8px;
+        border: none;
+        background: transparent;
+    }
+    .help-doc-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 12px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .help-toc-container {
+        background: #8BA48B;
+        padding: 40px 50px;
+        border: 8px solid #D6BD98;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .help-contents-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+        color: #fff;
+    }
+    .help-contents-hr {
+        border: none;
+        border-top: 2px solid rgba(255, 255, 255, 0.7);
+        margin-bottom: 20px;
+    }
+    .help-category {
+        margin-bottom: 8px;
+        margin-top: 15px;
+    }
+    .help-category-title {
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #1A3636 !important;
+    }
+    .help-doc-item {
+        border-left: none;
+        padding-left: 0;
+    }
+    .help-doc-item:hover {
+        background-color: transparent !important;
+        border-left-color: transparent;
+    }
+    .help-doc-toggle {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        width: 100%;
+        font-size: var(--text-body);
+        font-weight: var(--fw-label);
+        color: #ffffff !important;
+    }
+    .help-doc-toggle .help-doc-bullet {
+        flex-shrink: 0;
+        font-size: var(--text-body);
+        font-weight: var(--fw-value);
+        color: #ffffff !important;
+    }
+    .help-doc-date {
+        font-size: var(--text-micro);
+        color: rgba(255, 255, 255, 0.85);
+        white-space: nowrap;
+    }
+    .help-doc-content {
+        color: #ffffff;
+        padding-left: 22px;
+    }
+    .help-doc-content .help-doc-body {
+        color: #ffffff;
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
-<div class="row g-0">
+<div class="row g-0" style="margin-top: -1.5rem;">
     <!-- Left Sidebar: Navigation -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="help-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-question-circle"></i> Help</h6>
 
@@ -204,7 +288,7 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area pt-3">
         <div class="row">
             <div class="col-md-9">
                 <h1 class="text-h2 mb-4"><i class="bi bi-question-circle"></i> Help & Support</h1>
@@ -251,39 +335,45 @@
 
                 {% if documents %}
                     <!-- Documents List -->
-                    <div class="card">
-                        <div class="card-body" style="padding: 10px;">
+                    <div class="help-toc-container">
+                        <h1 class="help-contents-title">CONTENTS</h1>
+                        <hr class="help-contents-hr">
+                        <div id="help-docs-list">
                             {% set ns = namespace(current_category='') %}
                             {% for doc in documents %}
                                 {# Category heading when category changes #}
                                 {% if doc.category != ns.current_category %}
-                                    {% if not loop.first %}
-                                        <div style="margin-top: 15px;"></div>
-                                    {% endif %}
                                     {% set ns.current_category = doc.category %}
-                                    <div class="category-header mb-2" style="background: var(--bg-elevated); padding: 8px 12px; border-left: 4px solid var(--gold); margin-bottom: 8px;">
-                                        <h6 class="mb-0 text-value" style="color: var(--gold); font-weight: 600;">
-                                            <i class="bi bi-folder"></i> {{ doc.category }}
-                                        </h6>
+                                    <div class="help-category">
+                                        <div class="text-h2 help-category-title">
+                                            {{ doc.category|upper }}
+                                        </div>
                                     </div>
                                 {% endif %}
 
                                 {# Document Entry #}
-                                <div class="help-doc-item d-flex align-items-center py-2 px-2 mb-1" data-id="{{ doc.id }}" data-title="{{ doc.title }}" style="position: relative;">
+                                <div class="help-doc-item d-flex align-items-start py-1" data-id="{{ doc.id }}" data-title="{{ doc.title }}" style="position: relative;">
                                     <!-- Checkbox (hidden by default, shown in edit/delete mode) -->
                                     <div class="form-check doc-checkbox me-2" style="display: none;">
                                         <input class="form-check-input" type="checkbox" value="{{ doc.id }}" id="check-{{ doc.id }}">
                                     </div>
 
-                                    <!-- Document Link -->
-                                    <a href="{{ url_for('settings.help_view', doc_id=doc.id) }}" class="doc-link text-decoration-none flex-grow-1" style="color: var(--white-ish);">
-                                        <span class="text-body" style="font-weight: 500;">{{ doc.title }}</span>
-                                    </a>
+                                    <!-- Document Toggle -->
+                                    <button type="button" class="help-doc-toggle doc-link flex-grow-1"
+                                            data-bs-toggle="collapse" data-bs-target="#doc-{{ doc.id }}" aria-expanded="false" aria-controls="doc-{{ doc.id }}">
+                                        <span class="help-doc-bullet">•</span>
+                                        <span>{{ doc.title }}</span>
+                                    </button>
 
                                     <!-- Last Updated -->
-                                    <small class="text-muted ms-auto" style="font-size: var(--text-micro);">
-                                        {{ doc.updated_at.strftime('%b %d, %Y') if doc.updated_at else doc.created_at.strftime('%b %d, %Y') }}
-                                    </small>
+                                    <span class="help-doc-date ms-2">
+                                        {{ doc.display_date }}
+                                    </span>
+                                </div>
+                                <div id="doc-{{ doc.id }}" class="collapse help-doc-content">
+                                    <div class="help-doc-body">
+                                        {{ doc.content|safe }}
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -418,7 +508,7 @@ function disableEditDeleteMode() {
 // Handle checkbox changes
 document.querySelectorAll('.doc-checkbox input').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
-        const docId = parseInt(this.value);
+        const docId = this.value;
         if (this.checked) {
             selectedDocs.add(docId);
         } else {
@@ -439,7 +529,7 @@ function updateSelectedCount() {
 bulkEditBtn.addEventListener('click', () => {
     if (selectedDocs.size === 1) {
         const docId = Array.from(selectedDocs)[0];
-        window.location.href = `{{ url_for('settings.help_edit', doc_id=0) }}`.replace('0', docId);
+        window.location.href = `{{ url_for('settings.help_edit', doc_id='__DOC_ID__') }}`.replace('__DOC_ID__', docId);
     }
 });
 
@@ -458,7 +548,7 @@ bulkDeleteBtn.addEventListener('click', () => {
 
     if (confirm(confirmMsg)) {
         const deletePromises = Array.from(selectedDocs).map(id => {
-            return fetch(`{{ url_for('settings.help_delete', doc_id=0) }}`.replace('0', id), {
+            return fetch(`{{ url_for('settings.help_delete', doc_id='__DOC_ID__') }}`.replace('__DOC_ID__', id), {
                 method: 'POST'
             }).then(response => response.json());
         });

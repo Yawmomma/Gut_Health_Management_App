@@ -19,20 +19,75 @@
     .watch-item:hover {
         background: rgba(214, 189, 152, 0.1) !important;
     }
+    body {
+        overflow-x: hidden;
+    }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .dashboard-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 40px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 0;
+        margin-left: 200px;
+        width: 1000px;
+        max-width: 1000px;
+    }
+    .dashboard-main-bg {
+        min-height: calc(100vh - 50px);
+        padding-bottom: 24px;
+        padding-left: 15px;
+        padding-right: 15px;
+        margin-bottom: -5rem;
+        padding-bottom: 5rem;
+        position: relative;
+        background-color: var(--bg-deep);
+    }
+    .dashboard-main-bg::before {
+        content: "";
+        position: fixed;
+        top: 50px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: linear-gradient(rgba(26, 54, 54, 0.35), rgba(26, 54, 54, 0.35)),
+            url("{{ url_for('static', filename='images/wallpaper/ingredients-dryfruits-fruits-oil-sliced-vegetables-wooden-table.jpg') }}");
+        background-size: cover;
+        background-position: right bottom;
+        background-repeat: no-repeat;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* Fix content column to exact pixel width */
+    .dashboard-content-col {
+        width: 750px !important;
+        min-width: 750px !important;
+        max-width: 750px !important;
+        flex: 0 0 750px !important;
+    }
+    .dashboard-main-bg > * {
+        position: relative;
+        z-index: 1;
+    }
+    main.container {
+        max-width: 1200px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Remove all spacing before footer so background meets it */
+    footer {
+        margin-top: 0 !important;
+        padding-top: 0.5rem !important;
     }
     .section-title {
         font-size: var(--text-title);
@@ -65,6 +120,14 @@
         padding: 15px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
     }
+    .watch-list-title {
+        border-bottom: var(--bevel);
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+    }
+    .intro-text {
+        color: #fff !important;
+    }
     .quick-actions-container {
         padding-right: 12px;
         margin-top: 10px;
@@ -89,10 +152,8 @@
         background-color: rgba(26, 54, 54, 0.3) !important;
     }
     .date-header {
-        font-size: var(--text-value);
-        font-weight: 600;
-        color: #D6BD98;
         margin-bottom: 15px;
+        margin-top: 24px;
     }
     .watch-section-label {
         font-size: var(--text-label);
@@ -105,13 +166,10 @@
     }
 </style>
 
-<!-- Spacer to match other pages' vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <!-- Main Layout with Sidebar -->
-<div class="row g-0">
+<div class="row g-0" style="margin-top: -1.5rem;">
     <!-- Left Sidebar: Dashboard Navigation -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="dashboard-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-speedometer2"></i> Dashboard</h6>
 
@@ -218,54 +276,87 @@
                 </div>
             </a>
 
-            <!-- Separator -->
-            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+            <!-- Separator Line -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 28px 0;"></div>
 
-            <!-- Quick Actions in Sidebar -->
-            <div class="quick-actions-container">
-                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
-
-                <!-- Diary Logging -->
-                <div class="d-flex flex-column gap-2 mb-2">
-                    <a href="{{ url_for('diary.add_meal') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
-                        <i class="bi bi-egg-fried me-1"></i> Log Meal
-                    </a>
-                    <a href="{{ url_for('diary.add_symptom') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
-                        <i class="bi bi-bandaid me-1"></i> Log Symptoms
-                    </a>
-                    <a href="{{ url_for('diary.add_bowel') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
-                        <i class="bi bi-clipboard-pulse me-1"></i> Log Bowel
-                    </a>
-                </div>
-
-                <!-- Thin separator -->
-                <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 0;"></div>
-
-                <!-- Create Actions -->
-                <div class="d-flex flex-column gap-2">
-                    <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
-                        <i class="bi bi-journal-plus me-1"></i> Add Recipe
-                    </a>
-                    <a href="{{ url_for('recipes.create_meal') }}" class="btn btn-sm quick-action-btn-outline w-100 text-label">
-                        <i class="bi bi-plus-circle me-1"></i> Create Meal
-                    </a>
-                </div>
+            <!-- Quick Add Entry Buttons Container -->
+            <div style="background: #1A3636; border-radius: 8px; padding: 6px 4px; margin-left: -8px; margin-right: -8px;">
+                <a href="{{ url_for('diary.add_meal') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #28a745; background: rgba(40, 167, 69, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-egg-fried" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Meal</span>
+                </a>
+                <a href="{{ url_for('diary.add_symptom') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #dc3545; background: rgba(220, 53, 69, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-heart-pulse" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Symptom</span>
+                </a>
+                <a href="{{ url_for('diary.add_bowel') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #0dcaf0; background: rgba(13, 202, 240, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-clipboard-pulse" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Bowel</span>
+                </a>
+                <a href="{{ url_for('diary.add_stress') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #ffc107; background: rgba(255, 193, 7, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-emoji-frown" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Log Stress</span>
+                </a>
+                <a href="{{ url_for('diary.add_note') }}" class="btn btn-sm w-100 mb-0 d-flex align-items-center" style="font-size: 0.7rem; border: none; border-left: 4px solid #6c757d; background: rgba(108, 117, 125, 0.25); color: #fff; font-weight: 600; text-align: left; padding-left: 6px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <i class="bi bi-pencil-square" style="font-size: 10px;"></i>
+                    </div>
+                    <span>Add Note</span>
+                </a>
             </div>
+
+            <!-- Separator between entry buttons and quick links -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 26px 0;"></div>
+
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4); text-align: left; margin-top: 14px; font-size: 0.72rem; padding-left: 2px;">
+                <i class="bi bi-link-45deg"></i> Quick Links
+            </h6>
+
+            <a href="{{ url_for('diary.trends') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; background: transparent; color: #fff; text-align: left; padding-left: 5px;">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                    <i class="bi bi-graph-up" style="font-size: 10px;"></i>
+                </div>
+                <span>Trends</span>
+            </a>
+            <a href="{{ url_for('diary.weekly_summary') }}" class="btn btn-sm w-100 mb-2 d-flex align-items-center" style="font-size: 0.7rem; border: none; background: transparent; color: #fff; text-align: left; padding-left: 5px;">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                    <i class="bi bi-calendar-week" style="font-size: 10px;"></i>
+                </div>
+                <span>Weekly Summary</span>
+            </a>
         </div>
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area dashboard-main-bg" style="padding-top: 40px;">
         <div class="row">
-            <div class="col-md-9">
+            <div class="dashboard-content-col">
                 <!-- Date Header -->
-                <div class="date-header">
+                <h1 class="text-h2 date-header">
                     <i class="bi bi-calendar-event"></i> {{ current_date.strftime('%A, %B %d, %Y') }}
+                </h1>
+
+                <!-- Intro Card -->
+                <div class="card mb-4">
+                    <div class="card-body" style="padding: 14px 16px; color: #fff;">
+                        <h5 class="text-title mb-2 intro-text"><i class="bi bi-info-circle"></i> Welcome</h5>
+                        <p class="text-body mb-0 intro-text">
+                            Gut Health Management App is a local, desktop-first tool for tracking meals, symptoms, and gut health patterns related to FODMAP sensitivity and histamine intolerance. Log foods with serving sizes, capture essential nutrition details, monitor symptoms and stress, explore a detailed food guide, and learn from built-in education—everything stays on your computer with no accounts or cloud sync.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Watch List Section -->
                 <div class="watch-list-box mb-4">
-                    <h6 class="section-title-thin" style="border-bottom-color: #D6BD98; color: #ffc107;"><i class="bi bi-exclamation-triangle"></i> Watch List</h6>
+                    <h5 class="text-title watch-list-title"><i class="bi bi-exclamation-triangle"></i> Watch List</h5>
 
                     {% if high_risk_foods or moderate_risk_foods %}
                     <p class="text-muted text-label mb-3">Foods with moderate/high FODMAP or histamine levels logged in the last 7 days.</p>
@@ -342,7 +433,7 @@
                     {% endif %}
                 </div>
 
-            </div><!-- /.col-md-9 -->
+            </div><!-- /.dashboard-content-col -->
         </div><!-- /.row -->
     </div><!-- /.main-content-area -->
 </div><!-- /.row g-0 -->

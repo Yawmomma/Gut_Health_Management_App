@@ -140,7 +140,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
+        gap: 14px;
     }
 
     .food-name {
@@ -153,11 +153,12 @@
         gap: 8px;
         align-items: center;
         white-space: nowrap;
+        margin-left: auto;
     }
 
     .traffic-light-group {
         display: flex;
-        gap: 4px;
+        gap: 6px;
         align-items: center;
         white-space: nowrap;
     }
@@ -172,13 +173,165 @@
         font-size: var(--text-label);
         color: #6c757d;
         white-space: nowrap;
-        margin-left: auto;
+        margin-left: 6px;
     }
 
     .food-actions {
         display: flex;
         gap: 4px;
         white-space: nowrap;
+    }
+
+    .nutrition-tooltip .tooltip-inner {
+        background: #40534C;
+        color: var(--white-ish);
+        font-size: var(--text-label);
+        padding: 6px 8px;
+        text-align: left;
+        max-width: 240px;
+    }
+    .nutrition-tooltip .tooltip-arrow::before {
+        border-top-color: #40534C;
+        border-bottom-color: #40534C;
+    }
+    .nutrition-tooltip-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .nutrition-tooltip-meta {
+        font-size: var(--text-micro);
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 4px;
+    }
+    .nutrition-tooltip-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+        display: grid;
+        gap: 2px;
+    }
+    .nutrition-tooltip-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .nutrition-tooltip-section {
+        margin-top: 4px;
+    }
+    .nutrition-tooltip-section:first-child {
+        margin-top: 0;
+    }
+    .nutrition-tooltip-section.gapped {
+        margin-top: 10px;
+    }
+    .nutrition-tooltip-section-title {
+        font-size: var(--text-micro);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #D6BD98;
+        margin-bottom: 2px;
+    }
+
+    .daily-nutrition-chart {
+        background: #40534C;
+        border: 2px solid rgba(214, 189, 152, 0.4);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+    }
+    .daily-nutrition-chart h5 {
+        color: var(--white-ish);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .nutrition-chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+    .nutrition-chart-card {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 14px;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+    }
+    .nutrition-chart-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+        gap: 6px;
+        align-items: center;
+    }
+    .nutrition-chart-card canvas {
+        width: 100%;
+        height: 520px;
+        display: block;
+    }
+    .nutrition-chart-card canvas.nutrition-bar {
+        height: 260px;
+    }
+    .nutrition-chart-legend {
+        margin-top: 0;
+        display: grid;
+        gap: 4px;
+        font-size: 0.5rem;
+        color: var(--white-ish);
+        align-content: start;
+    }
+    .nutrition-chart-legend span {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 6px;
+    }
+    .nutrition-chart-legend .legend-text {
+        display: grid;
+        grid-template-columns: 26px minmax(90px, 1fr) 32px;
+        gap: 0;
+        align-items: center;
+        min-width: 0;
+    }
+    .nutrition-chart-legend .legend-name {
+        justify-self: start;
+    }
+    .nutrition-chart-legend .legend-value {
+        justify-self: end;
+    }
+    .nutrition-chart-legend .legend-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .nutrition-chart-legend-columns {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
+        max-width: 100%;
+        overflow: hidden;
+        padding-left: 0;
+        padding-right: 4px;
+    }
+    .nutrition-chart-legend {
+        max-width: 100%;
+    }
+    .nutrition-chart-legend-columns .nutrition-chart-legend {
+        gap: 2px;
+    }
+    .nutrition-chart-legend span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .nutrition-chart-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
     }
 
     .meal-meta {
@@ -549,7 +702,7 @@
                                             </a>
 
                                             <!-- FODMAP Traffic Light (based on serving type) -->
-                                            <div class="traffic-light-group">
+                                            <div class="traffic-light-group food-traffic-lights" title="FODMAP traffic light">
                                                 {% set st = meal_food.serving_type or 'safe' %}
                                                 {% if st == 'high' %}
                                                     {% set fructans = meal_food.food.high_fructans or 'Red' %}
@@ -578,13 +731,12 @@
                                                 {% endif %}
                                                 {% set is_high_fodmap = (fructans == 'Red' or gos == 'Red' or lactose == 'Red' or fructose == 'Red' or polyols == 'Red' or sorbitol == 'Red' or mannitol == 'Red') %}
                                                 {% set is_moderate_fodmap = (fructans == 'Amber' or gos == 'Amber' or lactose == 'Amber' or fructose == 'Amber' or polyols == 'Amber' or sorbitol == 'Amber' or mannitol == 'Amber') %}
-                                                <span class="traffic-light-label text-value">FODMAP:</span>
                                                 <span class="traffic-light {% if is_high_fodmap %}red{% elif is_moderate_fodmap %}amber{% else %}green{% endif %}"
                                                       title="FODMAP: {% if is_high_fodmap %}High{% elif is_moderate_fodmap %}Moderate{% else %}Low{% endif %} ({{ st }} serving)"></span>
                                             </div>
 
                                             <!-- Histamine Traffic Light (based on serving type) -->
-                                            <div class="traffic-light-group">
+                                            <div class="traffic-light-group" title="Histamine traffic light">
                                                 {% if st == 'high' %}
                                                     {% set histamine_level = meal_food.food.high_histamine_level or 'High' %}
                                                 {% elif st == 'moderate' %}
@@ -592,7 +744,6 @@
                                                 {% else %}
                                                     {% set histamine_level = meal_food.food.safe_histamine_level or 'Low' %}
                                                 {% endif %}
-                                                <span class="traffic-light-label text-value">Histamine:</span>
                                                 {% if histamine_level in ['High', 'Very High'] %}
                                                     <span class="traffic-light red" title="Histamine: High ({{ st }} serving)"></span>
                                                 {% elif histamine_level in ['Moderate', 'Medium'] %}
@@ -604,11 +755,95 @@
 
                                             <!-- Nutrition Info (if available) -->
                                             {% if meal_food.energy_kj is not none or meal_food.protein_g is not none %}
-                                            <span class="nutrition-badge" style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 4px; white-space: nowrap;">
-                                                {% if meal_food.energy_kj is not none %}{{ meal_food.energy_kj|int }}kJ{% endif %}
-                                                {% if meal_food.protein_g is not none %} | P:{{ meal_food.protein_g }}g{% endif %}
-                                                {% if meal_food.fat_g is not none %} | F:{{ meal_food.fat_g }}g{% endif %}
-                                                {% if meal_food.carbs_g is not none %} | C:{{ meal_food.carbs_g }}g{% endif %}
+                                            {% if meal_food.portion_size %}
+                                                {% set serving_display = meal_food.portion_size %}
+                                            {% elif meal_food.num_servings is not none %}
+                                                {% set serving_display = meal_food.num_servings ~ ' servings' %}
+                                            {% else %}
+                                                {% set serving_display = 'Serving' %}
+                                            {% endif %}
+                                            {% set nd = meal_food.nutrition_details or {} %}
+                                            {% set has_energy = nd.energy_kj is not none or nd.energy_cal is not none %}
+                                            {% set has_macros = nd.protein_g is not none or nd.fat_g is not none or nd.sat_fat_g is not none or nd.trans_fat_g is not none or nd.poly_fat_g is not none or nd.mono_fat_g is not none %}
+                                            {% set has_carbs = nd.carbs_g is not none or nd.sugars_g is not none or nd.lactose_g is not none or nd.galactose_g is not none or nd.fibre_g is not none %}
+                                            {% set has_minerals = nd.sodium_mg is not none or nd.potassium_mg is not none or nd.calcium_mg is not none or nd.phosphorus_mg is not none %}
+                                            {% set has_vitamins = nd.vitamin_a is not none or nd.vitamin_b12 is not none or nd.vitamin_d is not none or nd.riboflavin_b2 is not none %}
+                                            {% set has_custom = (nd.custom_nutrients and (nd.custom_nutrients.vitamins|length or nd.custom_nutrients.minerals|length or nd.custom_nutrients.macros|length)) %}
+                                            {% set nutrition_tooltip %}
+                                                <div class='nutrition-tooltip-title'>Nutrition Information</div>
+                                                <div class='nutrition-tooltip-meta'>Serving: {{ serving_display }}{% if st %} ({{ st }}){% endif %}</div>
+                                                {% if has_energy %}
+                                                <div class='nutrition-tooltip-section'>
+                                                    <div class='nutrition-tooltip-section-title'>Energy</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.energy_kj is not none %}<li><span>Energy</span><span>{{ nd.energy_kj }} kJ</span></li>{% endif %}
+                                                        {% if nd.energy_cal is not none %}<li><span>Calories</span><span>{{ nd.energy_cal }} Cal</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_macros %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Macros</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.protein_g is not none %}<li><span>Protein</span><span>{{ nd.protein_g }} g</span></li>{% endif %}
+                                                        {% if nd.fat_g is not none %}<li><span>Fat</span><span>{{ nd.fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.sat_fat_g is not none %}<li><span>Saturated</span><span>{{ nd.sat_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.trans_fat_g is not none %}<li><span>Trans</span><span>{{ nd.trans_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.poly_fat_g is not none %}<li><span>Polyunsat.</span><span>{{ nd.poly_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.mono_fat_g is not none %}<li><span>Monounsat.</span><span>{{ nd.mono_fat_g }} g</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_carbs %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Carbs</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.carbs_g is not none %}<li><span>Carbohydrate</span><span>{{ nd.carbs_g }} g</span></li>{% endif %}
+                                                        {% if nd.sugars_g is not none %}<li><span>Sugars</span><span>{{ nd.sugars_g }} g</span></li>{% endif %}
+                                                        {% if nd.lactose_g is not none %}<li><span>Lactose</span><span>{{ nd.lactose_g }} g</span></li>{% endif %}
+                                                        {% if nd.galactose_g is not none %}<li><span>Galactose</span><span>{{ nd.galactose_g }} g</span></li>{% endif %}
+                                                        {% if nd.fibre_g is not none %}<li><span>Dietary Fibre</span><span>{{ nd.fibre_g }} g</span></li>{% endif %}
+                                                        {% if nd.cholesterol_mg is not none %}<li><span>Cholesterol</span><span>{{ nd.cholesterol_mg }} mg</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_minerals %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Minerals</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.sodium_mg is not none %}<li><span>Sodium</span><span>{{ nd.sodium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.potassium_mg is not none %}<li><span>Potassium</span><span>{{ nd.potassium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.calcium_mg is not none %}<li><span>Calcium</span><span>{{ nd.calcium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.phosphorus_mg is not none %}<li><span>Phosphorus</span><span>{{ nd.phosphorus_mg }} mg</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_vitamins %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Vitamins</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.vitamin_a is not none %}<li><span>Vitamin A</span><span>{{ nd.vitamin_a }} {{ nd.vitamin_a_unit }}</span></li>{% endif %}
+                                                        {% if nd.riboflavin_b2 is not none %}<li><span>Riboflavin (B2)</span><span>{{ nd.riboflavin_b2 }} {{ nd.riboflavin_b2_unit }}</span></li>{% endif %}
+                                                        {% if nd.vitamin_b12 is not none %}<li><span>Vitamin B12</span><span>{{ nd.vitamin_b12 }} {{ nd.vitamin_b12_unit }}</span></li>{% endif %}
+                                                        {% if nd.vitamin_d is not none %}<li><span>Vitamin D</span><span>{{ nd.vitamin_d }} {{ nd.vitamin_d_unit }}</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_custom %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Custom</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% for item in nd.custom_nutrients.macros %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                        {% for item in nd.custom_nutrients.minerals %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                        {% for item in nd.custom_nutrients.vitamins %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                            {% endset %}
+                                            <span class="nutrition-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                                                  data-bs-custom-class="nutrition-tooltip" title="{{ nutrition_tooltip|safe }}"
+                                                  style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 10px; white-space: nowrap; cursor: help;">
+                                                Nutrition Information
                                             </span>
                                             {% endif %}
 
@@ -692,7 +927,7 @@
                                             </a>
 
                                             <!-- FODMAP Traffic Light (based on serving type) -->
-                                            <div class="traffic-light-group">
+                                            <div class="traffic-light-group food-traffic-lights" title="FODMAP traffic light">
                                                 {% set st = meal_food.serving_type or 'safe' %}
                                                 {% if st == 'high' %}
                                                     {% set fructans = meal_food.food.high_fructans or 'Red' %}
@@ -721,13 +956,12 @@
                                                 {% endif %}
                                                 {% set is_high_fodmap = (fructans == 'Red' or gos == 'Red' or lactose == 'Red' or fructose == 'Red' or polyols == 'Red' or sorbitol == 'Red' or mannitol == 'Red') %}
                                                 {% set is_moderate_fodmap = (fructans == 'Amber' or gos == 'Amber' or lactose == 'Amber' or fructose == 'Amber' or polyols == 'Amber' or sorbitol == 'Amber' or mannitol == 'Amber') %}
-                                                <span class="traffic-light-label text-value">FODMAP:</span>
                                                 <span class="traffic-light {% if is_high_fodmap %}red{% elif is_moderate_fodmap %}amber{% else %}green{% endif %}"
                                                       title="FODMAP: {% if is_high_fodmap %}High{% elif is_moderate_fodmap %}Moderate{% else %}Low{% endif %} ({{ st }} serving)"></span>
                                             </div>
 
                                             <!-- Histamine Traffic Light (based on serving type) -->
-                                            <div class="traffic-light-group">
+                                            <div class="traffic-light-group" title="Histamine traffic light">
                                                 {% if st == 'high' %}
                                                     {% set histamine_level = meal_food.food.high_histamine_level or 'High' %}
                                                 {% elif st == 'moderate' %}
@@ -735,7 +969,6 @@
                                                 {% else %}
                                                     {% set histamine_level = meal_food.food.safe_histamine_level or 'Low' %}
                                                 {% endif %}
-                                                <span class="traffic-light-label text-value">Histamine:</span>
                                                 {% if histamine_level in ['High', 'Very High'] %}
                                                     <span class="traffic-light red" title="Histamine: High ({{ st }} serving)"></span>
                                                 {% elif histamine_level in ['Moderate', 'Medium'] %}
@@ -747,11 +980,95 @@
 
                                             <!-- Nutrition Info (if available) -->
                                             {% if meal_food.energy_kj is not none or meal_food.protein_g is not none %}
-                                            <span class="nutrition-badge" style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 4px; white-space: nowrap;">
-                                                {% if meal_food.energy_kj is not none %}{{ meal_food.energy_kj|int }}kJ{% endif %}
-                                                {% if meal_food.protein_g is not none %} | P:{{ meal_food.protein_g }}g{% endif %}
-                                                {% if meal_food.fat_g is not none %} | F:{{ meal_food.fat_g }}g{% endif %}
-                                                {% if meal_food.carbs_g is not none %} | C:{{ meal_food.carbs_g }}g{% endif %}
+                                            {% if meal_food.portion_size %}
+                                                {% set serving_display = meal_food.portion_size %}
+                                            {% elif meal_food.num_servings is not none %}
+                                                {% set serving_display = meal_food.num_servings ~ ' servings' %}
+                                            {% else %}
+                                                {% set serving_display = 'Serving' %}
+                                            {% endif %}
+                                            {% set nd = meal_food.nutrition_details or {} %}
+                                            {% set has_energy = nd.energy_kj is not none or nd.energy_cal is not none %}
+                                            {% set has_macros = nd.protein_g is not none or nd.fat_g is not none or nd.sat_fat_g is not none or nd.trans_fat_g is not none or nd.poly_fat_g is not none or nd.mono_fat_g is not none %}
+                                            {% set has_carbs = nd.carbs_g is not none or nd.sugars_g is not none or nd.lactose_g is not none or nd.galactose_g is not none or nd.fibre_g is not none %}
+                                            {% set has_minerals = nd.sodium_mg is not none or nd.potassium_mg is not none or nd.calcium_mg is not none or nd.phosphorus_mg is not none %}
+                                            {% set has_vitamins = nd.vitamin_a is not none or nd.vitamin_b12 is not none or nd.vitamin_d is not none or nd.riboflavin_b2 is not none %}
+                                            {% set has_custom = (nd.custom_nutrients and (nd.custom_nutrients.vitamins|length or nd.custom_nutrients.minerals|length or nd.custom_nutrients.macros|length)) %}
+                                            {% set nutrition_tooltip %}
+                                                <div class='nutrition-tooltip-title'>Nutrition Information</div>
+                                                <div class='nutrition-tooltip-meta'>Serving: {{ serving_display }}{% if st %} ({{ st }}){% endif %}</div>
+                                                {% if has_energy %}
+                                                <div class='nutrition-tooltip-section'>
+                                                    <div class='nutrition-tooltip-section-title'>Energy</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.energy_kj is not none %}<li><span>Energy</span><span>{{ nd.energy_kj }} kJ</span></li>{% endif %}
+                                                        {% if nd.energy_cal is not none %}<li><span>Calories</span><span>{{ nd.energy_cal }} Cal</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_macros %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Macros</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.protein_g is not none %}<li><span>Protein</span><span>{{ nd.protein_g }} g</span></li>{% endif %}
+                                                        {% if nd.fat_g is not none %}<li><span>Fat</span><span>{{ nd.fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.sat_fat_g is not none %}<li><span>Saturated</span><span>{{ nd.sat_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.trans_fat_g is not none %}<li><span>Trans</span><span>{{ nd.trans_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.poly_fat_g is not none %}<li><span>Polyunsat.</span><span>{{ nd.poly_fat_g }} g</span></li>{% endif %}
+                                                        {% if nd.mono_fat_g is not none %}<li><span>Monounsat.</span><span>{{ nd.mono_fat_g }} g</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_carbs %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Carbs</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.carbs_g is not none %}<li><span>Carbohydrate</span><span>{{ nd.carbs_g }} g</span></li>{% endif %}
+                                                        {% if nd.sugars_g is not none %}<li><span>Sugars</span><span>{{ nd.sugars_g }} g</span></li>{% endif %}
+                                                        {% if nd.lactose_g is not none %}<li><span>Lactose</span><span>{{ nd.lactose_g }} g</span></li>{% endif %}
+                                                        {% if nd.galactose_g is not none %}<li><span>Galactose</span><span>{{ nd.galactose_g }} g</span></li>{% endif %}
+                                                        {% if nd.fibre_g is not none %}<li><span>Dietary Fibre</span><span>{{ nd.fibre_g }} g</span></li>{% endif %}
+                                                        {% if nd.cholesterol_mg is not none %}<li><span>Cholesterol</span><span>{{ nd.cholesterol_mg }} mg</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_minerals %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Minerals</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.sodium_mg is not none %}<li><span>Sodium</span><span>{{ nd.sodium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.potassium_mg is not none %}<li><span>Potassium</span><span>{{ nd.potassium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.calcium_mg is not none %}<li><span>Calcium</span><span>{{ nd.calcium_mg }} mg</span></li>{% endif %}
+                                                        {% if nd.phosphorus_mg is not none %}<li><span>Phosphorus</span><span>{{ nd.phosphorus_mg }} mg</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_vitamins %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Vitamins</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% if nd.vitamin_a is not none %}<li><span>Vitamin A</span><span>{{ nd.vitamin_a }} {{ nd.vitamin_a_unit }}</span></li>{% endif %}
+                                                        {% if nd.riboflavin_b2 is not none %}<li><span>Riboflavin (B2)</span><span>{{ nd.riboflavin_b2 }} {{ nd.riboflavin_b2_unit }}</span></li>{% endif %}
+                                                        {% if nd.vitamin_b12 is not none %}<li><span>Vitamin B12</span><span>{{ nd.vitamin_b12 }} {{ nd.vitamin_b12_unit }}</span></li>{% endif %}
+                                                        {% if nd.vitamin_d is not none %}<li><span>Vitamin D</span><span>{{ nd.vitamin_d }} {{ nd.vitamin_d_unit }}</span></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                {% if has_custom %}
+                                                <div class='nutrition-tooltip-section gapped'>
+                                                    <div class='nutrition-tooltip-section-title'>Custom</div>
+                                                    <ul class='nutrition-tooltip-list'>
+                                                        {% for item in nd.custom_nutrients.macros %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                        {% for item in nd.custom_nutrients.minerals %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                        {% for item in nd.custom_nutrients.vitamins %}<li><span>{{ item.name }}</span><span>{{ item.value }} {{ item.unit }}</span></li>{% endfor %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                            {% endset %}
+                                            <span class="nutrition-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                                                  data-bs-custom-class="nutrition-tooltip" title="{{ nutrition_tooltip|safe }}"
+                                                  style="font-size: 0.58rem; background: rgba(214, 189, 152, 0.2); padding: 1px 5px; border-radius: 3px; margin-left: 10px; white-space: nowrap; cursor: help;">
+                                                Nutrition Information
                                             </span>
                                             {% endif %}
 
@@ -1205,6 +1522,60 @@
             </div>
             {% endif %}
 
+            {% if daily_nutrition_items %}
+            <div class="card daily-nutrition-chart">
+                <h5 class="mb-2">
+                    <button class="btn btn-sm btn-outline-light w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#daily-nutrition-breakdown"
+                            aria-expanded="true" aria-controls="daily-nutrition-breakdown">
+                        <i class="bi bi-pie-chart"></i> Daily Nutrition Breakdown
+                    </button>
+                </h5>
+                <div class="collapse show" id="daily-nutrition-breakdown">
+                <div class="nutrition-chart-grid" style="grid-template-columns: 1fr;">
+                    <div class="nutrition-chart-card">
+                        <div class="text-label mb-1" style="color: rgba(255,255,255,0.75);">All nutrients (grams)</div>
+                        <div class="nutrition-chart-layout">
+                            <canvas id="nutrition-chart-1"></canvas>
+                            <div class="nutrition-chart-legend-columns">
+                                <div class="nutrition-chart-legend" id="nutrition-legend-1-top"></div>
+                                <div class="nutrition-chart-legend" id="nutrition-legend-1-bottom"></div>
+                            </div>
+                        </div>
+                        <script type="application/json" id="nutrition-data-1">
+                            {{ daily_nutrition_items|tojson }}
+                        </script>
+                    </div>
+                </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if daily_nutrition_progress %}
+            <div class="card daily-nutrition-chart">
+                <h5 class="mb-2">
+                    <button class="btn btn-sm btn-outline-light w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#daily-targets-breakdown"
+                            aria-expanded="true" aria-controls="daily-targets-breakdown">
+                        <i class="bi bi-graph-up"></i> Daily Targets vs Used
+                    </button>
+                </h5>
+                <div class="collapse show" id="daily-targets-breakdown">
+                <div class="nutrition-chart-grid" style="grid-template-columns: 1fr;">
+                    <div class="nutrition-chart-card">
+                        <div class="text-label mb-1" style="color: rgba(255,255,255,0.75);">Daily targets (percent used)</div>
+                        <div class="nutrition-chart-layout" style="grid-template-columns: 1fr;">
+                            <canvas id="nutrition-chart-2" class="nutrition-bar"></canvas>
+                        </div>
+                        <script type="application/json" id="nutrition-data-2">
+                            {{ daily_nutrition_progress|tojson }}
+                        </script>
+                    </div>
+                </div>
+                </div>
+            </div>
+            {% endif %}
+
         {% else %}
             <!-- No Entries -->
             <div class="card no-entries-card">
@@ -1250,6 +1621,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // Initialize tooltips for symptom traffic lights
 document.addEventListener('DOMContentLoaded', function() {
@@ -1257,6 +1629,174 @@ document.addEventListener('DOMContentLoaded', function() {
     const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    const palette = ['#4e79a7', '#59a14f', '#f28e2b', '#e15759', '#76b7b2', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ac'];
+
+    document.querySelectorAll('[id^="nutrition-data-"]').forEach((dataEl, idx) => {
+        let items = [];
+        try {
+            items = JSON.parse(dataEl.textContent || '[]');
+        } catch (err) {
+            items = [];
+        }
+
+        if (!items.length) return;
+
+        const labels = items.map(item => item.name);
+        const values = items.map(item => item.value);
+        const unit = items[0].unit || 'g';
+        const total = values.reduce((sum, val) => sum + val, 0);
+        const colors = labels.map((_, i) => palette[i % palette.length]);
+
+        const canvasId = dataEl.id.replace('nutrition-data-', 'nutrition-chart-');
+        const legendTopId = dataEl.id.replace('nutrition-data-', 'nutrition-legend-') + '-top';
+        const legendBottomId = dataEl.id.replace('nutrition-data-', 'nutrition-legend-') + '-bottom';
+        const ctx = document.getElementById(canvasId);
+        const legendTopEl = document.getElementById(legendTopId);
+        const legendBottomEl = document.getElementById(legendBottomId);
+
+        if (!ctx || !legendTopEl || !legendBottomEl) return;
+        if (ctx.dataset.chartInit === '1') return;
+        ctx.dataset.chartInit = '1';
+        if (ctx.chartInstance) {
+            ctx.chartInstance.destroy();
+        }
+
+        const container = ctx.parentElement;
+        const available = container ? Math.min(520, container.clientWidth || 520) : 520;
+        const size = Math.max(260, available);
+        ctx.width = size;
+        ctx.height = size;
+
+        ctx.chartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw || 0;
+                                const pct = total ? ((value / total) * 100).toFixed(1) : 0;
+                                const unitLabel = unit ? ` ${unit}` : '';
+                                return `${context.label}: ${value}${unitLabel} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const legendItems = items.map((item, i) => {
+            const pct = total ? ((item.value / total) * 100).toFixed(1) : '0.0';
+            const unitLabel = unit ? ` ${unit}` : '';
+            return `<span><span class="nutrition-chart-swatch" style="background:${colors[i]}"></span><span class="legend-text"><span class="legend-pct">${pct}%</span><span class="legend-name">${item.name}</span><span class="legend-value">${item.value}${unitLabel}</span></span></span>`;
+        });
+        const half = Math.ceil(legendItems.length / 2);
+        legendTopEl.innerHTML = legendItems.slice(0, half).join('');
+        legendBottomEl.innerHTML = legendItems.slice(half).join('');
+    });
+
+    const progressEl = document.getElementById('nutrition-data-2');
+    if (progressEl) {
+        let progressItems = [];
+        try {
+            progressItems = JSON.parse(progressEl.textContent || '[]');
+        } catch (err) {
+            progressItems = [];
+        }
+
+        if (progressItems.length) {
+            const labels = progressItems.map(item => item.name);
+            const values = progressItems.map(item => item.percent);
+            const targets = progressItems.map(() => 100);
+
+            const ctx = document.getElementById('nutrition-chart-2');
+            if (ctx && ctx.dataset.chartInit !== '1') {
+                ctx.dataset.chartInit = '1';
+                ctx.classList.add('nutrition-bar');
+                ctx.width = 520;
+                ctx.height = 260;
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Used (%)',
+                                data: values,
+                                backgroundColor: '#7fb3ff',
+                                borderColor: '#7fb3ff',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Recommended (%)',
+                                data: targets,
+                                borderColor: '#f8c66a',
+                                borderWidth: 3,
+                                type: 'line',
+                                pointRadius: 2,
+                                pointBackgroundColor: '#f8c66a',
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 150,
+                                ticks: {
+                                    font: { size: 9 },
+                                    color: '#ffffff',
+                                    callback: (value) => `${value}%`
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.12)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 9 },
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.08)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: { size: 9 },
+                                    color: '#ffffff'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.dataset.label}: ${context.raw}%`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
 });
 </script>
 {% endblock %}

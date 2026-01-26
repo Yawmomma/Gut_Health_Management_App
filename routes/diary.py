@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime, date, time, timedelta
 import calendar
 import re
+import json
 from collections import defaultdict
 from models.diary import DiaryEntry, Meal, MealFood, Symptom, BowelMovement, StressLog, Note
 from models.food import Food
@@ -9,6 +10,27 @@ from models.recipe import Recipe, SavedMeal
 from database import db
 
 bp = Blueprint('diary', __name__, url_prefix='/diary')
+
+
+def _get_portion_multiplier(portion_size):
+    if not portion_size:
+        return None, None, None
+
+    portion_lower = portion_size.lower().strip()
+    number_match = re.search(r'(\d+\.?\d*)', portion_lower)
+
+    if not number_match:
+        return 1.0, True, 1.0
+
+    num_value = float(number_match.group(1))
+    if 'serv' in portion_lower:
+        return num_value, True, num_value
+    if 'g' in portion_lower and 'mg' not in portion_lower:
+        return num_value / 100.0, False, None
+    if 'ml' in portion_lower:
+        return num_value / 100.0, False, None
+
+    return num_value, True, num_value
 
 
 def parse_portion_and_calculate_nutrition(portion_size, food):
@@ -33,37 +55,11 @@ def parse_portion_and_calculate_nutrition(portion_size, food):
     if not portion_size or not food:
         return result
 
-    portion_lower = portion_size.lower().strip()
+    multiplier, use_per_serve, num_servings = _get_portion_multiplier(portion_size)
+    if multiplier is None:
+        return result
 
-    # Try to extract number from the portion string
-    number_match = re.search(r'(\d+\.?\d*)', portion_lower)
-    if not number_match:
-        # No number found, assume 1 serving
-        multiplier = 1.0
-        use_per_serve = True
-    else:
-        num_value = float(number_match.group(1))
-
-        # Check if it's servings
-        if 'serv' in portion_lower:
-            multiplier = num_value
-            use_per_serve = True
-            result['num_servings'] = multiplier
-        # Check if it's grams
-        elif 'g' in portion_lower and 'mg' not in portion_lower:
-            # Calculate based on per 100g
-            multiplier = num_value / 100.0
-            use_per_serve = False
-        # Check if it's ml
-        elif 'ml' in portion_lower:
-            # Treat ml same as g for calculation
-            multiplier = num_value / 100.0
-            use_per_serve = False
-        else:
-            # Default: assume it's number of servings
-            multiplier = num_value
-            use_per_serve = True
-            result['num_servings'] = multiplier
+    result['num_servings'] = num_servings
 
     # Calculate nutrition based on multiplier
     if use_per_serve:
@@ -92,6 +88,78 @@ def parse_portion_and_calculate_nutrition(portion_size, food):
             result['sodium_mg'] = round(food.sodium_per_100 * multiplier, 1)
 
     return result
+
+
+def calculate_nutrition_breakdown(portion_size, food, num_servings=None):
+    if not food:
+        return {}
+
+    if not portion_size and num_servings is not None:
+        portion_size = f"{num_servings} servings"
+
+    multiplier, use_per_serve, _ = _get_portion_multiplier(portion_size)
+    if multiplier is None:
+        return {}
+
+    def scale(value):
+        if value is None:
+            return None
+        return round(value * multiplier, 2)
+
+    def choose(per_serve, per_100):
+        return per_serve if use_per_serve else per_100
+
+    details = {
+        'energy_kj': scale(choose(food.energy_per_serve_kj, food.energy_per_100_kj)),
+        'energy_cal': scale(choose(food.energy_per_serve_cal, food.energy_per_100_cal)),
+        'protein_g': scale(choose(food.protein_per_serve, food.protein_per_100)),
+        'fat_g': scale(choose(food.fat_per_serve, food.fat_per_100)),
+        'sat_fat_g': scale(choose(food.saturated_fat_per_serve, food.saturated_fat_per_100)),
+        'trans_fat_g': scale(choose(food.trans_fat_per_serve, food.trans_fat_per_100)),
+        'poly_fat_g': scale(choose(food.polyunsaturated_fat_per_serve, food.polyunsaturated_fat_per_100)),
+        'mono_fat_g': scale(choose(food.monounsaturated_fat_per_serve, food.monounsaturated_fat_per_100)),
+        'carbs_g': scale(choose(food.carbohydrate_per_serve, food.carbohydrate_per_100)),
+        'sugars_g': scale(choose(food.sugars_per_serve, food.sugars_per_100)),
+        'lactose_g': scale(choose(food.lactose_per_serve, food.lactose_per_100)),
+        'galactose_g': scale(choose(food.galactose_per_serve, food.galactose_per_100)),
+        'fibre_g': scale(choose(food.dietary_fibre_per_serve, food.dietary_fibre_per_100)),
+        'cholesterol_mg': scale(choose(food.cholesterol_per_serve, food.cholesterol_per_100)),
+        'sodium_mg': scale(choose(food.sodium_per_serve, food.sodium_per_100)),
+        'potassium_mg': scale(choose(food.potassium_per_serve, food.potassium_per_100)),
+        'calcium_mg': scale(choose(food.calcium_per_serve, food.calcium_per_100)),
+        'phosphorus_mg': scale(choose(food.phosphorus_per_serve, food.phosphorus_per_100)),
+        'vitamin_a': scale(choose(food.vitamin_a_per_serve, food.vitamin_a_per_100)),
+        'vitamin_b12': scale(choose(food.vitamin_b12_per_serve, food.vitamin_b12_per_100)),
+        'vitamin_d': scale(choose(food.vitamin_d_per_serve, food.vitamin_d_per_100)),
+        'riboflavin_b2': scale(choose(food.riboflavin_b2_per_serve, food.riboflavin_b2_per_100)),
+        'vitamin_a_unit': food.vitamin_a_unit or 'mcg',
+        'vitamin_b12_unit': food.vitamin_b12_unit or 'mcg',
+        'vitamin_d_unit': food.vitamin_d_unit or 'mcg',
+        'riboflavin_b2_unit': food.riboflavin_b2_unit or 'mg',
+        'custom_nutrients': {
+            'vitamins': [],
+            'minerals': [],
+            'macros': []
+        }
+    }
+
+    if food.custom_nutrients:
+        try:
+            custom = json.loads(food.custom_nutrients)
+            for group in ['vitamins', 'minerals', 'macros']:
+                for item in custom.get(group, []):
+                    base_value = item.get('per_serve') if use_per_serve else item.get('per_100')
+                    if base_value is None:
+                        continue
+                    details['custom_nutrients'][group].append({
+                        'name': item.get('name', 'Custom'),
+                        'value': scale(base_value),
+                        'unit': item.get('unit', '')
+                    })
+        except Exception:
+            pass
+
+    return details
 
 
 def entry_has_content(entry):
@@ -215,10 +283,103 @@ def day_view(date_string):
     if len(entries) != len(all_entries):
         db.session.commit()
 
+    for entry in entries:
+        if entry.entry_type == 'meal':
+            for meal in entry.meals:
+                for meal_food in meal.meal_foods:
+                    meal_food.nutrition_details = calculate_nutrition_breakdown(
+                        meal_food.portion_size,
+                        meal_food.food,
+                        meal_food.num_servings
+                    )
+
+    daily_nutrient_totals = {}
+
+    def to_grams(value, unit):
+        if value is None:
+            return None
+        if unit is None:
+            return None
+        unit = unit.strip().lower()
+        if unit == 'g':
+            return float(value)
+        if unit == 'mg':
+            return float(value) / 1000.0
+        if unit == 'mcg':
+            return float(value) / 1_000_000.0
+        return None
+
+    def add_nutrient(name, value, unit):
+        grams = to_grams(value, unit)
+        if grams is None:
+            return
+        if grams == 0:
+            return
+        if name not in daily_nutrient_totals:
+            daily_nutrient_totals[name] = {'name': name, 'unit': 'g', 'value': 0.0}
+        daily_nutrient_totals[name]['value'] = round(daily_nutrient_totals[name]['value'] + grams, 6)
+
+    for entry in entries:
+        if entry.entry_type != 'meal':
+            continue
+        for meal in entry.meals:
+            for meal_food in meal.meal_foods:
+                nd = getattr(meal_food, 'nutrition_details', {}) or {}
+                add_nutrient('Protein', nd.get('protein_g'), 'g')
+                add_nutrient('Fat', nd.get('fat_g'), 'g')
+                add_nutrient('Saturated', nd.get('sat_fat_g'), 'g')
+                add_nutrient('Trans', nd.get('trans_fat_g'), 'g')
+                add_nutrient('Polyunsat.', nd.get('poly_fat_g'), 'g')
+                add_nutrient('Monounsat.', nd.get('mono_fat_g'), 'g')
+                add_nutrient('Carbohydrate', nd.get('carbs_g'), 'g')
+                add_nutrient('Sugars', nd.get('sugars_g'), 'g')
+                add_nutrient('Lactose', nd.get('lactose_g'), 'g')
+                add_nutrient('Galactose', nd.get('galactose_g'), 'g')
+                add_nutrient('Dietary Fibre', nd.get('fibre_g'), 'g')
+                add_nutrient('Cholesterol', nd.get('cholesterol_mg'), 'mg')
+                add_nutrient('Sodium', nd.get('sodium_mg'), 'mg')
+                add_nutrient('Potassium', nd.get('potassium_mg'), 'mg')
+                add_nutrient('Calcium', nd.get('calcium_mg'), 'mg')
+                add_nutrient('Phosphorus', nd.get('phosphorus_mg'), 'mg')
+                add_nutrient('Vitamin A', nd.get('vitamin_a'), nd.get('vitamin_a_unit'))
+                add_nutrient('Riboflavin (B2)', nd.get('riboflavin_b2'), nd.get('riboflavin_b2_unit'))
+                add_nutrient('Vitamin B12', nd.get('vitamin_b12'), nd.get('vitamin_b12_unit'))
+                add_nutrient('Vitamin D', nd.get('vitamin_d'), nd.get('vitamin_d_unit'))
+
+                custom = nd.get('custom_nutrients', {})
+                for group in ['macros', 'minerals', 'vitamins']:
+                    for item in custom.get(group, []):
+                        add_nutrient(item.get('name', 'Custom'), item.get('value'), item.get('unit'))
+
+    daily_nutrition_items = sorted(daily_nutrient_totals.values(), key=lambda x: x['value'], reverse=True)
+
+    daily_recommended_grams = {
+        'Protein': 50.0,
+        'Fat': 78.0,
+        'Saturated': 20.0,
+        'Carbohydrate': 275.0,
+        'Sugars': 50.0,
+        'Dietary Fibre': 28.0,
+        'Sodium': 2.3
+    }
+
+    daily_nutrition_progress = []
+    for nutrient_name, target in daily_recommended_grams.items():
+        current = daily_nutrient_totals.get(nutrient_name, {}).get('value', 0.0)
+        if target and current is not None:
+            daily_nutrition_progress.append({
+                'name': nutrient_name,
+                'current': round(current, 4),
+                'target': target,
+                'percent': round((current / target) * 100, 1) if target else 0
+            })
+
     return render_template('diary/day.html',
                          entry_date=entry_date,
                          entries=entries,
-                         timedelta=timedelta)
+                         timedelta=timedelta,
+                         daily_nutrition_items=daily_nutrition_items,
+                         daily_nutrition_progress=daily_nutrition_progress)
 
 @bp.route('/add/meal', methods=['GET', 'POST'])
 def add_meal():

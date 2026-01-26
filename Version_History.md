@@ -38,7 +38,135 @@ templates/
 
 ## 🗓️ Version History
 
-**Latest Updates: 2026-01-25**
+**Latest Updates: 2026-01-26**
+
+- **Docker Line Ending Fix (BUG FIX)**: Fixed "exec /app/docker-entrypoint.sh: no such file or directory" error when running Docker on machines that clone with Windows line endings
+  - **Root Cause**: Git on Windows converts LF (Unix) line endings to CRLF (Windows). The shebang `#!/bin/bash` becomes `#!/bin/bash\r`, causing Linux to look for `/bin/bash\r` which doesn't exist
+  - **Solution 1**: Created `.gitattributes` file to force LF line endings for shell scripts, Dockerfile, and docker-compose files
+  - **Solution 2**: Added `sed -i 's/\r$//'` command in Dockerfile to strip any CRLF line endings during build
+  - **Files changed**: `.gitattributes` (new), `Dockerfile`
+
+- **Diary Main Content Alignment**: Reduced the left gap and aligned the diary heading with the sidebar
+  - Removed left padding on the main content area and adjusted the top offset to align the heading with the sidebar title
+  - **Files changed**: `templates/diary/calendar.html`
+
+- **Diary Sidebar Alignment**: Matched the diary calendar sidebar heading position to the dashboard
+  - Increased the diary sidebar top padding to align with the dashboard sidebar
+  - **Files changed**: `templates/diary/calendar.html`
+
+- **Header Footer Text**: Moved the footer text into the header and right-aligned it on the same line as the app title
+  - Kept the footer text at a small size and removed the footer block
+  - **Files changed**: `templates/base.html`
+
+- **Dashboard Sidebar Quick Add Buttons**: Matched dashboard sidebar quick add buttons to the diary calendar sidebar styling
+  - Replaced the old quick actions section with the same stacked button block (colors, spacing, icon circles)
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Sidebar Quick Links**: Restored the quick links section under the quick add buttons
+  - Added Trends and Weekly Summary links with the same sidebar link styling
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Food Guide Center Image**: Added a centered image below the category grid on the Food Guide page
+  - Uses `static/images/wallpaper/image food page.png` with a capped width and soft shadow (now smaller)
+  - **Files changed**: `templates/foods/index.html`
+
+- **Food Guide Main Heading Alignment**: Aligned the main content heading with the sidebar heading
+  - Adjusted the Food Guide page title top margin to match the sidebar heading position
+  - **Files changed**: `templates/foods/index.html`
+
+- **Food Guide Content Widening**: Reduced the left gap between the sidebar and main content
+  - Decreased main content left padding so the Food Guide content aligns closer to the sidebar (now 0)
+  - **Files changed**: `templates/foods/index.html`
+
+- **Food Guide Sidebar Alignment**: Matched the sidebar heading vertical position to the dashboard
+  - Increased the food guide sidebar top padding to align the heading with the dashboard sidebar
+  - **Files changed**: `templates/foods/index.html`
+
+- **Dashboard Fixed Layout**: Locked the dashboard background and content widths to prevent resizing with the browser
+  - Set a fixed container width and fixed wallpaper render size so the layout stays static
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Lock**: Prevented the wallpaper from resizing with the browser
+  - Set a fixed background render size so it stays consistent as the viewport changes
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Offset**: Extended the wallpaper under the sidebar without affecting layout width
+  - Moved the background onto a pseudo-element that starts 200px left of the main content and fills the full height
+  - Keeps a hard right edge while avoiding horizontal scroll on smaller windows
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Sidebar Alignment**: Shifted the sidebar content down to align with the date header
+  - Increased the sidebar top padding so nav text no longer sits under the header
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Spacing Adjustment**: Increased top spacing for the date and content area
+  - Moved the dashboard content down with a larger top padding and date margin
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Header Spacing + Horizontal Scroll Fix**: Added top spacing for the date and hid horizontal overflow on the dashboard
+  - Added a small top margin to the date header and set `overflow-x: hidden` on the dashboard page
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Alignment Fix**: Fixed background image not butting up against sidebar and footer
+  - Removed `padding-left: 15px` from `.main-content-area` so background starts at sidebar edge (200px)
+  - Moved padding inside `.dashboard-main-bg` to preserve content spacing while background extends full width
+  - Changed `background-position` from `left -20px bottom -20px` to `left bottom` for proper alignment
+  - Added `main.container` overrides to remove margins/padding that created gaps
+  - Added `footer { margin-top: 0 }` override so background meets footer edge
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Fit**: Forced the wallpaper to cover the full main-content height and reach the footer edge
+  - Switched to `background-size: cover`, anchored to the left/bottom, and removed the main container bottom margin on the dashboard
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Positioning**: Shifted the dashboard wallpaper up and left to align with the sidebar edge
+  - Adjusted background positioning to better frame the image behind the Watch List
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Coverage**: Extended the dashboard wallpaper to fill the entire main content area down to the footer
+  - Set a minimum height for the dashboard background so it covers the full green space
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Dashboard Wallpaper Background**: Added a dashboard-only wallpaper behind the main content area
+  - Uses the image in `static/images/wallpaper/` with a subtle dark overlay for readability
+  - **Files changed**: `templates/dashboard/index.html`
+
+- **Global Sidebar Layout Overhaul**: Updated sidebar positioning and styling across all pages
+  - **Sidebar now fixed position**: Stays in place when scrolling main content
+  - **Key CSS changes for `.sidebar-column`**:
+    - `position: fixed` (was sticky)
+    - `top: 50px` (below header)
+    - `left: 0`
+    - `width: 200px` (fixed width)
+    - `height: calc(100vh - 50px)` (extends from header to bottom)
+    - `overflow-y: auto` (scrollable if content exceeds height)
+    - `z-index: 100`
+  - **Main content area changes**:
+    - `margin-left: 200px` (matches sidebar width)
+    - `padding-left: 15px` (gap between sidebar and content)
+    - Removed `border-left` (no green separator line)
+  - **Row container**: `margin-top: -1.5rem` (pulls content up to meet header)
+  - **Removed spacer divs**: No longer needed for vertical alignment
+  - **Removed Bootstrap column classes**: Sidebar and main content use custom CSS classes only
+  - **Files changed**: `templates/dashboard/index.html`, `templates/foods/index.html`, `templates/diary/calendar.html`, `templates/recipes/index.html`, `templates/education/index.html`, `templates/settings/index.html`, `templates/settings/help.html`
+
+---
+
+**Previous Updates: 2026-01-25**
+
+- **Diary Trends/Weekly - Sidebar + Width Alignment**: Applied the standard sidebar layout and constrained main content width to match the rest of the app
+  - Added the green gradient sidebar with nav links, quick add buttons, and quick links
+  - Wrapped content in the standard `row` + `col-md-9` container inside the main content area
+  - **Files changed**: `templates/diary/trends.html`, `templates/diary/weekly.html`
+
+- **Diary Calendar - Sidebar Quick Links**: Restored Trends and Weekly Summary links in the sidebar below the quick-entry buttons
+  - Added a "Quick Links" subheading and two links matching the day-view sidebar styling
+  - **Files changed**: `templates/diary/calendar.html`
+
+- **Diary Calendar - Sidebar Quick Add Buttons**: Moved Quick Add Entry buttons from the main content into the sidebar to match the day-view diary styling exactly
+  - Added the same dark green container, spacing, and button styles used on the day view
+  - Removed the quick add card from the top of the diary calendar page
+  - **Files changed**: `templates/diary/calendar.html`
 
 - **Footer Updated for v1.0 Release**: Updated footer text to reflect the v1.0 milestone
   - New footer: "© 2026 Gut Health Management App | Your Personal Health Companion | By Sally - v1.0"
@@ -665,6 +793,25 @@ templates/
   - Works within vitamins, minerals, and macronutrients containers
 - **Decimal Precision**: Changed all nutrient input fields from `step="0.1"` or `step="0.01"` to `step="any"` for unlimited decimal precision
 - **Form Parity**: Updated add-food.html to match edit-food.html with containers and custom nutrient functionality
+
+**Updates: 2026-01-25**
+- **Help Documents (File-Based Storage)**: Moved Help & Support documents from database to `data/help_docs`
+  - Added `index.json` for metadata and `.md` files for content
+  - Upload preview flow unchanged; save now writes markdown file + index entry
+  - Edit/delete now updates/removes files and index entries
+- **Help Page Display**: Help list now renders as collapsible, inline content blocks on the same page
+  - Uses file-based markdown rendered to HTML in collapsible containers
+  - Dates shown per document using file/index timestamps
+- **Help List Styling**: Restyled Help list to match Education “CONTENTS” look (green panel, gold border, TOC-style typography)
+- **Diary Meal Nutrition Tooltip**: Nutrition badge now shows a compact hover tooltip with serving size and per-serve nutrition values
+- **Diary Nutrition Breakdown**: Tooltip now displays full per-serve breakdown (energy, macros, carbs, minerals, vitamins, custom nutrients) based on logged serving size
+- **Diary Nutrition Tooltip Layout**: Added spacing before section headings and updated label to “Nutrition Information” with wider inline spacing
+- **Diary Daily Nutrition Charts**: Added per-day doughnut charts grouped by nutrient unit (including custom nutrients) to the day view
+- **Diary Chart Stability**: Fixed chart container sizing and initialization to prevent repeated growth
+- **Diary Nutrition Pie Chart**: Switched to a single pie chart with all nutrients converted to grams
+- **Diary Target Chart**: Added a bar + recommendation line chart comparing daily nutrient usage to targets
+- **Diary Chart Layout**: Split charts into separate containers and enlarged chart sizing with smaller legend text
+- **Diary Chart Collapsible Panels**: Made each chart section collapsible from its heading
 
 **Previous Updates: 2026-01-17**
 - **Nutrition Display - Show ALL Fields**: Complete overhaul of nutrition panel display in detail.html

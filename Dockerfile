@@ -38,8 +38,9 @@ RUN if [ -f /app/instance/gut_health.db ]; then \
     fi
 
 # Copy and set up entrypoint script
+# Convert Windows line endings (CRLF) to Unix (LF) to prevent "no such file" errors
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 # Set permissions
 RUN chmod -R 755 /app

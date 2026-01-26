@@ -58,18 +58,136 @@ templates/
 
 ## Global Layout Pattern
 All pages follow this structure:
-- **Header**: Sticky beige bar, centered title
-- **Sidebar** (col-lg-2 col-md-3): Green gradient, sticky `top: 50px`, padding: 12px (28px top), 6 nav links (Dashboard, Food Guide, Diary, Recipes, Education, Settings), action buttons below separator
-- **Main Content** (col-lg-10 col-md-9): 3px sage green left border, 30px left padding
+- **Header**: Sticky beige bar (50px height), centered title
+- **Sidebar** (fixed): Green gradient, `position: fixed`, `width: 200px`, `height: calc(100vh - 50px)`, `top: 50px`, `left: 0`, padding: 12px, 7 nav links (Dashboard, Food Guide, Diary, Recipes, Education, Settings, Help & Support), action buttons below separator
+- **Main Content**: `margin-left: 200px`, `padding-left: 15px` (gap between sidebar and content)
 - **Content Width Constraint** (col-md-9): Wrap main content in `<div class="row"><div class="col-md-9">` to match dashboard width (~75% of main area)
-- **Spacer**: Non-dashboard pages use `height: 20px; margin-bottom: 5px` div for alignment
+- **Row Container**: `margin-top: -1.5rem` pulls content up to meet header
+- **No Spacer Divs**: Alignment handled by negative margin
+
+### Sidebar CSS (`.sidebar-column`)
+```css
+position: fixed;
+top: 50px;
+left: 0;
+width: 200px;
+height: calc(100vh - 50px);
+background: linear-gradient(135deg, #8BA48B, #677D6A);
+overflow-y: auto;
+z-index: 100;
+```
+
+### Main Content CSS (`.main-content-area`)
+```css
+padding-left: 15px;
+margin-left: 200px;
+```
 
 ### Layout Width Breakdown
 ```
-Sidebar:        col-lg-2 col-md-3 (with 12px padding)
-Main Area:      col-lg-10 col-md-9 (with 30px left padding, 3px left border)
+Sidebar:        200px fixed width (no Bootstrap cols)
+Main Area:      margin-left: 200px + 15px padding (no Bootstrap cols)
 Content Width:  col-md-9 within main area (constrains content to ~75% width)
 ```
+
+## 📐 Dashboard Reference Template
+**USE THIS AS THE MASTER REFERENCE** for layout and styling. File: `templates/dashboard/index.html`
+
+### Fixed Header (in base.html)
+```html
+<header style="position: fixed !important; top: 0 !important; left: 0 !important;
+    right: 0 !important; height: 50px !important; min-height: 50px !important;
+    z-index: 1000 !important; background-color: #D6BD98 !important;
+    display: flex !important; align-items: center !important; padding: 0 1rem !important;">
+    <a href="..." style="color: #1A3636 !important; font-size: 1.4rem !important;
+        font-weight: 700; text-decoration: none;">
+        <i class="bi bi-heart-pulse"></i> Gut Health App
+    </a>
+</header>
+```
+- **DO NOT** use Bootstrap `.navbar` class (causes conflicts)
+- Body needs `padding-top: 50px` to account for fixed header
+
+### Fixed Sidebar (200px)
+```css
+.sidebar-column {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 200px;
+    height: calc(100vh - 50px);
+    background: linear-gradient(135deg, #8BA48B, #677D6A);
+    z-index: 100;
+}
+```
+
+### Fixed Main Content Area (1000px)
+```css
+.main-content-area {
+    margin-left: 200px;
+    width: 1000px;
+    max-width: 1000px;
+}
+```
+
+### Fixed Content Column (750px)
+```css
+.dashboard-content-col {
+    width: 750px !important;
+    min-width: 750px !important;
+    max-width: 750px !important;
+    flex: 0 0 750px !important;
+}
+```
+
+### Wallpaper Background
+```css
+.dashboard-main-bg::before {
+    content: "";
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;      /* NOT width: 100vw */
+    bottom: 0;
+    background-image: linear-gradient(rgba(26, 54, 54, 0.35), rgba(26, 54, 54, 0.35)),
+        url("...");
+    background-size: cover;
+    background-position: right bottom;
+    z-index: 0;
+    pointer-events: none;
+}
+```
+
+### Layout Dimensions Summary
+```
+┌─────────────────────────────────────────────────────────┐
+│  HEADER (fixed, 50px height, z-index: 1000, beige)      │
+├────────────┬────────────────────────────────────────────┤
+│            │                                            │
+│  SIDEBAR   │   MAIN CONTENT AREA (1000px)              │
+│  (200px)   │   ┌──────────────────────┐                │
+│  fixed     │   │ CONTENT COL (750px)  │  wallpaper     │
+│  z:100     │   │                      │  shows here    │
+│            │   └──────────────────────┘                │
+│            │                                            │
+└────────────┴────────────────────────────────────────────┘
+```
+
+## Fixed Layout Rules (No Responsive)
+**IMPORTANT**: No horizontal scrollbars, no responsive breakpoints.
+
+### Key Rules
+- **No min-width constraints** - Never use `min-width` on html, body, main, or containers
+- **No 100vw** - Never use `width: 100vw` (causes overflow). Use `right: 0` instead
+- **overflow-x: hidden** - Set on both `html` and `body` in main.css
+- **Fixed pixel widths** - Use exact pixel values, not percentages
+
+### What NOT to Do
+- ❌ `min-width: 1200px` on html/body/main
+- ❌ `width: 100vw` (use `left: 0; right: 0` instead)
+- ❌ `overflow-x: auto` (use `overflow-x: hidden`)
+- ❌ Percentage-based column widths like `col-md-9` for main content
+- ❌ Bootstrap `.navbar` class on the header (use plain `<header>` tag)
 
 ## Typography Tokens (in `static/css/main.css`)
 ```css
