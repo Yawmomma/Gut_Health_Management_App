@@ -179,6 +179,7 @@ class Food(db.Model):
     # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_complete = db.Column(db.Boolean, default=True)  # False for quick-added foods needing more info
 
     def __repr__(self):
         return f'<Food {self.name}>'

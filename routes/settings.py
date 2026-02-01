@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, send_file, flash, redirect, url_fo
 import os
 import shutil
 import json
-import tempfile
 import uuid
 import re
 from datetime import datetime
@@ -11,6 +10,7 @@ from database import db
 from models.diary import DiaryEntry, Meal, MealFood, Symptom, BowelMovement, StressLog, Note
 from models.food import Food
 from models.recipe import Recipe, RecipeIngredient, SavedMeal, SavedMealItem
+from utils import parse_markdown, extract_title_from_markdown, save_upload_data, load_upload_data, delete_upload_data
 
 bp = Blueprint('settings', __name__, url_prefix='/settings')
 
@@ -141,7 +141,7 @@ def integrity_check():
                 entry.meals or
                 entry.symptoms or
                 entry.bowel_movements or
-                entry.stress_levels or
+                entry.stress_logs or
                 entry.notes
             )
             if not has_content:
@@ -257,60 +257,7 @@ def backup_database():
         return redirect(url_for('settings.index'))
 
 # Helper functions for help documents
-def parse_markdown(md_content):
-    """Convert markdown to HTML"""
-    try:
-        import markdown2
-        return markdown2.markdown(md_content, extras=['tables', 'fenced-code-blocks', 'header-ids', 'task-list'])
-    except ImportError:
-        try:
-            import markdown
-            return markdown.markdown(md_content, extensions=['tables', 'fenced_code', 'toc', 'nl2br'])
-        except ImportError:
-            import html
-            return html.escape(md_content).replace('\n', '<br>')
-
-def extract_title_from_markdown(md_content):
-    """Extract title from first H1 in markdown"""
-    lines = md_content.split('\n')
-    for line in lines:
-        if line.strip().startswith('# '):
-            return line.strip()[2:].strip()
-        if line.strip() and len(lines) > lines.index(line) + 1:
-            next_line = lines[lines.index(line) + 1]
-            if next_line.strip().startswith('==='):
-                return line.strip()
-    return "Untitled Document"
-
-def get_temp_upload_dir():
-    """Get or create temporary upload directory"""
-    temp_dir = os.path.join(tempfile.gettempdir(), 'gut_health_help_uploads')
-    os.makedirs(temp_dir, exist_ok=True)
-    return temp_dir
-
-def save_upload_data(data, upload_id):
-    """Save upload data to temporary file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False)
-    return file_path
-
-def load_upload_data(upload_id):
-    """Load upload data from temporary file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return None
-
-def delete_upload_data(upload_id):
-    """Delete temporary upload data file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    if os.path.exists(file_path):
-        os.remove(file_path)
+HELP_UPLOAD_SUBDIR = 'help_uploads'
 
 def get_help_docs_dir():
     """Get or create help documents directory"""
@@ -499,8 +446,6 @@ def help_view(doc_id):
 @bp.route('/help/upload', methods=['POST'])
 def help_upload():
     """Upload markdown file for help document"""
-    import uuid
-
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 
@@ -524,7 +469,7 @@ def help_upload():
             'category': request.form.get('category', 'General')
         }
 
-        save_upload_data(upload_data, upload_id)
+        save_upload_data(upload_data, upload_id, HELP_UPLOAD_SUBDIR)
 
         return jsonify({'success': True, 'redirect': url_for('settings.help_preview', upload_id=upload_id)})
 
@@ -541,7 +486,7 @@ def help_preview():
             flash('No upload ID provided. Please upload a file first.', 'error')
             return redirect(url_for('settings.help_index'))
 
-        preview_data = load_upload_data(upload_id)
+        preview_data = load_upload_data(upload_id, HELP_UPLOAD_SUBDIR)
 
         if not preview_data:
             flash('No upload data found. Please upload a file first.', 'error')
@@ -563,7 +508,7 @@ def help_preview():
             flash('No upload ID provided. Please upload a file first.', 'error')
             return redirect(url_for('settings.help_index'))
 
-        preview_data = load_upload_data(upload_id)
+        preview_data = load_upload_data(upload_id, HELP_UPLOAD_SUBDIR)
 
         if not preview_data:
             flash('No upload data found. Please upload a file first.', 'error')
@@ -597,7 +542,7 @@ def help_preview():
             })
             save_help_index(documents)
 
-            delete_upload_data(upload_id)
+            delete_upload_data(upload_id, HELP_UPLOAD_SUBDIR)
 
             flash(f'Help document "{title}" added successfully!', 'success')
             return redirect(url_for('settings.help_index'))

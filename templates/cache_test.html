@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cache Test - {{ timestamp }}</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1A3636; color: white; }
+        .success { color: #28a745; font-weight: bold; }
+        .info { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>Cache Test Page</h1>
+    <p class="success">Timestamp: {{ timestamp }}</p>
+    <p class="info">If you see this with a recent timestamp, Flask is serving fresh content.</p>
+    <p>Current time: {{ timestamp }}</p>
+    <p><a href="{{ url_for('foods.search') }}" style="color: #D6BD98;">Go to Food Search</a></p>
+    <hr>
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Close ALL browser windows completely</li>
+        <li>Open browser fresh (Ctrl+Shift+N for incognito mode)</li>
+        <li>Navigate to Food Search</li>
+        <li>Press Ctrl+Shift+Delete → Clear "Cached images and files"</li>
+        <li>Press F5 to reload</li>
+    </ol>
+</body>
+</html>

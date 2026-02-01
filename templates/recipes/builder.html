@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Builder - Gut Health App{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .recipes-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+        box-sizing: border-box;
+        background: transparent;
+    }
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-actions-container {
+        padding-right: 12px;
+        margin-top: 10px;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .stats-label {
+        font-size: var(--text-label);
+        color: rgba(255,255,255,0.85);
+    }
+    .stats-value {
+        font-size: var(--text-value);
+        font-weight: 600;
+        color: #fff;
+    }
+    .search-container {
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .recipe-result-card {
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+    .recipe-result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .recipe-name {
+        font-size: var(--text-value);
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 8px;
+    }
+    .recipe-preview-text {
+        font-size: var(--text-body);
+        color: var(--white-ish);
+        opacity: 0.85;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .ingredient-count {
+        font-size: var(--text-label);
+        color: var(--sage);
+    }
+    .search-type-toggle {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .search-type-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: var(--text-label);
+        border: 1px solid var(--sage);
+        background: transparent;
+        color: var(--white-ish);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .search-type-btn.active {
+        background: var(--gold);
+        color: var(--bg-deep);
+        border-color: var(--gold);
+    }
+    .search-type-btn:hover:not(.active) {
+        background: rgba(255,255,255,0.1);
+    }
+    .no-data-warning {
+        background: rgba(220, 53, 69, 0.15);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+    }
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 40px;
+    }
+    .loading-spinner.show {
+        display: block;
+    }
+    #resultsContainer {
+        min-height: 200px;
+    }
+    .inspiration-section {
+        background: rgba(214, 189, 152, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+    .action-btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .action-btn-row .btn {
+        font-size: var(--text-label);
+        padding: 4px 10px;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="recipes-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-tools"></i> Recipe Builder</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Quick Access in Sidebar -->
+            <div class="quick-actions-container">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightning"></i> Quick Access</h6>
+
+                <div class="d-flex flex-column gap-2 mb-2">
+                    <a href="{{ url_for('recipes.index') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Recipes
+                    </a>
+                    <a href="{{ url_for('recipe_builder.archived') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-archive me-1"></i> Archived ({{ archived_count }})
+                    </a>
+                </div>
+
+                <!-- Thin separator -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 0;"></div>
+
+                <!-- Stats -->
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-database"></i> Dataset Info</h6>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="stats-label">Total Recipes:</span>
+                    <span class="stats-value">{{ "{:,}".format(total_recipes) }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stats-label">Archived:</span>
+                    <span class="stats-value">{{ archived_count }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="row">
+            <div class="content-col">
+                <h1 class="mb-3 text-h2"><i class="bi bi-tools"></i> Recipe Builder</h1>
+                <p class="text-body mb-4" style="color: var(--white-ish); opacity: 0.85;">
+                    Search over 2 million recipes for inspiration. Find recipes by keyword or ingredients, then save them to your collection.
+                </p>
+
+                {% if not has_data %}
+                <!-- No Data Warning -->
+                <div class="no-data-warning">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                    <h5 class="mt-3">Recipe Data Not Found</h5>
+                    <p class="text-body mb-0">
+                        No parquet files found in <code>data/recipes/external/</code><br>
+                        Please download the recipe dataset and place the .parquet files in that folder.
+                    </p>
+                </div>
+                {% else %}
+
+                <!-- Search Container -->
+                <div class="search-container">
+                    <div class="search-type-toggle">
+                        <button type="button" class="search-type-btn active" data-type="keyword">
+                            <i class="bi bi-search"></i> Keyword Search
+                        </button>
+                        <button type="button" class="search-type-btn" data-type="ingredients">
+                            <i class="bi bi-list-check"></i> By Ingredients
+                        </button>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Search recipes..." autocomplete="off">
+                        <button class="btn btn-primary" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                    <small id="searchHint" class="text-muted mt-1 d-block">
+                        Enter keywords to search recipe names and ingredients
+                    </small>
+                </div>
+
+                <!-- Results Container -->
+                <div id="resultsContainer">
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-body">Searching recipes...</p>
+                    </div>
+
+                    <div id="resultsContent">
+                        <!-- Results will be loaded here via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Inspiration Section -->
+                <div class="inspiration-section">
+                    <h5 class="text-value mb-3"><i class="bi bi-lightbulb"></i> Need Inspiration?</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="randomBtn">
+                        <i class="bi bi-shuffle"></i> Show Random Recipes
+                    </button>
+                    <div id="randomResults" class="mt-3"></div>
+                </div>
+
+                {% endif %}
+            </div><!-- /.content-col -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+
+{% if has_data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchHint = document.getElementById('searchHint');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const resultsContent = document.getElementById('resultsContent');
+    const randomBtn = document.getElementById('randomBtn');
+    const randomResults = document.getElementById('randomResults');
+    const searchTypeBtns = document.querySelectorAll('.search-type-btn');
+
+    let searchType = 'keyword';
+    let searchTimeout;
+
+    // Search type toggle
+    searchTypeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            searchTypeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            searchType = this.dataset.type;
+
+            if (searchType === 'ingredients') {
+                searchInput.placeholder = 'Enter ingredients (comma-separated)...';
+                searchHint.textContent = 'Example: chicken, rice, tomatoes';
+            } else {
+                searchInput.placeholder = 'Search recipes...';
+                searchHint.textContent = 'Enter keywords to search recipe names and ingredients';
+            }
+        });
+    });
+
+    // Search function
+    async function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            resultsContent.innerHTML = '<p class="text-muted text-center">Enter a search term to find recipes</p>';
+            return;
+        }
+
+        loadingSpinner.classList.add('show');
+        resultsContent.innerHTML = '';
+
+        try {
+            const response = await fetch(`{{ url_for('recipe_builder.search') }}?q=${encodeURIComponent(query)}&type=${searchType}`);
+            const data = await response.json();
+
+            loadingSpinner.classList.remove('show');
+
+            if (data.recipes && data.recipes.length > 0) {
+                resultsContent.innerHTML = `
+                    <p class="text-body mb-3">Found ${data.recipes.length} recipes matching "${query}"</p>
+                    ${data.recipes.map(recipe => renderRecipeCard(recipe)).join('')}
+                `;
+            } else {
+                resultsContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-search" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <p class="mt-2 text-muted">No recipes found for "${query}"</p>
+                        <p class="text-body">Try different keywords or check your spelling</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            loadingSpinner.classList.remove('show');
+            resultsContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error searching recipes. Please try again.
+                </div>
+            `;
+            console.error('Search error:', error);
+        }
+    }
+
+    // Render recipe card
+    function renderRecipeCard(recipe) {
+        const ingredientCount = recipe.ingredients ? recipe.ingredients.length : 0;
+        const previewText = recipe.ingredients ?
+            recipe.ingredients.slice(0, 3).join(', ') + (ingredientCount > 3 ? '...' : '') :
+            'No ingredients listed';
+
+        return `
+            <a href="{{ url_for('recipe_builder.preview', recipe_hash='') }}${recipe.hash}" class="text-decoration-none">
+                <div class="recipe-result-card">
+                    <div class="recipe-name">${escapeHtml(recipe.name)}</div>
+                    <div class="recipe-preview-text">${escapeHtml(previewText)}</div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="ingredient-count">
+                            <i class="bi bi-bag"></i> ${ingredientCount} ingredients
+                        </span>
+                        ${recipe.servings ? `<span class="ingredient-count"><i class="bi bi-people"></i> ${recipe.servings} servings</span>` : ''}
+                    </div>
+                </div>
+            </a>
+        `;
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Event listeners
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    // Debounced search on input
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (searchInput.value.trim().length >= 3) {
+                performSearch();
+            }
+        }, 500);
+    });
+
+    // Random recipes
+    randomBtn.addEventListener('click', async function() {
+        randomBtn.disabled = true;
+        randomBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+
+        try {
+            const response = await fetch('{{ url_for('recipe_builder.random_recipes') }}?limit=5');
+            const data = await response.json();
+
+            if (data.recipes && data.recipes.length > 0) {
+                randomResults.innerHTML = data.recipes.map(recipe => renderRecipeCard(recipe)).join('');
+            } else {
+                randomResults.innerHTML = '<p class="text-muted">Could not load random recipes</p>';
+            }
+        } catch (error) {
+            randomResults.innerHTML = '<p class="text-danger">Error loading recipes</p>';
+            console.error('Random recipes error:', error);
+        }
+
+        randomBtn.disabled = false;
+        randomBtn.innerHTML = '<i class="bi bi-shuffle"></i> Show Random Recipes';
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

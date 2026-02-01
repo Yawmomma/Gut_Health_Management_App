@@ -3,8 +3,207 @@
 {% block title %}Create Recipe - Gut Health App{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .recipes-sidebar {
+        padding: 12px;
+        padding-top: 12px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-actions-container {
+        padding-right: 12px;
+        margin-top: 10px;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .recipe-meta-row .form-label i {
+        margin-right: 6px;
+    }
+    .custom-option-field {
+        display: none;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="recipes-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-book"></i> Recipes</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Quick Access in Sidebar -->
+            <div class="quick-actions-container">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-list"></i> Quick Access</h6>
+
+                <div class="d-flex flex-column gap-2 mb-2">
+                    <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-book me-1"></i> My Recipes
+                    </a>
+                    <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-plus-circle me-1"></i> Create New Recipe
+                    </a>
+                    <a href="{{ url_for('recipes.my_meals') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-cup-straw me-1"></i> My Saved Meals
+                    </a>
+                    <a href="{{ url_for('recipes.create_meal') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-plus-circle me-1"></i> Create New Meal
+                    </a>
+                    <a href="{{ url_for('recipes.chat') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-chat-dots me-1"></i> Recipe Helper (AI)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area pt-3">
+        <div class="row">
+            <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="text-h2"><i class="bi bi-plus-circle text-success"></i> Create Recipe</h1>
             <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-outline-secondary">
@@ -19,13 +218,13 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-7 mb-3">
                             <label for="name" class="form-label"><strong>Recipe Name *</strong></label>
                             <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chicken Stir Fry">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="servings" class="form-label"><strong>Servings</strong></label>
-                            <input type="number" class="form-control" id="servings" name="servings" value="1" min="1">
+                        <div class="col-md-5 mb-3">
+                            <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
+                            <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
                         </div>
                     </div>
 
@@ -34,20 +233,33 @@
                         <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of your recipe"></textarea>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
-                        <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
-                        <small class="text-muted">Upload a photo of your recipe (PNG, JPG, JPEG, GIF, WEBP)</small>
+                    <div class="row recipe-meta-row">
+                        <div class="col-md-4 mb-3">
+                            <label for="prep_time" class="form-label"><strong><i class="bi bi-clock"></i> Prep Time</strong></label>
+                            <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 min">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cook_time" class="form-label"><strong><i class="bi bi-fire"></i> Cook Time</strong></label>
+                            <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 min">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="servings" class="form-label"><strong><i class="bi bi-people"></i> Servings</strong></label>
+                            <input type="number" class="form-control" id="servings" name="servings" value="1" min="1">
+                        </div>
                     </div>
-
-                    <div class="row">
+                    <div class="row recipe-meta-row">
                         <div class="col-md-6 mb-3">
-                            <label for="prep_time" class="form-label"><strong>Prep Time</strong></label>
-                            <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 minutes">
+                            <label for="difficulty" class="form-label"><strong><i class="bi bi-speedometer2"></i> Difficulty</strong></label>
+                            <select class="form-select" id="difficulty" name="difficulty">
+                                <option value="">Select...</option>
+                                {% for level in difficulty_levels %}
+                                <option value="{{ level }}">{{ level }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="cook_time" class="form-label"><strong>Cook Time</strong></label>
-                            <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 minutes">
+                            <label for="source_url" class="form-label"><strong><i class="bi bi-link-45deg"></i> Source Link</strong></label>
+                            <input type="url" class="form-control" id="source_url" name="source_url" placeholder="https://...">
                         </div>
                     </div>
                 </div>
@@ -81,72 +293,67 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="cuisine" class="form-label"><strong>Cuisine / Origin</strong></label>
-                            <select class="form-select" id="cuisine" name="cuisine">
-                                <option value="">Select...</option>
-                                {% for cuisine in cuisines %}
-                                <option value="{{ cuisine }}">{{ cuisine }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="main_ingredient" class="form-label"><strong>Main Ingredient</strong></label>
-                            <select class="form-select" id="main_ingredient" name="main_ingredient">
-                                <option value="">Select...</option>
-                                {% for ingredient in main_ingredients %}
-                                <option value="{{ ingredient }}">{{ ingredient }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="preparation_method" class="form-label"><strong>Preparation Method</strong></label>
-                            <select class="form-select" id="preparation_method" name="preparation_method">
-                                <option value="">Select...</option>
-                                {% for method in preparation_methods %}
-                                <option value="{{ method }}">{{ method }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="difficulty" class="form-label"><strong>Difficulty Level</strong></label>
-                            <select class="form-select" id="difficulty" name="difficulty">
-                                <option value="">Select...</option>
-                                {% for level in difficulty_levels %}
-                                <option value="{{ level }}">{{ level }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="occasion" class="form-label"><strong>Occasion / Holiday</strong></label>
-                            <select class="form-select" id="occasion" name="occasion">
-                                <option value="">Select...</option>
-                                {% for occ in occasions %}
-                                <option value="{{ occ }}">{{ occ }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
-                        <div class="row">
-                            {% for dietary_need in dietary_needs %}
-                            <div class="col-md-6 col-lg-4 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}">
-                                    <label class="form-check-label" for="dietary_{{ loop.index }}">
-                                        {{ dietary_need }}
-                                    </label>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cuisine" class="form-label"><strong>Cuisine / Origin</strong></label>
+                                <select class="form-select" id="cuisine" name="cuisine">
+                                    <option value="">Select...</option>
+                                    {% for cuisine in cuisines %}
+                                    <option value="{{ cuisine }}">{{ cuisine }}</option>
+                                    {% endfor %}
+                                    <option value="__custom__">Custom...</option>
+                                </select>
+                                <div id="customCuisineWrapper" class="custom-option-field mt-2">
+                                    <input type="text" class="form-control" id="custom_cuisine" name="custom_cuisine" placeholder="Enter a custom cuisine">
                                 </div>
                             </div>
-                            {% endfor %}
+
+                            <div class="mb-3">
+                                <label for="preparation_method" class="form-label"><strong>Preparation Method</strong></label>
+                                <select class="form-select" id="preparation_method" name="preparation_methods">
+                                    <option value="">Select...</option>
+                                    {% for method in preparation_methods %}
+                                    <option value="{{ method }}">{{ method }}</option>
+                                    {% endfor %}
+                                    <option value="__custom__">Custom...</option>
+                                </select>
+                                <div id="customPrepMethodWrapper" class="custom-option-field mt-2">
+                                    <input type="text" class="form-control" id="custom_preparation_method" name="custom_preparation_method" placeholder="Enter a custom preparation method">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="occasion" class="form-label"><strong>Occasion / Holiday</strong></label>
+                                <select class="form-select" id="occasion" name="occasions">
+                                    <option value="">Select...</option>
+                                    {% for occ in occasions %}
+                                    <option value="{{ occ }}">{{ occ }}</option>
+                                    {% endfor %}
+                                    <option value="__custom__">Custom...</option>
+                                </select>
+                                <div id="customOccasionWrapper" class="custom-option-field mt-2">
+                                    <input type="text" class="form-control" id="custom_occasion" name="custom_occasion" placeholder="Enter a custom occasion (will be saved for future use)">
+                                    <small class="text-muted">Type a custom occasion here to add it to the list for future recipes</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
+                                <div class="row">
+                                    {% for dietary_need in dietary_needs %}
+                                    <div class="col-md-6 col-lg-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}">
+                                            <label class="form-check-label" for="dietary_{{ loop.index }}">
+                                                {{ dietary_need }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -213,6 +420,8 @@
                 <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
             </div>
         </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -383,19 +592,232 @@ function updateFoodInfo(ingredientId) {
     `;
 }
 
+function getCuisineValue() {
+    const cuisineSelect = document.getElementById('cuisine');
+    const customCuisineInput = document.getElementById('custom_cuisine');
+    if (!cuisineSelect) return '';
+    if (cuisineSelect.value === '__custom__') {
+        return customCuisineInput ? customCuisineInput.value.trim() : '';
+    }
+    return cuisineSelect.value;
+}
+
+function toggleCustomCuisine() {
+    const cuisineSelect = document.getElementById('cuisine');
+    const wrapper = document.getElementById('customCuisineWrapper');
+    const input = document.getElementById('custom_cuisine');
+    if (!cuisineSelect || !wrapper || !input) return;
+    if (cuisineSelect.value === '__custom__') {
+        wrapper.style.display = 'block';
+        input.focus();
+    } else {
+        wrapper.style.display = 'none';
+        input.value = '';
+    }
+}
+
+function getOccasionValue() {
+    const occasionSelect = document.getElementById('occasion');
+    const customOccasionInput = document.getElementById('custom_occasion');
+    if (!occasionSelect) return '';
+    if (occasionSelect.value === '__custom__') {
+        return customOccasionInput ? customOccasionInput.value.trim() : '';
+    }
+    return occasionSelect.value;
+}
+
+function getPreparationMethodValue() {
+    const prepSelect = document.getElementById('preparation_method');
+    const customPrepInput = document.getElementById('custom_preparation_method');
+    if (!prepSelect) return '';
+    if (prepSelect.value === '__custom__') {
+        return customPrepInput ? customPrepInput.value.trim() : '';
+    }
+    return prepSelect.value;
+}
+
+function toggleCustomPreparationMethod() {
+    const prepSelect = document.getElementById('preparation_method');
+    const wrapper = document.getElementById('customPrepMethodWrapper');
+    const input = document.getElementById('custom_preparation_method');
+    if (!prepSelect || !wrapper || !input) return;
+    if (prepSelect.value === '__custom__') {
+        wrapper.style.display = 'block';
+        input.focus();
+    } else {
+        wrapper.style.display = 'none';
+        input.value = '';
+    }
+}
+
+function toggleCustomOccasion() {
+    const occasionSelect = document.getElementById('occasion');
+    const wrapper = document.getElementById('customOccasionWrapper');
+    const input = document.getElementById('custom_occasion');
+    if (!occasionSelect || !wrapper || !input) return;
+    if (occasionSelect.value === '__custom__') {
+        wrapper.style.display = 'block';
+        input.focus();
+    } else {
+        wrapper.style.display = 'none';
+        input.value = '';
+    }
+}
+
 // Add first ingredient on page load
 document.addEventListener('DOMContentLoaded', function() {
-    addIngredient();
+    // Check for AI-generated recipe data in sessionStorage
+    const aiRecipeParsed = sessionStorage.getItem('ai_recipe_parsed');
+    const aiRecipeFull = sessionStorage.getItem('ai_recipe_full');
+
+    if (aiRecipeParsed) {
+        try {
+            const recipe = JSON.parse(aiRecipeParsed);
+
+            // Pre-fill basic fields
+            if (recipe.name) document.getElementById('name').value = recipe.name;
+            if (recipe.description) document.getElementById('description').value = recipe.description;
+            if (recipe.prep_time) document.getElementById('prep_time').value = recipe.prep_time;
+            if (recipe.cook_time) document.getElementById('cook_time').value = recipe.cook_time;
+            if (recipe.servings) {
+                const servingsMatch = recipe.servings.match(/\d+/);
+                if (servingsMatch) {
+                    document.getElementById('servings').value = servingsMatch[0];
+                }
+            }
+            if (recipe.instructions) document.getElementById('instructions').value = recipe.instructions;
+            if (recipe.notes) document.getElementById('notes').value = recipe.notes;
+
+            // Add ingredients
+            if (recipe.ingredients && recipe.ingredients.length > 0) {
+                // Clear any existing ingredients
+                document.getElementById('ingredients-container').innerHTML = '';
+
+                recipe.ingredients.forEach(ingredient => {
+                    addIngredient();
+
+                    // Try to match ingredient to a food in the database
+                    const ingredientLower = ingredient.toLowerCase();
+
+                    // Get the last added ingredient row
+                    const lastIngredient = document.querySelector('#ingredients-container .ingredient-row:last-child');
+                    if (lastIngredient) {
+                        const select = lastIngredient.querySelector('.food-select');
+                        const quantityInput = lastIngredient.querySelector('input[name="quantities[]"]');
+
+                        // Try to find a matching food
+                        let matchedFood = null;
+                        let bestMatchScore = 0;
+
+                        foods.forEach(food => {
+                            const foodNameLower = food.name.toLowerCase();
+
+                            // Exact match
+                            if (ingredientLower.includes(foodNameLower) || foodNameLower.includes(ingredientLower)) {
+                                const score = foodNameLower.length;
+                                if (score > bestMatchScore) {
+                                    bestMatchScore = score;
+                                    matchedFood = food;
+                                }
+                            }
+                        });
+
+                        if (matchedFood) {
+                            select.value = matchedFood.id;
+                            updateFoodInfo(ingredientCount);
+
+                            // Try to extract quantity from ingredient string
+                            const quantityMatch = ingredient.match(/^([\d\/.]+\s*(?:cup|cups|tbsp|tsp|g|kg|ml|l|oz|lb|pound|pounds)?)/i);
+                            if (quantityMatch) {
+                                quantityInput.value = quantityMatch[1].trim();
+                            }
+                        } else {
+                            // No match found - put the full ingredient text in the quantity field as a note
+                            quantityInput.value = ingredient;
+                        }
+                    }
+                });
+            } else {
+                // No ingredients parsed, add one empty row
+                addIngredient();
+            }
+
+            // Show a notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success alert-dismissible fade show mt-3';
+            notification.innerHTML = `
+                <i class="bi bi-check-circle"></i> <strong>AI Recipe Loaded!</strong>
+                Recipe data has been pre-filled from the chatbot. Please review and adjust as needed.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('h1').after(notification);
+
+            // Clear sessionStorage
+            sessionStorage.removeItem('ai_recipe_parsed');
+            sessionStorage.removeItem('ai_recipe_full');
+
+        } catch (error) {
+            console.error('Error loading AI recipe:', error);
+            addIngredient();
+        }
+    } else {
+        // No AI recipe data, add default ingredient row
+        addIngredient();
+    }
+
     updateSuggestedTags();
 
     // Add event listeners to update tags preview
-    const tagFields = ['category', 'subcategory', 'cuisine', 'main_ingredient', 'preparation_method', 'difficulty', 'occasion'];
+    const tagFields = ['category', 'subcategory', 'cuisine', 'difficulty'];
     tagFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
             field.addEventListener('change', updateSuggestedTags);
         }
     });
+
+    const cuisineSelect = document.getElementById('cuisine');
+    if (cuisineSelect) {
+        cuisineSelect.addEventListener('change', () => {
+            toggleCustomCuisine();
+            updateSuggestedTags();
+        });
+    }
+
+    const customCuisineInput = document.getElementById('custom_cuisine');
+    if (customCuisineInput) {
+        customCuisineInput.addEventListener('input', updateSuggestedTags);
+    }
+
+    const prepSelect = document.getElementById('preparation_method');
+    if (prepSelect) {
+        prepSelect.addEventListener('change', () => {
+            toggleCustomPreparationMethod();
+            updateSuggestedTags();
+        });
+    }
+
+    const customPrepInput = document.getElementById('custom_preparation_method');
+    if (customPrepInput) {
+        customPrepInput.addEventListener('input', updateSuggestedTags);
+    }
+
+    const occasionSelect = document.getElementById('occasion');
+    if (occasionSelect) {
+        occasionSelect.addEventListener('change', () => {
+            toggleCustomOccasion();
+            updateSuggestedTags();
+        });
+    }
+
+    const customOccasionInput = document.getElementById('custom_occasion');
+    if (customOccasionInput) {
+        customOccasionInput.addEventListener('input', updateSuggestedTags);
+    }
+
+    toggleCustomCuisine();
+    toggleCustomPreparationMethod();
+    toggleCustomOccasion();
 
     // Add listener for dietary needs checkboxes
     const dietaryCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
@@ -414,18 +836,16 @@ function updateSuggestedTags() {
 
     // Collect all selected values
     const subcategory = document.getElementById('subcategory').value;
-    const cuisine = document.getElementById('cuisine').value;
-    const mainIngredient = document.getElementById('main_ingredient').value;
-    const prepMethod = document.getElementById('preparation_method').value;
+    const cuisine = getCuisineValue();
     const difficulty = document.getElementById('difficulty').value;
-    const occasion = document.getElementById('occasion').value;
+    const prepMethod = getPreparationMethodValue();
+    const occasion = getOccasionValue();
 
     // Add non-empty values
     if (subcategory) tags.push(subcategory);
     if (cuisine) tags.push(cuisine);
-    if (mainIngredient) tags.push(mainIngredient);
-    if (prepMethod) tags.push(prepMethod);
     if (difficulty) tags.push(difficulty);
+    if (prepMethod) tags.push(prepMethod);
     if (occasion) tags.push(occasion);
 
     // Add selected dietary needs
@@ -472,18 +892,13 @@ function clearFormFieldForTag(tag) {
     }
 
     const cuisine = document.getElementById('cuisine');
-    if (cuisine && cuisine.value === tag) {
+    const customCuisineInput = document.getElementById('custom_cuisine');
+    if (cuisine && cuisine.value === '__custom__' && customCuisineInput && customCuisineInput.value === tag) {
+        customCuisineInput.value = '';
         cuisine.value = '';
-    }
-
-    const mainIngredient = document.getElementById('main_ingredient');
-    if (mainIngredient && mainIngredient.value === tag) {
-        mainIngredient.value = '';
-    }
-
-    const prepMethod = document.getElementById('preparation_method');
-    if (prepMethod && prepMethod.value === tag) {
-        prepMethod.value = '';
+        toggleCustomCuisine();
+    } else if (cuisine && cuisine.value === tag) {
+        cuisine.value = '';
     }
 
     const difficulty = document.getElementById('difficulty');
@@ -491,9 +906,24 @@ function clearFormFieldForTag(tag) {
         difficulty.value = '';
     }
 
-    const occasion = document.getElementById('occasion');
-    if (occasion && occasion.value === tag) {
-        occasion.value = '';
+    const prepSelect = document.getElementById('preparation_method');
+    const customPrepInput = document.getElementById('custom_preparation_method');
+    if (prepSelect && prepSelect.value === '__custom__' && customPrepInput && customPrepInput.value === tag) {
+        customPrepInput.value = '';
+        prepSelect.value = '';
+        toggleCustomPreparationMethod();
+    } else if (prepSelect && prepSelect.value === tag) {
+        prepSelect.value = '';
+    }
+
+    const occasionSelect = document.getElementById('occasion');
+    const customOccasionInput = document.getElementById('custom_occasion');
+    if (occasionSelect && occasionSelect.value === '__custom__' && customOccasionInput && customOccasionInput.value === tag) {
+        customOccasionInput.value = '';
+        occasionSelect.value = '';
+        toggleCustomOccasion();
+    } else if (occasionSelect && occasionSelect.value === tag) {
+        occasionSelect.value = '';
     }
 
     // Check if it's a dietary needs checkbox

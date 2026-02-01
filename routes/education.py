@@ -2,11 +2,13 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from models.education import EducationalContent, ResearchPaper
 from database import db
 from werkzeug.utils import secure_filename
+from utils import parse_markdown, extract_title_from_markdown, allowed_file, save_upload_data, load_upload_data, delete_upload_data
+from utils.markdown_utils import MARKDOWN_PROCESSOR
 import os
 import re
-import json
-import tempfile
+import uuid
 from datetime import datetime
+
 
 def natural_sort_key(chapter_number):
     """
@@ -18,77 +20,8 @@ def natural_sort_key(chapter_number):
     except:
         return [0]
 
+
 bp = Blueprint('education', __name__, url_prefix='/education')
-
-# Import markdown library (will try both)
-try:
-    import markdown2
-    MARKDOWN_PROCESSOR = 'markdown2'
-except ImportError:
-    try:
-        import markdown
-        MARKDOWN_PROCESSOR = 'markdown'
-    except ImportError:
-        MARKDOWN_PROCESSOR = None
-
-def parse_markdown(md_content):
-    """Convert markdown to HTML"""
-    if MARKDOWN_PROCESSOR == 'markdown2':
-        return markdown2.markdown(md_content, extras=['tables', 'fenced-code-blocks', 'header-ids', 'task-list'])
-    elif MARKDOWN_PROCESSOR == 'markdown':
-        return markdown.markdown(md_content, extensions=['tables', 'fenced_code', 'toc', 'nl2br'])
-    else:
-        # Fallback: basic HTML escaping and newline conversion
-        import html
-        return html.escape(md_content).replace('\n', '<br>')
-
-def extract_title_from_markdown(md_content):
-    """Extract title from first H1 in markdown"""
-    lines = md_content.split('\n')
-    for line in lines:
-        # Check for # Title format
-        if line.strip().startswith('# '):
-            return line.strip()[2:].strip()
-        # Check for Title\n=== format
-        if line.strip() and len(lines) > lines.index(line) + 1:
-            next_line = lines[lines.index(line) + 1]
-            if next_line.strip().startswith('==='):
-                return line.strip()
-    return "Untitled Chapter"
-
-def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-def get_temp_upload_dir():
-    """Get or create temporary upload directory"""
-    temp_dir = os.path.join(tempfile.gettempdir(), 'gut_health_uploads')
-    os.makedirs(temp_dir, exist_ok=True)
-    return temp_dir
-
-def save_upload_data(data, upload_id):
-    """Save upload data to temporary file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False)
-    return file_path
-
-def load_upload_data(upload_id):
-    """Load upload data from temporary file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return None
-
-def delete_upload_data(upload_id):
-    """Delete temporary upload data file"""
-    temp_dir = get_temp_upload_dir()
-    file_path = os.path.join(temp_dir, f"{upload_id}.json")
-    if os.path.exists(file_path):
-        os.remove(file_path)
 
 def save_education_image(file):
     """Save uploaded image and return the path"""
@@ -140,8 +73,6 @@ def chapter(chapter_id):
 @bp.route('/upload', methods=['POST'])
 def upload_markdown():
     """Upload markdown file and redirect to preview"""
-    import uuid
-
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 
@@ -198,18 +129,9 @@ def upload_markdown():
 
         save_upload_data(upload_data, upload_id)
 
-        # Debug logging
-        print(f"DEBUG: Upload successful. Data saved to temp file.")
-        print(f"DEBUG: Upload ID: {upload_id}")
-        print(f"DEBUG: Title extracted: {title}")
-        print(f"DEBUG: Suggested chapter: {next_chapter}")
-
         return jsonify({'success': True, 'redirect': url_for('education.preview_upload', upload_id=upload_id)})
 
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Upload error: {error_details}")  # Log to console
         return jsonify({'error': f'{str(e)}'}), 500
 
 @bp.route('/preview_upload', methods=['GET', 'POST'])
@@ -220,17 +142,12 @@ def preview_upload():
         # Get upload ID from query parameter
         upload_id = request.args.get('upload_id')
 
-        # Debug logging
-        print(f"DEBUG: Upload ID received: {upload_id}")
-
         if not upload_id:
             flash('No upload ID provided. Please upload a file first.', 'error')
             return redirect(url_for('education.index'))
 
         # Load preview data from temporary file
         preview_data = load_upload_data(upload_id)
-
-        print(f"DEBUG: Preview data loaded: {preview_data is not None}")
 
         if not preview_data:
             flash('No upload data found. Please upload a file first.', 'error')

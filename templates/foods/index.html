@@ -28,7 +28,7 @@
         padding-top: 40px;
     }
     .main-content-area {
-        padding-left: 0;
+        padding-left: 15px;
         margin-left: 200px;
     }
     .food-guide-title {
@@ -124,7 +124,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
                 </div>
             </a>
 
@@ -254,11 +254,11 @@
                 </div>
                 <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Nuts/Seeds</span>
             </a>
-                            <a href="{{ url_for('foods.search', category='Spices') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                            <a href="{{ url_for('foods.search', category='Fats/Oils') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
                 <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
                     <i class="bi bi-capsule" style="font-size: 1.2rem; color: #1A3636;"></i>
                 </div>
-                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Spices</span>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Fats/Oils</span>
             </a>
                             <a href="{{ url_for('foods.search', category='Beverages') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
                 <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
@@ -266,11 +266,11 @@
                 </div>
                 <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Beverages</span>
             </a>
-                            <a href="{{ url_for('foods.search', category='Oils & Condiments') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                            <a href="{{ url_for('foods.search', category='Herbs & Spices') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
                 <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
-                    <i class="bi bi-droplet" style="font-size: 1.2rem; color: #1A3636;"></i>
+                    <i class="bi bi-flower3" style="font-size: 1.2rem; color: #1A3636;"></i>
                 </div>
-                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Oils/Cond.</span>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Herbs/Spices</span>
             </a>
                             <a href="{{ url_for('foods.search', category='Packaged Food') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
                 <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
@@ -278,7 +278,13 @@
                 </div>
                 <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Packaged</span>
             </a>
-                            <a href="{{ url_for('foods.search') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                            <a href="{{ url_for('foods.search', category='Other') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-three-dots" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Other</span>
+            </a>
+                            <a href="{{ url_for('foods.search', view_all='1') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
                 <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
                     <i class="bi bi-list" style="font-size: 1.2rem; color: #1A3636;"></i>
                 </div>

@@ -14,13 +14,11 @@ venv/
 env/
 ENV/
 
-# Flask instance folder (local config) - but allow starter database
-instance/*
-!instance/gut_health.db
+# Flask instance folder (local config)
+instance/
 
-# Database files (contain user data) - except starter database
+# Database files (contain user data)
 *.db
-!instance/gut_health.db
 *.sqlite
 *.sqlite3
 
@@ -33,6 +31,10 @@ backups/
 # Data exports and embeddings (runtime generated)
 data/exports/
 data/embeddings/
+
+# External recipe database (too large for GitHub - download separately)
+# See README for download instructions
+data/recipes/external/
 
 # User uploads (recipe images, etc.)
 static/uploads/

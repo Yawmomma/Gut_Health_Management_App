@@ -25,11 +25,13 @@
     }
     .recipes-sidebar {
         padding: 12px;
-        padding-top: 12px;
+        padding-top: 40px;
     }
     .main-content-area {
         padding-left: 15px;
         margin-left: 200px;
+        box-sizing: border-box;
+        background: transparent;
     }
     .section-title {
         font-size: 0.75rem;
@@ -63,10 +65,48 @@
         font-weight: 600;
         color: #fff;
     }
+    .recipe-image-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .recipe-image-btn img {
+        transition: transform 0.3s ease;
+    }
+    .recipe-image-btn:hover img {
+        transform: scale(1.03);
+    }
+    /* 2x2 Grid Layout */
+    .recipe-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        width: 100%;
+    }
+    .recipe-grid-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 8px;
+    }
+    .recipe-grid-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .recipe-grid-card .card-body {
+        padding: 12px 10px;
+    }
+    .recipe-grid-card h6 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--white-ish);
+    }
+    .recipe-grid-card p {
+        font-size: 0.65rem;
+        color: rgba(224, 231, 225, 0.8);
+        line-height: 1.3;
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
-<div class="row g-0" style="margin-top: -1.5rem;">
+<div class="row g-0">
     <!-- Left Sidebar: Navigation -->
     <div class="sidebar-column">
         <div class="recipes-sidebar">
@@ -130,7 +170,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Recipes</span>
+                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
                 </div>
             </a>
 
@@ -198,6 +238,9 @@
                     <a href="{{ url_for('recipes.chat') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
                         <i class="bi bi-chat-dots me-1"></i> Recipe Helper (AI)
                     </a>
+                    <a href="{{ url_for('recipe_builder.index') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-tools me-1"></i> Recipe Builder
+                    </a>
                 </div>
 
                 <!-- Thin separator -->
@@ -218,112 +261,54 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="main-content-area pt-3">
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="row">
+            <div class="content-col">
 <h1 class="mb-4 text-h2"><i class="bi bi-book"></i> Recipes & Meals</h1>
 
-<!-- Feature Highlights - 3 Cards wrapped in beige border container -->
-<div class="row mb-3">
-    <div class="col-md-9">
-        <div style="border: 2px solid #D6BD98; border-radius: 8px; padding: 15px;">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-book" style="font-size: 3rem; color: #3E5266;"></i>
-                            <h5 class="mt-3">My Recipes</h5>
-                            <p>Create personalized recipes using foods from our comprehensive database.</p>
-                            <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-primary">
-                                View Recipes
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-cup-straw" style="font-size: 3rem; color: #C39264;"></i>
-                            <h5 class="mt-3">My Saved Meals</h5>
-                            <p>Build complete meals and save them for quick access and meal planning.</p>
-                            <a href="{{ url_for('recipes.my_meals') }}" class="btn btn-secondary">
-                                View Meals
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-chat-dots" style="font-size: 3rem; color: #5D2F1E;"></i>
-                            <h5 class="mt-3">Recipe Helper (AI)</h5>
-                            <p>Get AI-powered recipe suggestions tailored to your dietary needs.</p>
-                            <a href="{{ url_for('recipes.chat') }}" class="btn btn-primary">
-                                Open AI Helper
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Feature Highlights - 2x2 Grid -->
+<div class="recipe-grid">
+    <!-- Row 1 -->
+    <a href="{{ url_for('recipes.my_recipes') }}" class="card text-decoration-none recipe-grid-card">
+        <div class="card-body text-center">
+            <i class="bi bi-book" style="font-size: 2rem; color: #8BA48B;"></i>
+            <h6 class="mt-2 mb-1">My Recipes</h6>
+            <p class="text-label mb-2">View and manage your saved recipes.</p>
+            <span class="btn btn-sm btn-primary">View Recipes</span>
         </div>
-    </div>
-</div>
+    </a>
 
-<!-- Quick Tips - Below the 3 cards -->
-<div class="row mb-3">
-    <div class="col-md-9">
-        <div class="card" style="border: 1px solid rgba(214, 189, 152, 0.5);">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Quick Tips</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Creating Recipes:</h6>
-                        <p class="small mb-0">Use the food database to add ingredients. The app automatically calculates total FODMAP and histamine levels for your recipe.</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Saving Meals:</h6>
-                        <p class="small mb-0">Build complete meals by combining multiple foods. Perfect for planning your daily menu and ensuring balanced nutrition.</p>
-                    </div>
-                </div>
-            </div>
+    <a href="{{ url_for('recipes.my_meals') }}" class="card text-decoration-none recipe-grid-card">
+        <div class="card-body text-center">
+            <i class="bi bi-cup-straw" style="font-size: 2rem; color: #C39264;"></i>
+            <h6 class="mt-2 mb-1">My Saved Meals</h6>
+            <p class="text-label mb-2">Quick access to your meal combos.</p>
+            <span class="btn btn-sm btn-secondary">View Meals</span>
         </div>
-    </div>
-</div>
+    </a>
 
-<!-- Welcome Card - Bottom (matching education page width) -->
-<div class="row mt-3">
-    <div class="col-md-9">
-        <div class="card" style="border: 1px solid rgba(214, 189, 152, 0.5);">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Welcome to Recipes & Meals</h5>
-            </div>
-            <div class="card-body">
-                <p>Manage your personalized recipes, saved meals, and get AI-powered recipe assistance tailored to your dietary needs.</p>
-
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-book"></i> What You Can Do:</h6>
-                        <ul>
-                            <li>Create and save your own recipes using foods from our database</li>
-                            <li>Build and save complete meals for quick planning</li>
-                            <li>Get AI-powered recipe suggestions based on your dietary restrictions</li>
-                            <li>Track FODMAP and histamine levels for each recipe and meal</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-shield-check"></i> Safety Features:</h6>
-                        <ul>
-                            <li>All recipes show combined FODMAP ratings</li>
-                            <li>Histamine levels calculated for complete meals</li>
-                            <li>Portion size tracking for better management</li>
-                            <li>Custom notes and preparation tips</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+    <!-- Row 2 -->
+    <a href="{{ url_for('recipes.chat') }}" class="card text-decoration-none recipe-grid-card">
+        <div class="card-body text-center">
+            <i class="bi bi-chat-dots" style="font-size: 2rem; color: #5D2F1E;"></i>
+            <h6 class="mt-2 mb-1">Recipe Helper (AI)</h6>
+            <p class="text-label mb-2">AI-powered recipe suggestions.</p>
+            <span class="btn btn-sm btn-primary">Open AI Helper</span>
         </div>
-    </div>
+    </a>
+
+    <a href="{{ url_for('recipe_builder.index') }}" class="card text-decoration-none recipe-grid-card">
+        <div class="card-body text-center">
+            <i class="bi bi-tools" style="font-size: 2rem; color: #8BA48B;"></i>
+            <h6 class="mt-2 mb-1">Recipe Builder</h6>
+            <p class="text-label mb-2">Search 2M+ recipes for ideas.</p>
+            <span class="btn btn-sm btn-success">Open Builder</span>
+        </div>
+    </a>
 </div>
-    </div>
-</div>
+
+            </div><!-- /.content-col -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
 {% endblock %}

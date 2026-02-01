@@ -1,17 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from database import db
 from models.user import SavedRecipe
-from models.recipe import Recipe, RecipeIngredient, SavedMeal, SavedMealItem
+from models.recipe import Recipe, RecipeIngredient, SavedMeal, SavedMealItem, RecipeClassificationOption
 from models.food import Food
+from utils import allowed_file
 import recipe_categories as rc
 from werkzeug.utils import secure_filename
 import os
+from sqlalchemy import func
 
 bp = Blueprint('recipes', __name__, url_prefix='/recipes')
-
-def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 def save_upload_file(file, prefix='recipe'):
     """Save uploaded file and return the path"""
@@ -26,6 +24,38 @@ def save_upload_file(file, prefix='recipe'):
         file.save(filepath)
         return f"uploads/{filename}"
     return None
+
+def get_classification_options(option_type, base_list, include_value=None):
+    """Merge base list with custom options, preserving display order."""
+    custom_values = RecipeClassificationOption.query.filter_by(option_type=option_type).order_by(
+        RecipeClassificationOption.value.asc()
+    ).all()
+    combined = list(base_list)
+    seen = {value.lower() for value in combined}
+    for option in custom_values:
+        if option.value.lower() not in seen:
+            combined.append(option.value)
+            seen.add(option.value.lower())
+    if include_value and include_value.lower() not in seen:
+        combined.append(include_value)
+    return combined
+
+def resolve_custom_option(option_type, selected_value, custom_value, base_list):
+    """Resolve custom selections and persist new options for future use."""
+    if selected_value == '__custom__':
+        custom_value = (custom_value or '').strip()
+        if not custom_value:
+            return None
+        base_lower = {value.lower() for value in base_list}
+        if custom_value.lower() not in base_lower:
+            existing = RecipeClassificationOption.query.filter(
+                RecipeClassificationOption.option_type == option_type,
+                func.lower(RecipeClassificationOption.value) == custom_value.lower()
+            ).first()
+            if not existing:
+                db.session.add(RecipeClassificationOption(option_type=option_type, value=custom_value))
+        return custom_value
+    return selected_value
 
 @bp.route('/')
 def index():
@@ -100,19 +130,30 @@ def create_recipe():
             if subcategory and subcategory.strip() in removed_tags:
                 subcategory = None
 
-            cuisine = request.form.get('cuisine')
+            cuisine = resolve_custom_option(
+                'cuisine',
+                request.form.get('cuisine'),
+                request.form.get('custom_cuisine'),
+                rc.CUISINES
+            )
             if cuisine and cuisine.strip() in removed_tags:
                 cuisine = None
 
-            main_ingredient = request.form.get('main_ingredient')
-            if main_ingredient and main_ingredient.strip() in removed_tags:
-                main_ingredient = None
-
-            preparation_method = request.form.get('preparation_method')
+            preparation_method = resolve_custom_option(
+                'preparation_method',
+                request.form.get('preparation_methods'),
+                request.form.get('custom_preparation_method'),
+                rc.PREPARATION_METHODS
+            )
             if preparation_method and preparation_method.strip() in removed_tags:
                 preparation_method = None
 
-            occasion = request.form.get('occasion')
+            occasion = resolve_custom_option(
+                'occasion',
+                request.form.get('occasions'),
+                request.form.get('custom_occasion'),
+                rc.OCCASIONS
+            )
             if occasion and occasion.strip() in removed_tags:
                 occasion = None
 
@@ -132,12 +173,12 @@ def create_recipe():
                 category=request.form.get('category'),
                 subcategory=subcategory,
                 cuisine=cuisine,
-                main_ingredient=main_ingredient,
                 dietary_needs=dietary_needs_str,
                 preparation_method=preparation_method,
                 occasion=occasion,
                 difficulty=difficulty,
                 tags=request.form.get('tags'),
+                source_url=request.form.get('source_url'),
                 image_path=image_path
             )
             db.session.add(recipe)
@@ -184,15 +225,18 @@ def create_recipe():
         'safe_serving': f.safe_serving
     } for f in foods]
 
+    cuisines = get_classification_options('cuisine', rc.CUISINES)
+    preparation_methods = get_classification_options('preparation_method', rc.PREPARATION_METHODS)
+    occasions = get_classification_options('occasion', rc.OCCASIONS)
+
     return render_template('recipes/create_recipe.html',
                          foods=foods_data,
                          meal_types=rc.MEAL_TYPES,
                          all_subcategories=rc.ALL_SUBCATEGORIES,
-                         cuisines=rc.CUISINES,
-                         main_ingredients=rc.MAIN_INGREDIENTS,
+                         cuisines=cuisines,
                          dietary_needs=rc.DIETARY_NEEDS,
-                         preparation_methods=rc.PREPARATION_METHODS,
-                         occasions=rc.OCCASIONS,
+                         preparation_methods=preparation_methods,
+                         occasions=occasions,
                          difficulty_levels=rc.DIFFICULTY_LEVELS)
 
 
@@ -240,19 +284,30 @@ def edit_recipe(recipe_id):
             if subcategory and subcategory.strip() in removed_tags:
                 subcategory = None
 
-            cuisine = request.form.get('cuisine')
+            cuisine = resolve_custom_option(
+                'cuisine',
+                request.form.get('cuisine'),
+                request.form.get('custom_cuisine'),
+                rc.CUISINES
+            )
             if cuisine and cuisine.strip() in removed_tags:
                 cuisine = None
 
-            main_ingredient = request.form.get('main_ingredient')
-            if main_ingredient and main_ingredient.strip() in removed_tags:
-                main_ingredient = None
-
-            preparation_method = request.form.get('preparation_method')
+            preparation_method = resolve_custom_option(
+                'preparation_method',
+                request.form.get('preparation_methods'),
+                request.form.get('custom_preparation_method'),
+                rc.PREPARATION_METHODS
+            )
             if preparation_method and preparation_method.strip() in removed_tags:
                 preparation_method = None
 
-            occasion = request.form.get('occasion')
+            occasion = resolve_custom_option(
+                'occasion',
+                request.form.get('occasions'),
+                request.form.get('custom_occasion'),
+                rc.OCCASIONS
+            )
             if occasion and occasion.strip() in removed_tags:
                 occasion = None
 
@@ -271,12 +326,12 @@ def edit_recipe(recipe_id):
             recipe.category = request.form.get('category')
             recipe.subcategory = subcategory
             recipe.cuisine = cuisine
-            recipe.main_ingredient = main_ingredient
             recipe.dietary_needs = dietary_needs_str
             recipe.preparation_method = preparation_method
             recipe.occasion = occasion
             recipe.difficulty = difficulty
             recipe.tags = request.form.get('tags')
+            recipe.source_url = request.form.get('source_url')
 
             # Delete existing ingredients
             RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
@@ -340,17 +395,23 @@ def edit_recipe(recipe_id):
         }
     } for ing in recipe.ingredients]
 
+    prep_include = recipe.preparation_method.split(',')[0].strip() if recipe.preparation_method else None
+    occasion_include = recipe.occasion.split(',')[0].strip() if recipe.occasion else None
+
+    cuisines = get_classification_options('cuisine', rc.CUISINES, include_value=recipe.cuisine)
+    preparation_methods = get_classification_options('preparation_method', rc.PREPARATION_METHODS, include_value=prep_include)
+    occasions = get_classification_options('occasion', rc.OCCASIONS, include_value=occasion_include)
+
     return render_template('recipes/edit_recipe.html',
                          recipe=recipe,
                          foods=foods_data,
                          ingredients=ingredients_data,
                          meal_types=rc.MEAL_TYPES,
                          all_subcategories=rc.ALL_SUBCATEGORIES,
-                         cuisines=rc.CUISINES,
-                         main_ingredients=rc.MAIN_INGREDIENTS,
+                         cuisines=cuisines,
                          dietary_needs=rc.DIETARY_NEEDS,
-                         preparation_methods=rc.PREPARATION_METHODS,
-                         occasions=rc.OCCASIONS,
+                         preparation_methods=preparation_methods,
+                         occasions=occasions,
                          difficulty_levels=rc.DIFFICULTY_LEVELS)
 
 
@@ -457,7 +518,6 @@ def edit_meal(meal_id):
                 if file.filename:
                     # Delete old photo if exists
                     if meal.image_path:
-                        import os
                         old_path = os.path.join('static', meal.image_path.lstrip('/'))
                         if os.path.exists(old_path):
                             os.remove(old_path)
@@ -528,7 +588,6 @@ def delete_meal(meal_id):
     try:
         # Delete photo if exists
         if meal.image_path:
-            import os
             photo_path = os.path.join('static', meal.image_path.lstrip('/'))
             if os.path.exists(photo_path):
                 os.remove(photo_path)

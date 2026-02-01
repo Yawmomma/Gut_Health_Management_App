@@ -36,6 +36,8 @@ If you're dealing with similar issues, feel free to use it, fork it, or adapt it
 - Save and organize gut-friendly recipes
 - Create reusable meal templates
 - Categorize by meal type and dietary requirements
+- **Recipe Builder**: Search over 2 million recipes from an external database for inspiration
+- **AI Recipe Helper**: Get AI-powered recipe suggestions tailored to your dietary needs (requires OpenAI API key)
 
 ### Educational Content
 - Learn about FODMAPs, histamine, and gut health
@@ -73,12 +75,34 @@ If you're dealing with similar issues, feel free to use it, fork it, or adapt it
    pip install -r requirements.txt
    ```
 
-3. Run the application:
+3. **(Optional) Download the Recipe Builder Database**:
+
+   The Recipe Builder feature requires an external recipe database (~770MB). Download from Hugging Face:
+
+   - Visit: https://huggingface.co/datasets/corbt/all-recipes
+   - Download all 4 parquet files from the `data/` folder
+   - Place them in: `data/recipes/external/`
+
+   The app will work without this database, but the Recipe Builder search feature will be unavailable.
+
+4. Run the application:
    ```bash
    python app.py
    ```
 
-4. Open your browser and go to: **http://localhost:5000**
+6. Open your browser and go to: **http://localhost:5000**
+
+### Optional: AI Recipe Helper Setup
+
+To use the AI Recipe Helper feature, you'll need an OpenAI API key:
+
+1. Create a `.env` file in the project root
+2. Add your API key:
+   ```
+   OPENAI_API_KEY=your-api-key-here
+   ```
+
+The AI helper will suggest recipes based on your dietary restrictions and available ingredients.
 
 ## Project Structure
 
@@ -88,16 +112,22 @@ Gut_Health_Management_App/
 ├── config.py              # Configuration settings
 ├── models/                # Database models
 ├── routes/                # URL route handlers
+│   └── recipe_builder.py  # Recipe Builder routes
 ├── templates/             # HTML templates
 │   ├── dashboard/         # Main landing page
 │   ├── foods/             # Food guide pages
 │   ├── diary/             # Diary and tracking
-│   ├── recipes/           # Recipe management
+│   ├── recipes/           # Recipe management (incl. builder)
 │   ├── education/         # Educational content
-│   └── settings/          # App settings
+│   └── settings/          # App settings & help
 ├── static/                # CSS, JavaScript, images
-├── database/              # Database seeds and migrations
+├── migrations/            # Database migration scripts
+├── utils/                 # Utility modules
+│   ├── recipe_parser.py   # Parse recipes from URLs
+│   └── recipe_search.py   # External recipe database search
+├── database/              # Database seeds
 └── data/                  # User data storage
+    └── recipes/external/  # External recipe database (download separately)
 ```
 
 ## Privacy
@@ -116,4 +146,26 @@ Built with the help of Claude AI for code assistance and debugging.
 
 ---
 
-**Version**: 1.0.0
+## Changelog
+
+### v1.1.0 (February 2026)
+- **New**: Recipe Builder - search over 2 million external recipes for inspiration
+- **New**: AI Recipe Helper - get personalized recipe suggestions (requires OpenAI API key)
+- **New**: Recipe URL import - parse recipes from websites
+- **New**: Chat persona support for AI helper
+- **New**: Food completion tracking
+- **Improved**: Recipes page redesigned with 2x2 grid layout
+- **Improved**: UI improvements across all pages
+- **Improved**: Help documentation with Quick Tips
+- **Fixed**: Various bug fixes and styling updates
+
+### v1.0.0 (Initial Release)
+- Food Guide with FODMAP and histamine tracking
+- Daily Diary for meals, symptoms, and observations
+- Recipes & Meals management
+- Educational content system
+- Settings and backup functionality
+
+---
+
+**Version**: 1.1.0

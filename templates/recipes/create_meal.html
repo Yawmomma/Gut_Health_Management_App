@@ -131,7 +131,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
                 </div>
             </a>
 
@@ -356,7 +356,94 @@ function updateFoodInfo(foodId) {
 
 // Add first food on page load
 document.addEventListener('DOMContentLoaded', function() {
-    addFood();
+    // Check for AI-generated meal data in sessionStorage
+    const aiMealParsed = sessionStorage.getItem('ai_meal_parsed');
+    const aiMealFull = sessionStorage.getItem('ai_meal_full');
+
+    if (aiMealParsed) {
+        try {
+            const meal = JSON.parse(aiMealParsed);
+
+            // Pre-fill basic fields
+            if (meal.name) document.getElementById('name').value = meal.name;
+            if (meal.description) document.getElementById('description').value = meal.description;
+
+            // Add foods from ingredients
+            if (meal.ingredients && meal.ingredients.length > 0) {
+                // Clear any existing foods
+                document.getElementById('foods-container').innerHTML = '';
+
+                meal.ingredients.forEach(ingredient => {
+                    addFood();
+
+                    // Try to match ingredient to a food in the database
+                    const ingredientLower = ingredient.toLowerCase();
+
+                    // Get the last added food row
+                    const lastFood = document.querySelector('#foods-container .food-row:last-child');
+                    if (lastFood) {
+                        const select = lastFood.querySelector('.food-select');
+                        const portionInput = lastFood.querySelector('input[name="portions[]"]');
+
+                        // Try to find a matching food
+                        let matchedFood = null;
+                        let bestMatchScore = 0;
+
+                        foods.forEach(food => {
+                            const foodNameLower = food.name.toLowerCase();
+
+                            // Exact match or contains
+                            if (ingredientLower.includes(foodNameLower) || foodNameLower.includes(ingredientLower)) {
+                                const score = foodNameLower.length;
+                                if (score > bestMatchScore) {
+                                    bestMatchScore = score;
+                                    matchedFood = food;
+                                }
+                            }
+                        });
+
+                        if (matchedFood) {
+                            select.value = matchedFood.id;
+                            updateFoodInfo(foodCount);
+
+                            // Try to extract portion/quantity from ingredient string
+                            const portionMatch = ingredient.match(/^([\d\/.]+\s*(?:cup|cups|tbsp|tsp|g|kg|ml|l|oz|lb|pound|pounds)?)/i);
+                            if (portionMatch) {
+                                portionInput.value = portionMatch[1].trim();
+                            }
+                        } else {
+                            // No match found - put the full ingredient text in the portion field as a note
+                            portionInput.value = ingredient;
+                        }
+                    }
+                });
+            } else {
+                // No ingredients parsed, add one empty row
+                addFood();
+            }
+
+            // Show a notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success alert-dismissible fade show mt-3';
+            notification.innerHTML = `
+                <i class="bi bi-check-circle"></i> <strong>AI Meal Loaded!</strong>
+                Meal data has been pre-filled from the chatbot. Please review and adjust as needed.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('h1').after(notification);
+
+            // Clear sessionStorage
+            sessionStorage.removeItem('ai_meal_parsed');
+            sessionStorage.removeItem('ai_meal_full');
+
+        } catch (error) {
+            console.error('Error loading AI meal:', error);
+            addFood();
+        }
+    } else {
+        // No AI meal data, add default food row
+        addFood();
+    }
 });
 </script>
 {% endblock %}

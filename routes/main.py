@@ -139,10 +139,14 @@ def dashboard():
         reverse=True
     )
 
+    # Query for incomplete foods (quick-added foods that need more information)
+    incomplete_foods = Food.query.filter_by(is_complete=False).order_by(Food.created_at.desc()).all()
+
     return render_template('dashboard/index.html',
                          current_date=datetime.now(),
                          high_risk_foods=high_risk_foods,
-                         moderate_risk_foods=moderate_risk_foods)
+                         moderate_risk_foods=moderate_risk_foods,
+                         incomplete_foods=incomplete_foods)
 
 @bp.route('/about')
 def about():

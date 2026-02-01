@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.name }} - Recipe Builder{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .recipes-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+        box-sizing: border-box;
+        background: transparent;
+    }
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    .recipe-preview-card {
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .recipe-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--gold);
+        margin-bottom: 15px;
+    }
+    .recipe-section {
+        margin-bottom: 20px;
+    }
+    .recipe-section-title {
+        font-size: var(--text-value);
+        font-weight: 600;
+        color: var(--white-ish);
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(214, 189, 152, 0.3);
+    }
+    .ingredient-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .ingredient-list li {
+        font-size: var(--text-body);
+        color: var(--white-ish);
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .ingredient-list li:last-child {
+        border-bottom: none;
+    }
+    .direction-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        counter-reset: step-counter;
+    }
+    .direction-list li {
+        font-size: var(--text-body);
+        color: var(--white-ish);
+        padding: 10px 0 10px 35px;
+        position: relative;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .direction-list li:before {
+        counter-increment: step-counter;
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 10px;
+        width: 24px;
+        height: 24px;
+        background: var(--gold);
+        color: var(--bg-deep);
+        border-radius: 50%;
+        font-size: var(--text-label);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .direction-list li:last-child {
+        border-bottom: none;
+    }
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .copy-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        color: #fff !important;
+    }
+    .save-form-section {
+        background: rgba(214, 189, 152, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .archived-badge {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: var(--text-label);
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .tab-content-section {
+        display: none;
+    }
+    .tab-content-section.active {
+        display: block;
+    }
+    .save-tab-btn {
+        padding: 10px 20px;
+        border: 2px solid var(--sage);
+        background: transparent;
+        color: var(--white-ish);
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: var(--text-body);
+        transition: all 0.2s ease;
+    }
+    .save-tab-btn.active {
+        background: var(--gold);
+        color: var(--bg-deep);
+        border-color: var(--gold);
+    }
+    .save-tab-btn:hover:not(.active) {
+        background: rgba(255,255,255,0.1);
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="recipes-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-eye"></i> Recipe Preview</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Quick Access -->
+            <div style="padding-right: 12px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('recipe_builder.index') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Search
+                    </a>
+                    <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-book me-1"></i> My Recipes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="row">
+            <div class="content-col">
+                <!-- Back Button -->
+                <a href="{{ url_for('recipe_builder.index') }}" class="btn btn-outline-secondary btn-sm mb-3">
+                    <i class="bi bi-arrow-left"></i> Back to Recipe Builder
+                </a>
+
+                <!-- Recipe Preview Card -->
+                <div class="recipe-preview-card">
+                    <h1 class="recipe-title">
+                        {{ recipe.name }}
+                        {% if is_archived %}
+                        <span class="archived-badge"><i class="bi bi-archive"></i> Archived</span>
+                        {% endif %}
+                    </h1>
+
+                    {% if recipe.servings %}
+                    <div class="mb-3">
+                        <span class="badge bg-secondary"><i class="bi bi-people"></i> {{ recipe.servings }} servings</span>
+                        <span class="badge bg-secondary"><i class="bi bi-bag"></i> {{ recipe.ingredients|length }} ingredients</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Ingredients Section -->
+                    <div class="recipe-section">
+                        <h3 class="recipe-section-title"><i class="bi bi-list-check"></i> Ingredients</h3>
+                        {% if recipe.ingredients %}
+                        <ul class="ingredient-list">
+                            {% for ingredient in recipe.ingredients %}
+                            <li><i class="bi bi-dot"></i> {{ ingredient }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">No ingredients listed</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Directions Section -->
+                    <div class="recipe-section">
+                        <h3 class="recipe-section-title"><i class="bi bi-list-ol"></i> Directions</h3>
+                        {% if recipe.directions %}
+                        <ol class="direction-list">
+                            {% for step in recipe.directions %}
+                            <li>{{ step }}</li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <p class="text-muted">No directions listed</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <!-- Ask AI Button -->
+                        <button type="button" class="btn btn-primary btn-sm" id="askAiBtn">
+                            <i class="bi bi-chat-dots"></i> Ask AI About This
+                        </button>
+
+                        <!-- Copy for AI Button -->
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="copyForAiBtn">
+                            <i class="bi bi-clipboard"></i> Copy for AI
+                        </button>
+
+                        {% if not is_archived %}
+                        <form method="POST" action="{{ url_for('recipe_builder.archive', recipe_hash=recipe.hash) }}" style="display: inline;">
+                            <input type="hidden" name="recipe_name" value="{{ recipe.name }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-archive"></i> Archive Recipe
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('recipe_builder.unarchive', recipe_hash=recipe.hash) }}" style="display: inline;">
+                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-arrow-counterclockwise"></i> Restore Recipe
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Save Options Section -->
+                <div class="save-form-section">
+                    <h4 class="text-value mb-3"><i class="bi bi-save"></i> Save This Recipe</h4>
+
+                    <!-- Tab Buttons -->
+                    <div class="d-flex gap-2 mb-3">
+                        <button type="button" class="save-tab-btn active" data-tab="recipes">
+                            <i class="bi bi-book"></i> Save to Recipes
+                        </button>
+                        <button type="button" class="save-tab-btn" data-tab="meals">
+                            <i class="bi bi-cup-straw"></i> Save as Meal
+                        </button>
+                    </div>
+
+                    <!-- Save to Recipes Form -->
+                    <div id="tab-recipes" class="tab-content-section active">
+                        <form method="POST" action="{{ url_for('recipe_builder.save_to_recipes') }}">
+                            <input type="hidden" name="recipe_hash" value="{{ recipe.hash }}">
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Recipe Name</label>
+                                <input type="text" name="name" class="form-control" value="{{ recipe.name }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Description (optional)</label>
+                                <textarea name="description" class="form-control" rows="2" placeholder="Add a description..."></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-label">Servings</label>
+                                    <input type="number" name="servings" class="form-control" value="{{ recipe.servings or 1 }}" min="1">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-label">Category</label>
+                                    <select name="category" class="form-select">
+                                        <option value="">Select category...</option>
+                                        {% for cat in meal_types %}
+                                        <option value="{{ cat }}">{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Instructions</label>
+                                <textarea name="instructions" class="form-control" rows="6">{% for step in recipe.directions %}{{ loop.index }}. {{ step }}
+{% endfor %}</textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Save to My Recipes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Save as Meal Form -->
+                    <div id="tab-meals" class="tab-content-section">
+                        <form method="POST" action="{{ url_for('recipe_builder.save_to_meals') }}">
+                            <input type="hidden" name="recipe_hash" value="{{ recipe.hash }}">
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Meal Name</label>
+                                <input type="text" name="name" class="form-control" value="{{ recipe.name }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Description (optional)</label>
+                                <textarea name="description" class="form-control" rows="2" placeholder="Add a description..."></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-label">Meal Type</label>
+                                <select name="meal_type" class="form-select">
+                                    <option value="">Select type...</option>
+                                    <option value="Breakfast">Breakfast</option>
+                                    <option value="Lunch">Lunch</option>
+                                    <option value="Dinner">Dinner</option>
+                                    <option value="Snack">Snack</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Save as Meal
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div><!-- /.content-col -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabBtns = document.querySelectorAll('.save-tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content-section');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+
+            // Update button states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update content visibility
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === 'tab-' + tabId) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+
+    // Recipe data for AI features
+    const recipeData = {
+        name: {{ recipe.name | tojson }},
+        ingredients: {{ recipe.ingredients | tojson }},
+        directions: {{ recipe.directions | tojson }},
+        servings: {{ recipe.servings | tojson }}
+    };
+
+    // Format recipe for AI
+    function formatRecipeForAI() {
+        let text = `Recipe: ${recipeData.name}\n\n`;
+        if (recipeData.servings) {
+            text += `Servings: ${recipeData.servings}\n\n`;
+        }
+        text += `Ingredients:\n`;
+        recipeData.ingredients.forEach(ing => {
+            text += `- ${ing}\n`;
+        });
+        text += `\nDirections:\n`;
+        recipeData.directions.forEach((step, i) => {
+            text += `${i + 1}. ${step}\n`;
+        });
+        return text;
+    }
+
+    // Ask AI Button - stores recipe and redirects to chat
+    const askAiBtn = document.getElementById('askAiBtn');
+    if (askAiBtn) {
+        askAiBtn.addEventListener('click', function() {
+            // Store recipe in sessionStorage for chat to pick up
+            const recipeText = formatRecipeForAI();
+            const aiPrompt = `Please analyze this recipe for gut health (FODMAP and histamine). Suggest any modifications to make it more gut-friendly:\n\n${recipeText}`;
+            sessionStorage.setItem('pendingRecipeForAI', aiPrompt);
+            // Redirect to chat
+            window.location.href = '{{ url_for("recipes.chat") }}';
+        });
+    }
+
+    // Copy for AI Button
+    const copyForAiBtn = document.getElementById('copyForAiBtn');
+    if (copyForAiBtn) {
+        copyForAiBtn.addEventListener('click', async function() {
+            const recipeText = formatRecipeForAI();
+            try {
+                await navigator.clipboard.writeText(recipeText);
+                // Show success feedback
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                this.classList.add('copy-success');
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                    this.classList.remove('copy-success');
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy to clipboard');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

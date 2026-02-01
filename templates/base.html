@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <!-- Custom CSS with Culinary Theme -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ range(1, 999999) | random }}">
 
     <style>
         /* Typography system using CSS custom properties */
@@ -99,10 +99,7 @@
             padding: 0.4rem 0.5rem !important;
         }
 
-        /* Reduce container max-width for tighter layout */
-        .container {
-            max-width: 1100px !important;
-        }
+        /* Container styles removed - using custom layout system */
 
         /* Comfortable density mode adjustments */
         :root[data-density="comfortable"] .table td,
@@ -132,11 +129,11 @@
 </head>
 <body style="padding-top: 50px;">
     <!-- Navigation -->
-    <header style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 50px !important; min-height: 50px !important; z-index: 1000 !important; background-color: #D6BD98 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 0 1rem !important;">
-        <a href="{{ url_for('main.dashboard') }}" style="color: #1A3636 !important; font-size: 1.4rem !important; font-weight: 700; letter-spacing: 0.5px; text-decoration: none;">
-            <i class="bi bi-heart-pulse" style="font-size: 1.3rem; vertical-align: middle;"></i> Gut Health App
+    <header style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 50px !important; min-height: 50px !important; z-index: 1000 !important; background-color: #D6BD98 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 0 1rem !important; overflow: hidden !important;">
+        <a href="{{ url_for('main.dashboard') }}" style="color: #1A3636 !important; font-size: 1.0rem !important; font-weight: 700; letter-spacing: 0.5px; text-decoration: none; white-space: nowrap !important; flex-shrink: 0 !important;">
+            <i class="bi bi-heart-pulse" style="font-size: 0.95rem; vertical-align: middle;"></i> Gut Health App Pro
         </a>
-        <span style="font-size: var(--text-label) !important; color: #1A3636 !important; text-align: right;">
+        <span style="font-size: var(--text-micro) !important; color: #1A3636 !important; text-align: right; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; margin-left: 1rem !important;">
             &copy; 2026 Gut Health Management App | Your Personal Health Companion | By Sally - v1.0
         </span>
     </header>
@@ -144,7 +141,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="container mt-3">
+            <div style="margin-left: 200px; padding: 1rem 1rem 0;">
                 {% for category, message in messages %}
                     <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
                         {{ message }}
@@ -156,7 +153,7 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="container my-4">
+    <main>
         {% block content %}{% endblock %}
     </main>
 

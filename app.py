@@ -38,17 +38,33 @@ def format_num(value):
     except (ValueError, TypeError):
         return value
 
+# Custom Jinja filter to add ordinal suffix to numbers (1st, 2nd, 3rd, etc.)
+@app.template_filter('ordinal')
+def ordinal(value):
+    """Add ordinal suffix to a number (1st, 2nd, 3rd, etc.)"""
+    try:
+        num = int(value)
+        if 10 <= num % 100 <= 20:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
+        return f"{num}{suffix}"
+    except (ValueError, TypeError):
+        return value
+
 # Import models (after db is initialized)
 from models import food, diary, user, education, recipe, chat
 
 # Import routes
 from routes import main, foods, diary as diary_routes, recipes, education as education_routes, api, settings
+from routes import recipe_builder
 
 # Register blueprints
 app.register_blueprint(main.bp)
 app.register_blueprint(foods.bp)
 app.register_blueprint(diary_routes.bp)
 app.register_blueprint(recipes.bp)
+app.register_blueprint(recipe_builder.bp)
 app.register_blueprint(education_routes.bp)
 app.register_blueprint(api.bp)
 app.register_blueprint(settings.bp)
@@ -88,8 +104,8 @@ def start_file_watcher():
     event_handler = FileChangeHandler(socketio)
     observer = Observer()
 
-    # Watch templates, static, routes, and models directories
-    paths_to_watch = ['templates', 'static', 'routes', 'models']
+    # Watch templates, static, routes, models, and utils directories
+    paths_to_watch = ['templates', 'static', 'routes', 'models', 'utils']
     for path in paths_to_watch:
         if os.path.exists(path):
             observer.schedule(event_handler, path, recursive=True)

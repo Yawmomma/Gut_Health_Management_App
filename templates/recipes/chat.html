@@ -3,171 +3,696 @@
 {% block title %}AI Recipe Helper - Gut Health App{% endblock %}
 
 {% block content %}
-<h1 class="mb-4 text-h2"><i class="bi bi-chat-dots"></i> AI Recipe Helper</h1>
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .recipes-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+        max-width: var(--layout-main-max, 880px);
+    }
+    .content-col {
+        max-width: var(--layout-content-max, 620px);
+    }
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .quick-actions-container {
+        padding-right: 12px;
+        margin-top: 10px;
+    }
+    .quick-action-btn-sidebar {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        background-color: #1A3636 !important;
+        border: 1px solid #1A3636 !important;
+    }
+    .quick-action-btn-sidebar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
 
-<div class="row">
-    <!-- Main Chat Area -->
-    <div class="col-lg-8">
-        <!-- LLM Provider Selection -->
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-gear"></i> LLM Provider</h5>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Provider</label>
-                        <select id="llm-provider" class="form-select">
-                            <option value="ollama" selected>Ollama (Local)</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="anthropic">Anthropic (Claude)</option>
-                        </select>
+    /* Chat messages */
+    .chat-message {
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 8px;
+    }
+    .chat-message.user {
+        background-color: #40534C;
+        color: #e0e7e1;
+        margin-left: 20%;
+        text-align: right;
+        border: 1px solid #677D6A;
+    }
+    .chat-message.assistant {
+        background-color: #1A3636;
+        color: #e0e7e1;
+        margin-right: 20%;
+        border: 1px solid #40534C;
+    }
+    .chat-message .role {
+        font-weight: bold;
+        font-size: var(--text-value);
+        margin-bottom: 5px;
+    }
+    .chat-message.user .role {
+        color: #D6BD98;
+    }
+    .chat-message.assistant .role {
+        color: #8BA48B;
+    }
+    .chat-message button {
+        margin-top: 8px;
+    }
+
+    /* Recipe formatting in chat */
+    .chat-message.assistant .content h3 {
+        color: #D6BD98;
+        font-size: var(--text-title);
+        font-weight: bold;
+        margin-top: 12px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 2px solid rgba(214, 189, 152, 0.3);
+    }
+    .chat-message.assistant .content h3:first-child {
+        margin-top: 0;
+    }
+    .chat-message.assistant .content ul {
+        margin: 8px 0;
+        padding-left: 20px;
+        list-style-type: disc;
+    }
+    .chat-message.assistant .content ol {
+        margin: 8px 0;
+        padding-left: 20px;
+    }
+    .chat-message.assistant .content li {
+        margin-bottom: 4px;
+        line-height: 1.4;
+    }
+    .chat-message.assistant .content p {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+    .chat-message.assistant .content strong {
+        color: #D6BD98;
+        font-weight: bold;
+    }
+
+    /* AI Loading indicator */
+    .chat-message.loading {
+        background-color: #1A3636;
+        color: #e0e7e1;
+        margin-right: 20%;
+        border: 1px solid #40534C;
+    }
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .loading-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8BA48B;
+        font-size: var(--text-value);
+    }
+    .loading-text i {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    .loading-bar-wrapper {
+        background: #40534C;
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+    .loading-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 30%;
+        background: linear-gradient(90deg, #8BA48B, #D6BD98, #8BA48B);
+        border-radius: 4px;
+        animation: loading-slide 1.5s ease-in-out infinite;
+    }
+    .loading-status {
+        font-size: var(--text-micro);
+        color: #677D6A;
+    }
+    @keyframes loading-slide {
+        0% {
+            left: -30%;
+        }
+        100% {
+            left: 100%;
+        }
+    }
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.4;
+        }
+    }
+
+    /* History items */
+    .history-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .history-item:hover {
+        background-color: #f8f9fa;
+    }
+    .history-item.active {
+        background-color: #e3f2fd;
+    }
+    .history-item .title {
+        font-weight: 500;
+        font-size: var(--text-title);
+        margin-bottom: 3px;
+    }
+    .history-item .meta {
+        font-size: var(--text-label);
+        color: #6c757d;
+    }
+    .history-item .actions {
+        display: none;
+    }
+    .history-item:hover .actions {
+        display: inline-block;
+    }
+
+    /* Recipe context selector */
+    .recipe-context-area {
+        margin-bottom: 10px;
+    }
+    .recipe-context-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+    .recipe-tag {
+        display: inline-flex;
+        align-items: center;
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: var(--text-label);
+    }
+    .recipe-tag .remove-tag {
+        margin-left: 6px;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+    .recipe-tag .remove-tag:hover {
+        opacity: 1;
+    }
+    .recipe-selector-btn {
+        background: transparent;
+        border: 1px dashed #677D6A;
+        color: #8BA48B;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: var(--text-label);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .recipe-selector-btn:hover {
+        background: rgba(139, 164, 139, 0.1);
+        border-style: solid;
+    }
+    .recipe-dropdown {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #1A3636;
+        border: 1px solid #40534C;
+        border-radius: 8px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        margin-bottom: 5px;
+    }
+    .recipe-dropdown.show {
+        display: block;
+    }
+    .recipe-dropdown-search {
+        padding: 8px;
+        border-bottom: 1px solid #40534C;
+    }
+    .recipe-dropdown-search input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #40534C;
+        border-radius: 4px;
+        background: #40534C;
+        color: #e0e7e1;
+        font-size: var(--text-label);
+    }
+    .recipe-dropdown-search input::placeholder {
+        color: #8BA48B;
+    }
+    .recipe-dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: background 0.2s;
+    }
+    .recipe-dropdown-item:hover {
+        background: #40534C;
+    }
+    .recipe-dropdown-item .recipe-name {
+        color: #D6BD98;
+        font-weight: 500;
+        font-size: var(--text-value);
+    }
+    .recipe-dropdown-item .recipe-meta {
+        color: #8BA48B;
+        font-size: var(--text-micro);
+    }
+    .recipe-dropdown-empty {
+        padding: 15px;
+        text-align: center;
+        color: #677D6A;
+        font-size: var(--text-label);
+    }
+    /* @ mention autocomplete */
+    .mention-autocomplete {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #1A3636;
+        border: 1px solid #40534C;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1001;
+        display: none;
+        margin-bottom: 5px;
+    }
+    .mention-autocomplete.show {
+        display: block;
+    }
+    .mention-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .mention-item:hover, .mention-item.selected {
+        background: #40534C;
+    }
+    .mention-item .recipe-name {
+        color: #D6BD98;
+        font-size: var(--text-value);
+    }
+
+    /* Recipe side panel */
+    .recipe-side-panel {
+        position: fixed;
+        top: 50px;
+        right: -500px;
+        width: 500px;
+        height: calc(100vh - 50px);
+        background: white;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+        z-index: 1050;
+        transition: right 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .recipe-side-panel.active {
+        right: 0;
+    }
+    .recipe-panel-header {
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .recipe-panel-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    .recipe-panel-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    .recipe-panel-overlay {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="recipes-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-chat-dots"></i> AI Helper</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
                     </div>
-                    <div class="col-md-5">
-                        <label class="form-label">Model (Optional)</label>
-                        <input type="text" id="llm-model" class="form-control" placeholder="Leave empty for default">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button class="btn btn-outline-primary w-100" id="new-chat-btn">
-                            <i class="bi bi-plus-circle"></i> New Chat
-                        </button>
-                    </div>
+                    <span class="text-label" style="color: #fff;">Dashboard</span>
                 </div>
-                <div class="alert alert-info mt-3 mb-0" id="provider-info">
-                    <small><strong>Ollama:</strong> Local LLM. Make sure Ollama is running (<code>ollama serve</code>).</small>
+            </a>
+
+            <!-- Food Guide -->
+            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Quick Access in Sidebar -->
+            <div class="quick-actions-container">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-list"></i> Quick Access</h6>
+
+                <div class="d-flex flex-column gap-2 mb-2">
+                    <a href="{{ url_for('recipes.my_recipes') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-book me-1"></i> My Recipes
+                    </a>
+                    <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-sm quick-action-btn-sidebar w-100 text-label" style="color: #fff;">
+                        <i class="bi bi-plus-circle me-1"></i> Create New Recipe
+                    </a>
                 </div>
             </div>
-        </div>
 
-        <!-- Chat Interface -->
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0">Chat</h5>
-                    <span id="current-conversation-title" class="text-muted small"></span>
+            <!-- Ollama Model Selector -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 12px 15px 0; padding-top: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-robot"></i> Ollama Model</h6>
+                <div class="d-flex gap-1">
+                    <select id="ollama-model-select" class="form-select form-select-sm text-label flex-grow-1" style="font-size: var(--text-label);">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <button class="btn btn-sm" type="button" onclick="checkOllamaConnection()" title="Refresh model list" style="background-color: #1A3636; color: #fff; border: 1px solid #1A3636;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
                 </div>
-                <div id="chat-messages" class="mb-3" style="height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-                    <div class="text-center text-muted">
-                        <i class="bi bi-chat-text" style="font-size: 3rem;"></i>
-                        <p class="mt-2">Start a conversation or select a saved chat from the history below.</p>
-                    </div>
-                </div>
-                <form id="chat-form">
-                    <div class="input-group">
-                        <input type="text" id="user-message" class="form-control" placeholder="Ask for recipe suggestions, meal ideas, or food advice..." autocomplete="off">
-                        <button class="btn btn-primary" type="submit" id="send-btn">
-                            <i class="bi bi-send"></i> Send
-                        </button>
-                    </div>
-                </form>
-                <div id="chat-status" class="mt-2 small text-muted"></div>
+                <small class="text-label d-block mt-2" style="color: rgba(255,255,255,0.7); font-size: var(--text-micro);">
+                    Select the AI model to use
+                </small>
+            </div>
+
+            <!-- Persona Selector -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 12px 15px 0; padding-top: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-person-circle"></i> AI Persona</h6>
+                <select id="persona-selector" class="form-select form-select-sm text-label" style="font-size: var(--text-label);">
+                    <option value="nutritionist" selected>Nutritionist</option>
+                    <option value="chef">Chef</option>
+                    <option value="scientist">Scientist</option>
+                    <option value="friendly">Friendly Helper</option>
+                </select>
+                <small class="text-label d-block mt-2" style="color: rgba(255,255,255,0.7); font-size: var(--text-micro);">
+                    Changes the AI's expertise and tone
+                </small>
             </div>
         </div>
     </div>
 
-    <!-- Chat History Sidebar -->
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Chat History</h5>
-            </div>
-            <div class="card-body p-0">
-                <div id="chat-history" style="max-height: 700px; overflow-y: auto;">
-                    <div class="text-center text-muted p-4">
-                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                        <p class="mt-2 mb-0">No saved chats yet</p>
+    <!-- Right Content Area -->
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="row">
+            <div class="content-col">
+                <h1 class="mb-4 text-h2"><i class="bi bi-chat-dots"></i> AI Recipe Helper</h1>
+
+                <!-- Chat Interface -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Chat</h5>
+                            <div>
+                                <span id="current-conversation-title" class="text-muted small me-2"></span>
+                                <button class="btn btn-sm btn-outline-primary" id="new-chat-btn">
+                                    <i class="bi bi-plus-circle"></i> New Chat
+                                </button>
+                            </div>
+                        </div>
+                        <div id="chat-messages" class="mb-3" style="height: 400px; overflow-y: auto; border: 1px solid #40534C; padding: 15px; background-color: #1A3636; border-radius: 5px;">
+                            <div class="text-center" style="color: #677D6A;">
+                                <i class="bi bi-chat-text" style="font-size: 3rem;"></i>
+                                <p class="mt-2">Start a conversation or select a saved chat from the history below.</p>
+                            </div>
+                        </div>
+                        <form id="chat-form">
+                            <!-- Recipe Context Area -->
+                            <div class="recipe-context-area" style="position: relative;">
+                                <div id="selected-recipes" class="recipe-context-tags">
+                                    <!-- Selected recipe tags appear here -->
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button type="button" class="recipe-selector-btn" id="add-recipe-btn" onclick="toggleRecipeDropdown()">
+                                        <i class="bi bi-book"></i> Add Recipe Context
+                                    </button>
+                                    <small style="color: #677D6A;">or type @ in your message</small>
+                                </div>
+                                <!-- Recipe dropdown -->
+                                <div id="recipe-dropdown" class="recipe-dropdown">
+                                    <div class="recipe-dropdown-search">
+                                        <input type="text" id="recipe-search-input" placeholder="Search your recipes..." oninput="searchRecipes(this.value)">
+                                    </div>
+                                    <div id="recipe-dropdown-list">
+                                        <div class="recipe-dropdown-empty">Start typing to search recipes...</div>
+                                    </div>
+                                </div>
+                                <!-- @ mention autocomplete -->
+                                <div id="mention-autocomplete" class="mention-autocomplete"></div>
+                            </div>
+                            <div class="input-group" style="position: relative;">
+                                <input type="text" id="user-message" class="form-control" placeholder="Ask for recipe suggestions, meal ideas, or food advice... (use @recipe name to reference)" autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="paste-recipe-btn" title="Paste recipe from clipboard">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button class="btn btn-primary" type="submit" id="send-btn">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                        </form>
+                        <div id="chat-status" class="mt-2 small text-muted"></div>
                     </div>
                 </div>
-            </div>
+
+                <!-- Chat History (Collapsible) -->
+                <div class="card">
+                    <div class="card-header" data-bs-toggle="collapse" data-bs-target="#chatHistory" style="cursor: pointer; background-color: var(--gold); color: var(--bg-deep);">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history"></i> Chat History
+                            <i class="bi bi-chevron-down float-end"></i>
+                        </h5>
+                    </div>
+                    <div id="chatHistory" class="collapse show">
+                        <div class="card-body p-0">
+                            <div id="chat-history" style="max-height: 400px; overflow-y: auto;">
+                                <div class="text-center text-muted p-4">
+                                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 mb-0">No saved chats yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.content-col -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
+
+<!-- Recipe Side Panel -->
+<div id="recipeSidePanel" class="recipe-side-panel" style="display: none;">
+    <div class="recipe-panel-header">
+        <h5><i class="bi bi-clipboard-check"></i> Recipe Preview</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="closeRecipePanel()"></button>
+    </div>
+    <div class="recipe-panel-body">
+        <div class="mb-3">
+            <label class="form-label">Recipe Name</label>
+            <input type="text" class="form-control" id="recipe-name-panel">
         </div>
+        <div class="mb-3">
+            <label class="form-label">Full Recipe</label>
+            <textarea class="form-control" id="recipe-content-panel" rows="20" readonly></textarea>
+        </div>
+    </div>
+    <div class="recipe-panel-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeRecipePanel()">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="copyRecipeToClipboard()">
+            <i class="bi bi-clipboard"></i> Copy to Clipboard
+        </button>
+        <a href="{{ url_for('recipes.create_recipe') }}" class="btn btn-primary" id="go-to-create-recipe">
+            <i class="bi bi-plus-circle"></i> Create Recipe
+        </a>
     </div>
 </div>
 
-<style>
-.chat-message {
-    margin-bottom: 15px;
-    padding: 10px 15px;
-    border-radius: 8px;
-}
-
-.chat-message.user {
-    background-color: #e3f2fd;
-    margin-left: 20%;
-    text-align: right;
-}
-
-.chat-message.assistant {
-    background-color: #ffffff;
-    margin-right: 20%;
-    border: 1px solid #dee2e6;
-}
-
-.chat-message .role {
-    font-weight: bold;
-    font-size: var(--text-value);
-    margin-bottom: 5px;
-}
-
-.chat-message.user .role {
-    color: #1976d2;
-}
-
-.chat-message.assistant .role {
-    color: #388e3c;
-}
-
-.history-item {
-    padding: 12px 15px;
-    border-bottom: 1px solid #dee2e6;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.history-item:hover {
-    background-color: #f8f9fa;
-}
-
-.history-item.active {
-    background-color: #e3f2fd;
-}
-
-.history-item .title {
-    font-weight: 500;
-    font-size: var(--text-title);
-    margin-bottom: 3px;
-}
-
-.history-item .meta {
-    font-size: var(--text-title);
-    color: #6c757d;
-}
-
-.history-item .actions {
-    display: none;
-}
-
-.history-item:hover .actions {
-    display: inline-block;
-}
-</style>
+<!-- Overlay for side panel -->
+<div id="recipePanelOverlay" class="recipe-panel-overlay" style="display: none;" onclick="closeRecipePanel()"></div>
 
 <script>
 let currentConversationId = null;
 let currentProvider = 'ollama';
 let currentModel = null;
+let currentPersona = 'nutritionist';
+let selectedRecipes = [];  // Array of {id, name} objects
+let mentionSearchTimeout = null;
+let selectedMentionIndex = 0;
+let mentionResults = [];
 
 // Load chat history on page load
 document.addEventListener('DOMContentLoaded', function() {
+    checkOllamaConnection();
     loadChatHistory();
 
-    // Provider change handler
-    document.getElementById('llm-provider').addEventListener('change', function() {
-        currentProvider = this.value;
-        updateProviderInfo();
+    // Ollama model select handler
+    document.getElementById('ollama-model-select').addEventListener('change', function() {
+        currentModel = this.value || null;
     });
 
-    // Model input handler
-    document.getElementById('llm-model').addEventListener('input', function() {
-        currentModel = this.value.trim() || null;
+    // Persona change handler
+    document.getElementById('persona-selector').addEventListener('change', function() {
+        currentPersona = this.value;
     });
 
     // New chat button
@@ -180,27 +705,126 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         sendMessage();
     });
+
+    // @ mention detection in message input
+    const messageInput = document.getElementById('user-message');
+    messageInput.addEventListener('input', handleMentionInput);
+    messageInput.addEventListener('keydown', handleMentionKeydown);
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.recipe-context-area')) {
+            closeRecipeDropdown();
+            closeMentionAutocomplete();
+        }
+    });
+
+    // Load recipes on page load for faster search
+    loadAllRecipes();
+
+    // Paste Recipe button handler
+    document.getElementById('paste-recipe-btn').addEventListener('click', async function() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                messageInput.value = text;
+                messageInput.focus();
+                // Auto-resize textarea
+                messageInput.style.height = 'auto';
+                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                // Visual feedback
+                this.innerHTML = '<i class="bi bi-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="bi bi-clipboard"></i>';
+                }, 1500);
+            }
+        } catch (err) {
+            alert('Could not access clipboard. Please paste manually with Ctrl+V');
+        }
+    });
+
+    // Check for pending recipe from Recipe Builder
+    const pendingRecipe = sessionStorage.getItem('pendingRecipeForAI');
+    if (pendingRecipe) {
+        // Clear it so it doesn't persist
+        sessionStorage.removeItem('pendingRecipeForAI');
+        // Populate the message input
+        messageInput.value = pendingRecipe;
+        // Focus the input and scroll to bottom
+        messageInput.focus();
+        // Auto-resize textarea if needed
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+        // Show a toast notification
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-info alert-dismissible fade show position-fixed';
+        toast.style.cssText = 'top: 60px; right: 20px; z-index: 1050; max-width: 350px;';
+        toast.innerHTML = `
+            <i class="bi bi-info-circle"></i> <strong>Recipe loaded!</strong>
+            Click Send or press Enter to ask the AI about it.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
 });
 
-function updateProviderInfo() {
-    const infoDiv = document.getElementById('provider-info');
-    const provider = document.getElementById('llm-provider').value;
+// Check Ollama connection and load models
+async function checkOllamaConnection() {
+    const modelSelect = document.getElementById('ollama-model-select');
 
-    const infos = {
-        'ollama': '<small><strong>Ollama:</strong> Local LLM. Make sure Ollama is running (<code>ollama serve</code>).</small>',
-        'openai': '<small><strong>OpenAI:</strong> Requires API key in environment variables. Supports GPT-3.5, GPT-4, etc.</small>',
-        'anthropic': '<small><strong>Anthropic:</strong> Requires API key in environment variables. Supports Claude models.</small>'
-    };
+    try {
+        const response = await fetch('http://localhost:11434/api/tags');
+        if (response.ok) {
+            const data = await response.json();
+            const models = data.models || [];
 
-    infoDiv.innerHTML = infos[provider];
+            // Populate model dropdown
+            if (models.length > 0) {
+                modelSelect.innerHTML = models.map((model, index) => {
+                    const modelName = model.name;
+                    const size = model.size ? formatModelSize(model.size) : '';
+                    const displayName = size ? `${modelName} (${size})` : modelName;
+                    return `<option value="${modelName}" ${index === 0 ? 'selected' : ''}>${displayName}</option>`;
+                }).join('');
+
+                // Set the first model as current
+                currentModel = models[0].name;
+            } else {
+                modelSelect.innerHTML = '<option value="">No models installed - run: ollama pull llama3.2</option>';
+            }
+
+            return models.length > 0;
+        }
+    } catch (error) {
+        modelSelect.innerHTML = '<option value="">Ollama not running - start with: ollama serve</option>';
+        return false;
+    }
+}
+
+// Format model size for display
+function formatModelSize(bytes) {
+    if (bytes >= 1e9) {
+        return (bytes / 1e9).toFixed(1) + ' GB';
+    } else if (bytes >= 1e6) {
+        return (bytes / 1e6).toFixed(1) + ' MB';
+    }
+    return bytes + ' B';
 }
 
 function startNewChat() {
     currentConversationId = null;
-    document.getElementById('chat-messages').innerHTML = '<div class="text-center text-muted"><i class="bi bi-chat-text" style="font-size: 3rem;"></i><p class="mt-2">Start a new conversation</p></div>';
+    document.getElementById('chat-messages').innerHTML = '<div class="text-center" style="color: #677D6A;"><i class="bi bi-chat-text" style="font-size: 3rem;"></i><p class="mt-2">Start a new conversation</p></div>';
     document.getElementById('current-conversation-title').textContent = '';
     document.getElementById('user-message').value = '';
     document.getElementById('user-message').focus();
+
+    // Clear selected recipes
+    selectedRecipes = [];
+    renderSelectedRecipes();
 
     // Remove active class from all history items
     document.querySelectorAll('.history-item').forEach(item => item.classList.remove('active'));
@@ -225,6 +849,7 @@ async function loadChatHistory() {
                         <div class="title">${escapeHtml(conv.title)}</div>
                         <div class="meta">
                             <span class="badge bg-info">${conv.provider}</span>
+                            <span class="badge bg-success ms-1">${conv.persona || 'nutritionist'}</span>
                             <span class="ms-2">${conv.message_count} messages</span>
                             <span class="ms-2">${formatDate(conv.updated_at)}</span>
                         </div>
@@ -249,7 +874,8 @@ async function loadConversation(conversationId) {
 
         currentConversationId = conversationId;
         currentProvider = data.conversation.provider;
-        document.getElementById('llm-provider').value = currentProvider;
+        currentPersona = data.conversation.persona || 'nutritionist';
+        document.getElementById('persona-selector').value = currentPersona;
         document.getElementById('current-conversation-title').textContent = data.conversation.title;
 
         // Display messages
@@ -257,7 +883,7 @@ async function loadConversation(conversationId) {
         chatMessages.innerHTML = data.messages.map(msg => `
             <div class="chat-message ${msg.role}">
                 <div class="role">${msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
-                <div class="content">${escapeHtml(msg.content)}</div>
+                <div class="content">${formatMessage(msg.content, msg.role === 'assistant')}</div>
             </div>
         `).join('');
 
@@ -285,12 +911,37 @@ async function sendMessage() {
     sendBtn.disabled = true;
     sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
 
+    // Build recipe context indicator for display
+    let recipeContextHtml = '';
+    if (selectedRecipes.length > 0) {
+        const recipeNames = selectedRecipes.map(r => `<span style="background: rgba(139,164,139,0.3); padding: 2px 6px; border-radius: 10px; margin-right: 4px;"><i class="bi bi-book"></i> ${escapeHtml(r.name)}</span>`).join('');
+        recipeContextHtml = `<div style="font-size: var(--text-micro); color: #8BA48B; margin-bottom: 5px;">With context: ${recipeNames}</div>`;
+    }
+
     // Add user message to chat
     const chatMessages = document.getElementById('chat-messages');
     chatMessages.innerHTML += `
         <div class="chat-message user">
             <div class="role">You</div>
-            <div class="content">${escapeHtml(message)}</div>
+            ${recipeContextHtml}
+            <div class="content">${formatMessage(message, false)}</div>
+        </div>
+    `;
+
+    // Add loading indicator
+    const modelName = currentModel || 'default model';
+    chatMessages.innerHTML += `
+        <div class="chat-message loading" id="loading-indicator">
+            <div class="loading-container">
+                <div class="loading-text">
+                    <i class="bi bi-robot"></i>
+                    <span>AI is thinking...</span>
+                </div>
+                <div class="loading-bar-wrapper">
+                    <div class="loading-bar"></div>
+                </div>
+                <div class="loading-status">Using ${escapeHtml(modelName)} via ${currentProvider}</div>
+            </div>
         </div>
     `;
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -298,10 +949,13 @@ async function sendMessage() {
     // Clear input
     messageInput.value = '';
 
-    // Show status
-    document.getElementById('chat-status').textContent = 'Waiting for response...';
+    // Clear the old text status
+    document.getElementById('chat-status').textContent = '';
 
     try {
+        // Get selected recipe IDs for context
+        const recipeIds = selectedRecipes.map(r => r.id);
+
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
@@ -311,11 +965,19 @@ async function sendMessage() {
                 message: message,
                 provider: currentProvider,
                 model: currentModel,
-                conversation_id: currentConversationId
+                persona: currentPersona,
+                conversation_id: currentConversationId,
+                recipe_ids: recipeIds
             })
         });
 
         const data = await response.json();
+
+        // Remove loading indicator
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
 
         if (response.ok) {
             // Update conversation ID
@@ -327,10 +989,16 @@ async function sendMessage() {
             chatMessages.innerHTML += `
                 <div class="chat-message assistant">
                     <div class="role">AI Assistant</div>
-                    <div class="content">${escapeHtml(data.response)}</div>
+                    <div class="content">${formatMessage(data.response, true)}</div>
                 </div>
             `;
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Check if response contains a recipe and add copy button
+            if (detectRecipe(data.response)) {
+                const recipe = extractRecipe(data.response);
+                showRecipeCopyButton(data.response, recipe);
+            }
 
             // Reload chat history
             loadChatHistory();
@@ -342,7 +1010,23 @@ async function sendMessage() {
 
     } catch (error) {
         console.error('Error sending message:', error);
-        document.getElementById('chat-status').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+
+        // Remove loading indicator if still present
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+
+        // Show error in chat area
+        chatMessages.innerHTML += `
+            <div class="chat-message assistant" style="border-color: #dc3545;">
+                <div class="role" style="color: #dc3545;"><i class="bi bi-exclamation-triangle"></i> Error</div>
+                <div class="content" style="color: #f8d7da;">${escapeHtml(error.message)}</div>
+            </div>
+        `;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        document.getElementById('chat-status').textContent = '';
     } finally {
         // Re-enable send button
         sendBtn.disabled = false;
@@ -375,10 +1059,261 @@ async function deleteConversation(conversationId) {
     }
 }
 
+// Recipe detection and extraction
+function detectRecipe(text) {
+    const lowerText = text.toLowerCase();
+    const hasIngredients = lowerText.includes('ingredients:') || lowerText.includes('ingredient list');
+    const hasInstructions = lowerText.includes('instructions:') ||
+                           lowerText.includes('directions:') ||
+                           lowerText.includes('method:') ||
+                           lowerText.includes('steps:');
+    return hasIngredients && hasInstructions;
+}
+
+function extractRecipe(text) {
+    const lines = text.split('\n');
+    let recipe = {
+        name: '',
+        description: '',
+        ingredients: [],
+        instructions: '',
+        prep_time: '',
+        cook_time: '',
+        servings: '',
+        notes: ''
+    };
+
+    // Try to extract recipe name from first line or heading
+    const firstLine = lines[0].trim();
+    if (firstLine && !firstLine.toLowerCase().includes('recipe') && firstLine.length < 100) {
+        recipe.name = firstLine.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+    }
+
+    // Parse sections
+    let section = '';
+    for (let line of lines) {
+        const lowerLine = line.toLowerCase();
+        const trimmedLine = line.trim();
+
+        // Check for metadata
+        if (lowerLine.includes('prep time:') || lowerLine.includes('preparation time:')) {
+            recipe.prep_time = trimmedLine.split(':')[1]?.trim() || '';
+            continue;
+        } else if (lowerLine.includes('cook time:') || lowerLine.includes('cooking time:')) {
+            recipe.cook_time = trimmedLine.split(':')[1]?.trim() || '';
+            continue;
+        } else if (lowerLine.includes('servings:') || lowerLine.includes('serves:') || lowerLine.includes('yield:')) {
+            recipe.servings = trimmedLine.split(':')[1]?.trim() || '';
+            continue;
+        }
+
+        // Check for section headers
+        if (lowerLine.includes('ingredients:') || lowerLine.includes('ingredient list')) {
+            section = 'ingredients';
+            continue;
+        } else if (lowerLine.includes('instructions:') ||
+                   lowerLine.includes('directions:') ||
+                   lowerLine.includes('method:') ||
+                   lowerLine.includes('steps:')) {
+            section = 'instructions';
+            continue;
+        } else if (lowerLine.includes('notes:') || lowerLine.includes('tips:')) {
+            section = 'notes';
+            continue;
+        } else if (lowerLine.includes('description:')) {
+            section = 'description';
+            continue;
+        }
+
+        // Add content to appropriate section
+        if (section === 'ingredients' && trimmedLine && !trimmedLine.startsWith('#')) {
+            recipe.ingredients.push(trimmedLine.replace(/^[-*•]\s*/, '').replace(/^\d+[\.)]\s*/, ''));
+        } else if (section === 'instructions' && trimmedLine && !trimmedLine.startsWith('#')) {
+            recipe.instructions += trimmedLine.replace(/^\d+[\.)]\s*/, '') + '\n';
+        } else if (section === 'notes' && trimmedLine && !trimmedLine.startsWith('#')) {
+            recipe.notes += trimmedLine + '\n';
+        } else if (section === 'description' && trimmedLine && !trimmedLine.startsWith('#')) {
+            recipe.description += trimmedLine + ' ';
+        }
+    }
+
+    // Clean up
+    recipe.instructions = recipe.instructions.trim();
+    recipe.notes = recipe.notes.trim();
+    recipe.description = recipe.description.trim();
+
+    return recipe;
+}
+
+function showRecipeCopyButton(fullText, parsedRecipe) {
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'mt-3 d-flex gap-2 flex-wrap';
+
+    // Copy to Clipboard button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn-sm btn-success';
+    copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy Recipe';
+    copyBtn.onclick = () => {
+        navigator.clipboard.writeText(fullText).then(() => {
+            copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            setTimeout(() => {
+                copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy Recipe';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        });
+    };
+
+    // Add to Recipe button
+    const addToRecipeBtn = document.createElement('button');
+    addToRecipeBtn.className = 'btn btn-sm btn-primary';
+    addToRecipeBtn.innerHTML = '<i class="bi bi-book"></i> Add to Recipe';
+    addToRecipeBtn.onclick = () => {
+        // Store in sessionStorage so it can be used on create recipe page
+        sessionStorage.setItem('ai_recipe_full', fullText);
+        sessionStorage.setItem('ai_recipe_parsed', JSON.stringify(parsedRecipe));
+        window.location.href = "{{ url_for('recipes.create_recipe') }}";
+    };
+
+    // Add to Meal button
+    const addToMealBtn = document.createElement('button');
+    addToMealBtn.className = 'btn btn-sm btn-info';
+    addToMealBtn.innerHTML = '<i class="bi bi-cup-straw"></i> Add to Meal';
+    addToMealBtn.onclick = () => {
+        // Store in sessionStorage so it can be used on create meal page
+        sessionStorage.setItem('ai_meal_full', fullText);
+        sessionStorage.setItem('ai_meal_parsed', JSON.stringify(parsedRecipe));
+        window.location.href = "{{ url_for('recipes.create_meal') }}";
+    };
+
+    buttonContainer.appendChild(copyBtn);
+    buttonContainer.appendChild(addToRecipeBtn);
+    buttonContainer.appendChild(addToMealBtn);
+
+    // Append to the last AI message
+    const lastMessage = document.querySelector('.chat-message.assistant:last-child .content');
+    if (lastMessage) {
+        lastMessage.appendChild(buttonContainer);
+    }
+}
+
+// Recipe panel functions
+function openRecipePanel(fullText, parsedRecipe) {
+    document.getElementById('recipe-name-panel').value = parsedRecipe.name || 'AI Generated Recipe';
+    document.getElementById('recipe-content-panel').value = fullText;
+
+    // Store in sessionStorage so it can be used on create recipe page
+    sessionStorage.setItem('ai_recipe', fullText);
+    sessionStorage.setItem('ai_recipe_parsed', JSON.stringify(parsedRecipe));
+
+    // Show panel and overlay
+    document.getElementById('recipeSidePanel').style.display = 'block';
+    document.getElementById('recipePanelOverlay').style.display = 'block';
+
+    // Animate slide in
+    setTimeout(() => {
+        document.getElementById('recipeSidePanel').classList.add('active');
+    }, 10);
+}
+
+function closeRecipePanel() {
+    const panel = document.getElementById('recipeSidePanel');
+    panel.classList.remove('active');
+
+    setTimeout(() => {
+        panel.style.display = 'none';
+        document.getElementById('recipePanelOverlay').style.display = 'none';
+    }, 300);
+}
+
+function copyRecipeToClipboard() {
+    const content = document.getElementById('recipe-content-panel').value;
+    navigator.clipboard.writeText(content).then(() => {
+        alert('Recipe copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard');
+    });
+}
+
+// Utility functions
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function formatMessage(text, isAssistant = false) {
+    if (!isAssistant) {
+        // User messages - just escape HTML
+        return escapeHtml(text);
+    }
+
+    // For assistant messages, convert markdown-style formatting to HTML
+    let formatted = escapeHtml(text);
+
+    // Convert ### headings to h3 tags
+    formatted = formatted.replace(/###\s+(.+?)(?:\n|$)/g, '<h3>$1</h3>\n');
+
+    // Convert **bold** to strong tags
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Convert bullet points (-, *, •) to proper lists
+    // First, identify list blocks
+    const lines = formatted.split('\n');
+    let inList = false;
+    let listType = null; // 'ul' or 'ol'
+    let result = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const isBullet = /^[-*•]\s+(.+)/.test(line);
+        const isNumbered = /^\d+[\.)]\s+(.+)/.test(line);
+
+        if (isBullet || isNumbered) {
+            const currentListType = isNumbered ? 'ol' : 'ul';
+
+            if (!inList) {
+                // Start a new list
+                result.push(`<${currentListType}>`);
+                inList = true;
+                listType = currentListType;
+            } else if (listType !== currentListType) {
+                // List type changed, close old and open new
+                result.push(`</${listType}>`);
+                result.push(`<${currentListType}>`);
+                listType = currentListType;
+            }
+
+            // Extract the content after the bullet/number
+            const content = isBullet ?
+                line.replace(/^[-*•]\s+/, '') :
+                line.replace(/^\d+[\.)]\s+/, '');
+            result.push(`<li>${content}</li>`);
+        } else {
+            if (inList) {
+                // Close the list
+                result.push(`</${listType}>`);
+                inList = false;
+                listType = null;
+            }
+
+            // Add regular line
+            if (line) {
+                result.push(`<p>${line}</p>`);
+            } else {
+                result.push('');
+            }
+        }
+    }
+
+    // Close any open list at the end
+    if (inList) {
+        result.push(`</${listType}>`);
+    }
+
+    return result.join('\n');
 }
 
 function formatDate(dateString) {
@@ -394,6 +1329,196 @@ function formatDate(dateString) {
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
+}
+
+// ==========================================
+// Recipe Context Functions
+// ==========================================
+
+let allRecipes = [];  // Cache of all recipes for faster search
+
+async function loadAllRecipes() {
+    try {
+        const response = await fetch('/api/recipes/search?q=&limit=100');
+        allRecipes = await response.json();
+    } catch (error) {
+        console.error('Error loading recipes:', error);
+    }
+}
+
+function toggleRecipeDropdown() {
+    const dropdown = document.getElementById('recipe-dropdown');
+    if (dropdown.classList.contains('show')) {
+        closeRecipeDropdown();
+    } else {
+        dropdown.classList.add('show');
+        document.getElementById('recipe-search-input').focus();
+        searchRecipes('');  // Show all recipes initially
+    }
+}
+
+function closeRecipeDropdown() {
+    document.getElementById('recipe-dropdown').classList.remove('show');
+}
+
+async function searchRecipes(query) {
+    const listDiv = document.getElementById('recipe-dropdown-list');
+
+    // Filter from cache for instant results
+    const filtered = allRecipes.filter(r =>
+        r.name.toLowerCase().includes(query.toLowerCase()) &&
+        !selectedRecipes.some(sr => sr.id === r.id)  // Exclude already selected
+    ).slice(0, 10);
+
+    if (filtered.length === 0) {
+        listDiv.innerHTML = '<div class="recipe-dropdown-empty">No recipes found</div>';
+        return;
+    }
+
+    listDiv.innerHTML = filtered.map(r => `
+        <div class="recipe-dropdown-item" onclick="selectRecipe(${r.id}, '${escapeHtml(r.name).replace(/'/g, "\\'")}')">
+            <div class="recipe-name">${escapeHtml(r.name)}</div>
+            <div class="recipe-meta">${r.category || 'Uncategorized'} • ${r.ingredient_count} ingredients</div>
+        </div>
+    `).join('');
+}
+
+function selectRecipe(id, name) {
+    // Check if already selected
+    if (selectedRecipes.some(r => r.id === id)) {
+        return;
+    }
+
+    selectedRecipes.push({ id, name });
+    renderSelectedRecipes();
+    closeRecipeDropdown();
+    document.getElementById('recipe-search-input').value = '';
+}
+
+function removeRecipe(id) {
+    selectedRecipes = selectedRecipes.filter(r => r.id !== id);
+    renderSelectedRecipes();
+}
+
+function renderSelectedRecipes() {
+    const container = document.getElementById('selected-recipes');
+
+    if (selectedRecipes.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = selectedRecipes.map(r => `
+        <span class="recipe-tag">
+            <i class="bi bi-book"></i> ${escapeHtml(r.name)}
+            <span class="remove-tag" onclick="removeRecipe(${r.id})"><i class="bi bi-x"></i></span>
+        </span>
+    `).join('');
+}
+
+// ==========================================
+// @ Mention Autocomplete Functions
+// ==========================================
+
+function handleMentionInput(e) {
+    const input = e.target;
+    const value = input.value;
+    const cursorPos = input.selectionStart;
+
+    // Find if we're currently typing a mention
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/@([^@]*)$/);
+
+    if (mentionMatch) {
+        const searchTerm = mentionMatch[1];
+        showMentionAutocomplete(searchTerm);
+    } else {
+        closeMentionAutocomplete();
+    }
+}
+
+function handleMentionKeydown(e) {
+    const autocomplete = document.getElementById('mention-autocomplete');
+    if (!autocomplete.classList.contains('show')) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedMentionIndex = Math.min(selectedMentionIndex + 1, mentionResults.length - 1);
+        updateMentionSelection();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedMentionIndex = Math.max(selectedMentionIndex - 1, 0);
+        updateMentionSelection();
+    } else if (e.key === 'Enter' && mentionResults.length > 0) {
+        e.preventDefault();
+        selectMention(mentionResults[selectedMentionIndex]);
+    } else if (e.key === 'Escape') {
+        closeMentionAutocomplete();
+    }
+}
+
+function showMentionAutocomplete(searchTerm) {
+    const autocomplete = document.getElementById('mention-autocomplete');
+
+    // Filter recipes
+    mentionResults = allRecipes.filter(r =>
+        r.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !selectedRecipes.some(sr => sr.id === r.id)
+    ).slice(0, 5);
+
+    if (mentionResults.length === 0) {
+        autocomplete.innerHTML = '<div class="recipe-dropdown-empty">No matching recipes</div>';
+    } else {
+        autocomplete.innerHTML = mentionResults.map((r, i) => `
+            <div class="mention-item ${i === selectedMentionIndex ? 'selected' : ''}"
+                 onclick="selectMention({id: ${r.id}, name: '${escapeHtml(r.name).replace(/'/g, "\\'")}'})">
+                <span class="recipe-name"><i class="bi bi-book"></i> ${escapeHtml(r.name)}</span>
+            </div>
+        `).join('');
+    }
+
+    selectedMentionIndex = 0;
+    autocomplete.classList.add('show');
+}
+
+function updateMentionSelection() {
+    const items = document.querySelectorAll('#mention-autocomplete .mention-item');
+    items.forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedMentionIndex);
+    });
+}
+
+function selectMention(recipe) {
+    const input = document.getElementById('user-message');
+    const value = input.value;
+    const cursorPos = input.selectionStart;
+
+    // Find the @ position
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+        // Replace @searchterm with just the question (remove the @mention)
+        const beforeAt = value.substring(0, atIndex);
+        const afterCursor = value.substring(cursorPos);
+        input.value = beforeAt + afterCursor;
+        input.selectionStart = input.selectionEnd = beforeAt.length;
+    }
+
+    // Add recipe to selected recipes
+    if (!selectedRecipes.some(r => r.id === recipe.id)) {
+        selectedRecipes.push({ id: recipe.id, name: recipe.name });
+        renderSelectedRecipes();
+    }
+
+    closeMentionAutocomplete();
+    input.focus();
+}
+
+function closeMentionAutocomplete() {
+    document.getElementById('mention-autocomplete').classList.remove('show');
+    mentionResults = [];
+    selectedMentionIndex = 0;
 }
 </script>
 {% endblock %}

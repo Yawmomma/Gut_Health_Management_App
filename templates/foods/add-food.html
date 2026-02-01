@@ -141,7 +141,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: var(--text-title);
+        font-size: var(--text-body);
         color: var(--white-ish);
     }
 
@@ -251,9 +251,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <style>
     .sidebar-nav-item {
         transition: transform 0.2s ease;
@@ -265,19 +262,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .foods-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 40px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-title);
@@ -294,7 +294,7 @@
 <!-- Main Layout with Sidebar -->
 <div class="row g-0">
     <!-- Left Sidebar: Navigation -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="foods-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> Food Guide</h6>
 
@@ -356,7 +356,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
                 </div>
             </a>
 
@@ -424,39 +424,38 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
-        <div class="text-center mb-4">
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="mb-4">
             <h1 class="mb-0" style="font-size: var(--text-h2);"><i class="bi bi-plus-circle"></i> Add Custom Food/Drink</h1>
         </div>
 
-<div class="row">
-    <div class="col-md-9">
+        <div class="row">
+            <div class="col-md-9">
         <div class="card">
             <div class="card-body">
-                <form method="POST" id="add-food-form">
+                <form method="POST" id="add-food-form" novalidate>
                     <!-- Basic Information -->
                     <h5 class="mb-3"><i class="bi bi-tag"></i> Basic Information</h5>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="food_name" class="form-label"><strong>Food/Drink Name *</strong></label>
-                            <input type="text" class="form-control form-control-lg" id="food_name" name="food_name"
+                            <input type="text" class="form-control" id="food_name" name="food_name"
                                    placeholder="e.g., Kippers, Green Tea, Sourdough Bread" required>
                         </div>
                         <div class="col-md-6">
                             <label for="category" class="form-label"><strong>Category *</strong></label>
-                            <select class="form-select form-select-lg" id="category" name="category" required>
+                            <select class="form-select" id="category" name="category" required>
                                 <option value="">Choose...</option>
                                 <option value="Vegetables">Vegetables</option>
                                 <option value="Fruits">Fruits</option>
-                                <option value="Grains">Grains & Cereals</option>
-                                <option value="Proteins">Proteins (Meat/Fish)</option>
-                                <option value="Dairy">Dairy & Alternatives</option>
+                                <option value="Grains">Grains</option>
+                                <option value="Proteins">Proteins</option>
+                                <option value="Dairy">Dairy</option>
                                 <option value="Nuts & Seeds">Nuts & Seeds</option>
-                                <option value="Spices">Spices</option>
+                                <option value="Fats/Oils">Fats/Oils</option>
+                                <option value="Herbs & Spices">Herbs & Spices</option>
                                 <option value="Beverages">Beverages</option>
-                                <option value="Condiments">Condiments & Sauces</option>
-                                <option value="Snacks">Snacks</option>
                                 <option value="Packaged Food">Packaged Food</option>
                                 <option value="Other">Other</option>
                             </select>
@@ -752,6 +751,7 @@
                         </div>
                     </div>
 
+                    <div class="additional-section">
                     <!-- Nutrition Information Section (Optional - for packaged items) -->
                     <details class="collapsible-section additional">
                         <summary class="collapsible-summary">
@@ -1133,13 +1133,15 @@
                             </div>
                         </div>
                     </details>
+                    </div>
 
                     </div>
                 </form>
             </div>
         </div>
 
-    </div>
+            </div> <!-- Close col-md-9 -->
+        </div> <!-- Close row -->
     </div> <!-- Close main-content-area -->
 </div> <!-- Close row g-0 -->
 

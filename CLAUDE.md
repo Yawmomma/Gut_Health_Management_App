@@ -26,7 +26,7 @@ templates/
 | Dark Green | #677D6A | Sidebar gradient end |
 | Beige/Gold | #D6BD98 | Secondary, header, accents |
 | Dark Green | #1A3636 | Text/emphasis, Quick Actions buttons, moderate risk container bg |
-| Olive Green | #40534C (`--bg-elevated`) | Card backgrounds, Watch List container bg |
+| Olive Green | #40534c (`--bg-elevated`) | Card backgrounds, Watch List container bg |
 | Traffic Lights | #28a745 / #ffc107 / #dc3545 | Green/Amber/Red ratings |
 
 ### CSS Variables (in `static/css/main.css`)
@@ -60,10 +60,12 @@ templates/
 All pages follow this structure:
 - **Header**: Sticky beige bar (50px height), centered title
 - **Sidebar** (fixed): Green gradient, `position: fixed`, `width: 200px`, `height: calc(100vh - 50px)`, `top: 50px`, `left: 0`, padding: 12px, 7 nav links (Dashboard, Food Guide, Diary, Recipes, Education, Settings, Help & Support), action buttons below separator
-- **Main Content**: `margin-left: 200px`, `padding-left: 15px` (gap between sidebar and content)
-- **Content Width Constraint** (col-md-9): Wrap main content in `<div class="row"><div class="col-md-9">` to match dashboard width (~75% of main area)
+- **Main Content**: `margin-left: 200px`, `padding-left: 15px`, `max-width: 880px`
+- **Content Column**: `max-width: 620px` (applied via `.dashboard-content-col`, `.food-detail-content-col`, etc.)
 - **Row Container**: `margin-top: -1.5rem` pulls content up to meet header
 - **No Spacer Divs**: Alignment handled by negative margin
+
+**CRITICAL**: Never add inline CSS that overrides `.main-content-area` or content column classes. These are globally defined in `static/css/main.css` to ensure consistent widths across all pages.
 
 ### Sidebar CSS (`.sidebar-column`)
 ```css
@@ -85,10 +87,15 @@ margin-left: 200px;
 
 ### Layout Width Breakdown
 ```
-Sidebar:        200px fixed width (no Bootstrap cols)
-Main Area:      margin-left: 200px + 15px padding (no Bootstrap cols)
-Content Width:  col-md-9 within main area (constrains content to ~75% width)
+Sidebar:        200px fixed width (position: fixed, left: 0)
+Main Area:      margin-left: 200px, padding-left: 15px, max-width: 880px
+Content Column: max-width: 620px (applied via CSS classes in main.css)
+Total Offset:   215px from left edge (200px + 15px)
 ```
+
+**CSS Variables** (in `static/css/main.css`):
+- `--layout-main-max: 880px` - Main content area maximum width
+- `--layout-content-max: 620px` - Inner content column maximum width
 
 ## 📐 Dashboard Reference Template
 **USE THIS AS THE MASTER REFERENCE** for layout and styling. File: `templates/dashboard/index.html`
@@ -121,24 +128,35 @@ Content Width:  col-md-9 within main area (constrains content to ~75% width)
 }
 ```
 
-### Fixed Main Content Area (1000px)
+### Main Content Area (max 880px)
 ```css
 .main-content-area {
     margin-left: 200px;
-    width: 1000px;
-    max-width: 1000px;
+    padding-left: 15px;
+    width: 100% !important;
+    max-width: var(--layout-main-max) !important;  /* 880px */
+    box-sizing: border-box;
 }
 ```
 
-### Fixed Content Column (750px)
+### Content Columns (max 620px)
 ```css
-.dashboard-content-col {
-    width: 750px !important;
-    min-width: 750px !important;
-    max-width: 750px !important;
-    flex: 0 0 750px !important;
+.dashboard-content-col,
+.food-guide-content-col,
+.food-search-content-col,
+.food-detail-content-col,
+.content-col {
+    width: 100% !important;
+    max-width: var(--layout-content-max) !important;  /* 620px */
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+    box-sizing: border-box;
 }
 ```
+
+**IMPORTANT**: These specifications are defined in `static/css/main.css` (lines 111-126) and should NEVER be overridden in individual templates. If a page's containers extend too far right or are misaligned, check for:
+- Inline CSS overrides in the template that redefine these classes
+- Nested div structures causing double padding (e.g., padding on both `.main-content-area` and a child background wrapper)
 
 ### Wallpaper Background
 ```css
@@ -164,14 +182,21 @@ Content Width:  col-md-9 within main area (constrains content to ~75% width)
 │  HEADER (fixed, 50px height, z-index: 1000, beige)      │
 ├────────────┬────────────────────────────────────────────┤
 │            │                                            │
-│  SIDEBAR   │   MAIN CONTENT AREA (1000px)              │
+│  SIDEBAR   │   MAIN CONTENT AREA (max 880px)           │
 │  (200px)   │   ┌──────────────────────┐                │
-│  fixed     │   │ CONTENT COL (750px)  │  wallpaper     │
-│  z:100     │   │                      │  shows here    │
+│  fixed     │   │ CONTENT COL (620px)  │  wallpaper     │
+│  z:100     │   │  max-width           │  shows here    │
 │            │   └──────────────────────┘                │
 │            │                                            │
 └────────────┴────────────────────────────────────────────┘
 ```
+
+**Width Specifications** (defined in `static/css/main.css`):
+- Sidebar: 200px fixed
+- Gap/padding: 15px (main-content-area padding-left)
+- Main area: max 880px (--layout-main-max)
+- Content column: max 620px (--layout-content-max)
+- Total left offset: 215px (200px sidebar + 15px padding)
 
 ## Fixed Layout Rules (No Responsive)
 **IMPORTANT**: No horizontal scrollbars, no responsive breakpoints.

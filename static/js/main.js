@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Gut Health App initialized');
 
     // Auto-hide flash messages after 5 seconds
-    const alerts = document.querySelectorAll('.alert:not(.alert-info)');
+    const alerts = document.querySelectorAll('.alert:not(.alert-info):not(.alert-persistent)');
     alerts.forEach(alert => {
         setTimeout(() => {
             const bsAlert = new bootstrap.Alert(alert);

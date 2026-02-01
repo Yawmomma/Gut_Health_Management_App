@@ -77,6 +77,12 @@ def parse_custom_nutrients(form):
         return json.dumps(custom_nutrients)
     return None
 
+@bp.route('/cache-test')
+def cache_test():
+    """Cache test page to verify fresh content"""
+    from datetime import datetime
+    return render_template('cache_test.html', timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
 @bp.route('/')
 def index():
     """Food guide home page"""
@@ -87,6 +93,7 @@ def search():
     """Food search interface"""
     query = request.args.get('q', '')
     category = request.args.get('category', '')
+    view_all = request.args.get('view_all', '')
 
     foods = Food.query
 
@@ -101,7 +108,8 @@ def search():
     return render_template('foods/search.html',
                          foods=foods,
                          query=query,
-                         category=category)
+                         category=category,
+                         view_all=view_all)
 
 @bp.route('/<int:food_id>')
 def detail(food_id):
@@ -141,8 +149,12 @@ def add_food():
     if request.method == 'POST':
         try:
             # Get form data
-            food_name = request.form.get('food_name')
-            category = request.form.get('category')
+            food_name = (request.form.get('food_name') or '').strip()
+            category = (request.form.get('category') or '').strip()
+            if not food_name:
+                food_name = 'Unnamed Food'
+            if not category:
+                category = 'Other'
 
             # Serving sizes
             safe_serving = request.form.get('safe_serving', '')
@@ -284,6 +296,7 @@ def add_food():
             where_to_buy = request.form.get('where_to_buy', '')
 
             # Create new food
+            # Foods created via full form are marked as complete
             new_food = Food(
                 name=food_name,
                 category=category,
@@ -418,7 +431,9 @@ def add_food():
                 may_contain_allergens=may_contain_allergens,
                 where_to_buy=where_to_buy,
                 # Custom nutrients
-                custom_nutrients=parse_custom_nutrients(request.form)
+                custom_nutrients=parse_custom_nutrients(request.form),
+                # Mark as complete since it was created via full form
+                is_complete=True
             )
 
             db.session.add(new_food)
@@ -442,8 +457,12 @@ def edit_food(food_id):
     if request.method == 'POST':
         try:
             # Update basic information
-            food.name = request.form.get('food_name')
-            food.category = request.form.get('category')
+            incoming_name = (request.form.get('food_name') or '').strip()
+            if incoming_name:
+                food.name = incoming_name
+            incoming_category = (request.form.get('category') or '').strip()
+            if incoming_category:
+                food.category = incoming_category
 
             # Serving sizes
             food.safe_serving = request.form.get('safe_serving', '')
@@ -681,6 +700,9 @@ def edit_food(food_id):
 
             # Custom nutrients
             food.custom_nutrients = parse_custom_nutrients(request.form)
+
+            # Mark as complete since food has been edited with full information
+            food.is_complete = True
 
             db.session.commit()
 

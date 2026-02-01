@@ -13,7 +13,7 @@ class Config:
 
     # LLM Provider configurations
     OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
-    OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.1:8b')
+    OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'hf.co/MaziyarPanahi/phi-4-GGUF:latest')
 
     # OpenAI configuration (optional)
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')

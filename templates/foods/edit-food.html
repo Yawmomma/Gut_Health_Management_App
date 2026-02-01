@@ -604,31 +604,37 @@
 
     .sidebar-column {
 
+        position: fixed;
+
+        top: 50px;
+
+        left: 0;
+
+        width: 200px;
+
+        height: calc(100vh - 50px);
+
         background: linear-gradient(135deg, #8BA48B, #677D6A);
 
-        min-height: 100%;
+        overflow-y: auto;
+
+        z-index: 100;
 
     }
 
     .foods-sidebar {
 
-        position: sticky;
-
-        top: 50px;
-
         padding: 12px;
 
-        padding-top: 28px;
+        padding-top: 40px;
 
     }
 
     .main-content-area {
 
-        border-left: 3px solid #8BA48B;
+        padding-left: 15px;
 
-        padding-left: 30px;
-
-        min-height: 100%;
+        margin-left: 200px;
 
     }
 
@@ -662,7 +668,7 @@
 
     <!-- Left Sidebar: Navigation -->
 
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
 
         <div class="foods-sidebar">
 
@@ -786,7 +792,7 @@
 
                     </div>
 
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
 
                 </div>
 
@@ -903,7 +909,7 @@
 
     <!-- Right Content Area -->
 
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area" style="padding-top: 40px;">
 
         <h1 class="mb-4"><i class="bi bi-pencil-square"></i> Edit {{ food.name }}</h1>
 
@@ -917,7 +923,7 @@
 
             <div class="card-body">
 
-                <form method="POST" id="edit-food-form">
+                <form method="POST" id="edit-food-form" novalidate>
 
                     <!-- Basic Information -->
 
@@ -949,21 +955,19 @@
 
                                 <option value="Fruits" {% if food.category == 'Fruits' %}selected{% endif %}>Fruits</option>
 
-                                <option value="Grains" {% if food.category == 'Grains' %}selected{% endif %}>Grains & Cereals</option>
+                                <option value="Grains" {% if food.category == 'Grains' %}selected{% endif %}>Grains</option>
 
-                                <option value="Proteins" {% if food.category == 'Proteins' %}selected{% endif %}>Proteins (Meat/Fish)</option>
+                                <option value="Proteins" {% if food.category == 'Proteins' %}selected{% endif %}>Proteins</option>
 
-                                <option value="Dairy" {% if food.category == 'Dairy' %}selected{% endif %}>Dairy & Alternatives</option>
+                                <option value="Dairy" {% if food.category == 'Dairy' %}selected{% endif %}>Dairy</option>
 
                                 <option value="Nuts & Seeds" {% if food.category == 'Nuts & Seeds' %}selected{% endif %}>Nuts & Seeds</option>
 
-                                <option value="Spices" {% if food.category == 'Spices' %}selected{% endif %}>Spices</option>
+                                <option value="Fats/Oils" {% if food.category == 'Fats/Oils' %}selected{% endif %}>Fats/Oils</option>
+
+                                <option value="Herbs & Spices" {% if food.category == 'Herbs & Spices' %}selected{% endif %}>Herbs & Spices</option>
 
                                 <option value="Beverages" {% if food.category == 'Beverages' %}selected{% endif %}>Beverages</option>
-
-                                <option value="Condiments" {% if food.category == 'Condiments' %}selected{% endif %}>Condiments & Sauces</option>
-
-                                <option value="Snacks" {% if food.category == 'Snacks' %}selected{% endif %}>Snacks</option>
 
                                 <option value="Packaged Food" {% if food.category == 'Packaged Food' %}selected{% endif %}>Packaged Food</option>
 
@@ -1633,6 +1637,7 @@
 
 
 
+                    <div class="additional-section">
                     <!-- Nutrition Information Section (Optional - for packaged items) -->
 
                     <details class="collapsible-section additional">
@@ -2319,6 +2324,7 @@
                         </div>
 
                     </details>
+                    </div>
 
 
 

@@ -82,6 +82,7 @@ DIETARY_NEEDS = [
     'Keto & Low-Carb',
     'Gluten-Free',
     'Dairy-Free',
+    'FODMAP Friendly',
     'Vegan & Plant-Based',
     'Paleo & Whole30',
     'Heart-Healthy or Low-Fat',
@@ -92,24 +93,36 @@ DIETARY_NEEDS = [
 
 # PREPARATION METHOD
 PREPARATION_METHODS = [
-    'Grilling & BBQ',
-    'Baking & Roasting',
-    'Slow Cooker / Crockpot',
+    'Grilling',
+    'BBQ',
+    'Baking',
+    'Roasting',
+    'Slow Cooker',
+    'Crockpot',
     'Air Fryer',
-    'Stovetop / Skillet Meals',
-    'No-Cook or Minimal-Prep',
-    'One-Pot or Sheet-Pan Meals'
+    'Stovetop Meals',
+    'Skillet Meals',
+    'No-Cook',
+    'Minimal-Prep',
+    'One-Pot Meals',
+    'Sheet-Pan Meals'
 ]
 
 # OCCASION / HOLIDAY
 OCCASIONS = [
-    'Thanksgiving & Christmas',
-    'Easter & Holiday Brunch',
-    'Halloween & Themed Parties',
-    'Game Day & Tailgating',
-    'Potlucks & Family Gatherings',
+    'Thanksgiving',
+    'Christmas',
+    'Easter',
+    'Holiday Brunch',
+    'Halloween',
+    'Themed Parties',
+    'Game Day',
+    'Tailgating',
+    'Potlucks',
+    'Family Gatherings',
     'Weeknight Dinners',
-    'Romantic or Special-Occasion Meals'
+    'Romantic Meals',
+    'Special-Occasion Meals'
 ]
 
 # PREPARATION TIME / DIFFICULTY

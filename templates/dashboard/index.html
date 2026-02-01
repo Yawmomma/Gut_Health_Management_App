@@ -37,10 +37,8 @@
         padding-top: 40px;
     }
     .main-content-area {
-        padding-left: 0;
+        padding-left: 15px;
         margin-left: 200px;
-        width: 1000px;
-        max-width: 1000px;
     }
     .dashboard-main-bg {
         min-height: calc(100vh - 50px);
@@ -70,24 +68,16 @@
 
     /* Fix content column to exact pixel width */
     .dashboard-content-col {
-        width: 750px !important;
-        min-width: 750px !important;
-        max-width: 750px !important;
-        flex: 0 0 750px !important;
+        width: 100% !important;
     }
     .dashboard-main-bg > * {
         position: relative;
         z-index: 1;
     }
-    main.container {
-        max-width: 1200px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
     /* Remove all spacing before footer so background meets it */
     footer {
-        margin-top: 0 !important;
-        padding-top: 0.5rem !important;
+        margin-top: 0;
+        padding-top: 0.5rem;
     }
     .section-title {
         font-size: var(--text-title);
@@ -167,7 +157,7 @@
 </style>
 
 <!-- Main Layout with Sidebar -->
-<div class="row g-0" style="margin-top: -1.5rem;">
+<div class="row g-0">
     <!-- Left Sidebar: Dashboard Navigation -->
     <div class="sidebar-column">
         <div class="dashboard-sidebar">
@@ -231,7 +221,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
                 </div>
             </a>
 
@@ -340,8 +330,9 @@
         <div class="row">
             <div class="dashboard-content-col">
                 <!-- Date Header -->
-                <h1 class="text-h2 date-header">
-                    <i class="bi bi-calendar-event"></i> {{ current_date.strftime('%A, %B %d, %Y') }}
+                <h1 class="text-h2 date-header" style="color: #005588 !important;">
+                    <i class="bi bi-calendar-event"></i> <strong style="font-size: 1.7rem;">{{ current_date.strftime('%A') }}</strong><br>
+                    <strong style="font-size: 0.85rem;">{{ current_date.day|ordinal }} {{ current_date.strftime('%B %Y') }}</strong>
                 </h1>
 
                 <!-- Intro Card -->
@@ -429,6 +420,45 @@
                     <div class="text-center py-2">
                         <i class="bi bi-check-circle" style="font-size: 1.2rem; color: #28a745;"></i>
                         <p class="text-muted text-body mt-1 mb-0">No concerning foods logged in the last 7 days.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- To Do List Section -->
+                <div class="watch-list-box mb-4">
+                    <h5 class="text-title watch-list-title"><i class="bi bi-pencil-square"></i> To Do</h5>
+
+                    {% if incomplete_foods %}
+                    <p class="text-muted text-label mb-3">Foods that were quickly added and need more information to be complete.</p>
+
+                    <div style="background: rgba(13, 202, 240, 0.08); border-radius: 6px; padding: 10px;">
+                        <div class="watch-section-label" style="color: #0dcaf0; margin-top: 0; border-bottom: 1px solid rgba(13, 202, 240, 0.3); padding-bottom: 6px;">
+                            <i class="bi bi-clipboard-check"></i> Incomplete Foods ({{ incomplete_foods|length }})
+                        </div>
+                        <div class="d-flex flex-column gap-1 mt-2">
+                            {% for food in incomplete_foods %}
+                            <a href="{{ url_for('foods.edit_food', food_id=food.id) }}" class="text-decoration-none">
+                                <div class="watch-item d-flex justify-content-between align-items-center py-1 px-2" style="border-left: 3px solid #0dcaf0; border-radius: 3px; background: rgba(255,255,255,0.5);">
+                                    <div>
+                                        <span class="text-value" style="font-weight: 500;">{{ food.name }}</span>
+                                        <small class="text-muted ms-1" class="text-body">{{ food.category }}</small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <small class="text-muted" class="text-body">Added {{ food.created_at.strftime('%b %d') }}</small>
+                                        <span class="badge" class="text-micro" style="background-color: #0dcaf0; color: #fff; padding: 1px 4px;">
+                                            Edit
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-2">
+                        <i class="bi bi-check-circle" style="font-size: 1.2rem; color: #28a745;"></i>
+                        <p class="text-muted text-body mt-1 mb-0">All foods are complete. Great work!</p>
                     </div>
                     {% endif %}
                 </div>

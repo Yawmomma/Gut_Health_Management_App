@@ -250,6 +250,71 @@ def index():
         'total': len(month_entries)
     }
 
+    # Build detailed entries data for popup modals
+    def get_entry_details(entry):
+        """Extract details from an entry based on its type"""
+        details = {
+            'id': entry.id,
+            'date': entry.entry_date.strftime('%Y-%m-%d'),
+            'date_display': entry.entry_date.strftime('%a, %d %b'),
+            'time': entry.entry_time.strftime('%H:%M') if entry.entry_time else '',
+            'type': entry.entry_type,
+            'items': []
+        }
+
+        if entry.entry_type == 'meal':
+            for meal in entry.meals:
+                meal_info = f"{meal.meal_type}"
+                foods = [mf.food.name for mf in meal.meal_foods if mf.food]
+                if foods:
+                    meal_info += f": {', '.join(foods[:3])}"
+                    if len(foods) > 3:
+                        meal_info += f" +{len(foods) - 3} more"
+                details['items'].append(meal_info)
+        elif entry.entry_type == 'symptom':
+            for symptom in entry.symptoms:
+                symptoms_list = []
+                if symptom.bloating > 0:
+                    symptoms_list.append(f"Bloating ({symptom.bloating}/5)")
+                if symptom.pain > 0:
+                    symptoms_list.append(f"Pain ({symptom.pain}/5)")
+                if symptom.wind > 0:
+                    symptoms_list.append(f"Wind ({symptom.wind}/5)")
+                if symptom.nausea > 0:
+                    symptoms_list.append(f"Nausea ({symptom.nausea}/5)")
+                if symptom.heartburn > 0:
+                    symptoms_list.append(f"Heartburn ({symptom.heartburn}/5)")
+                if symptom.headache > 0:
+                    symptoms_list.append(f"Headache ({symptom.headache}/5)")
+                if symptom.brain_fog > 0:
+                    symptoms_list.append(f"Brain Fog ({symptom.brain_fog}/5)")
+                if symptom.fatigue > 0:
+                    symptoms_list.append(f"Fatigue ({symptom.fatigue}/5)")
+                if symptom.sinus_issues > 0:
+                    symptoms_list.append(f"Sinus ({symptom.sinus_issues}/5)")
+                details['items'].append(', '.join(symptoms_list[:4]) if symptoms_list else 'No symptoms recorded')
+        elif entry.entry_type == 'bowel':
+            for bowel in entry.bowel_movements:
+                details['items'].append(f"Type {bowel.bristol_type} - {bowel.urgency or 'Normal'} urgency")
+        elif entry.entry_type == 'stress':
+            for stress in entry.stress_logs:
+                details['items'].append(f"Level {stress.stress_level}/10")
+        elif entry.entry_type == 'note':
+            for note in entry.notes:
+                title = note.title or note.category or 'Note'
+                details['items'].append(title)
+
+        return details
+
+    # Group detailed entries by type
+    month_entries_details = {
+        'meals': [get_entry_details(e) for e in month_entries if e.entry_type == 'meal'],
+        'symptoms': [get_entry_details(e) for e in month_entries if e.entry_type == 'symptom'],
+        'bowel': [get_entry_details(e) for e in month_entries if e.entry_type == 'bowel'],
+        'stress': [get_entry_details(e) for e in month_entries if e.entry_type == 'stress'],
+        'notes': [get_entry_details(e) for e in month_entries if e.entry_type == 'note']
+    }
+
     return render_template('diary/calendar.html',
                          current_date=current_date,
                          today=today,
@@ -257,7 +322,8 @@ def index():
                          next_month=next_month,
                          calendar_weeks=calendar_weeks,
                          entries_by_date=entries_by_date,
-                         month_stats=month_stats)
+                         month_stats=month_stats,
+                         month_entries_details=month_entries_details)
 
 @bp.route('/day/<date_string>')
 def day_view(date_string):

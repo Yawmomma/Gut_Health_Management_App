@@ -1,6 +1,23 @@
 from database import db
 from datetime import datetime
 
+
+class RecipeClassificationOption(db.Model):
+    """Custom classification options for recipes (e.g., cuisines, main ingredients)."""
+    __tablename__ = 'recipe_classification_options'
+
+    id = db.Column(db.Integer, primary_key=True)
+    option_type = db.Column(db.String(50), nullable=False, index=True)
+    value = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('option_type', 'value', name='uq_recipe_classification_option'),
+    )
+
+    def __repr__(self):
+        return f'<RecipeClassificationOption {self.option_type}: {self.value}>'
+
 class Recipe(db.Model):
     """User-created recipes with ingredients from food library"""
     __tablename__ = 'recipes'
@@ -24,10 +41,9 @@ class Recipe(db.Model):
 
     # ADDITIONAL FILTERS
     cuisine = db.Column(db.String(100))  # Italian, Mexican, Asian, American, Mediterranean, etc.
-    main_ingredient = db.Column(db.String(100))  # Chicken, Beef, Fish & Seafood, Pork, Vegetarian/Vegan, etc.
     dietary_needs = db.Column(db.String(200))  # Keto, Gluten-Free, Dairy-Free, Vegan, Paleo, etc. (comma-separated for multiple)
-    preparation_method = db.Column(db.String(100))  # Grilling & BBQ, Baking & Roasting, Slow Cooker, Air Fryer, etc.
-    occasion = db.Column(db.String(100))  # Thanksgiving, Easter, Game Day, Weeknight Dinners, etc.
+    preparation_method = db.Column(db.String(200))  # Grilling, BBQ, Baking, Roasting, Slow Cooker, Air Fryer, etc. (comma-separated for multiple)
+    occasion = db.Column(db.String(200))  # Thanksgiving, Easter, Game Day, Weeknight Dinners, etc. (comma-separated for multiple)
     difficulty = db.Column(db.String(50))  # Quick & Easy, Under 15 Minutes, Under 30 Minutes, Beginner-Friendly, Intermediate, Advanced
 
     # LEGACY TAGS (keeping for backward compatibility)
@@ -35,6 +51,7 @@ class Recipe(db.Model):
 
     # Photo
     image_path = db.Column(db.String(500))  # Path to uploaded recipe photo
+    source_url = db.Column(db.String(500))  # Optional source link
 
     # Relationships
     ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True, cascade='all, delete-orphan')
@@ -52,14 +69,12 @@ class Recipe(db.Model):
             tags_list.append(self.subcategory)
         if self.cuisine:
             tags_list.append(self.cuisine)
-        if self.main_ingredient:
-            tags_list.append(self.main_ingredient)
         if self.dietary_needs:
             tags_list.extend([d.strip() for d in self.dietary_needs.split(',') if d.strip()])
         if self.preparation_method:
-            tags_list.append(self.preparation_method)
+            tags_list.extend([p.strip() for p in self.preparation_method.split(',') if p.strip()])
         if self.occasion:
-            tags_list.append(self.occasion)
+            tags_list.extend([o.strip() for o in self.occasion.split(',') if o.strip()])
         if self.difficulty:
             tags_list.append(self.difficulty)
         if self.tags:
@@ -122,3 +137,44 @@ class SavedMealItem(db.Model):
 
     def __repr__(self):
         return f'<SavedMealItem {self.portion_size}>'
+
+
+class ArchivedExternalRecipe(db.Model):
+    """Track archived/hidden recipes from external dataset"""
+    __tablename__ = 'archived_external_recipes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_hash = db.Column(db.String(32), unique=True, nullable=False, index=True)
+    recipe_name = db.Column(db.String(200))  # Store name for reference
+    archived_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ArchivedExternalRecipe {self.recipe_name}>'
+
+    @classmethod
+    def get_archived_hashes(cls) -> set:
+        """Get set of all archived recipe hashes."""
+        return {r.recipe_hash for r in cls.query.all()}
+
+    @classmethod
+    def is_archived(cls, recipe_hash: str) -> bool:
+        """Check if a recipe hash is archived."""
+        return cls.query.filter_by(recipe_hash=recipe_hash).first() is not None
+
+    @classmethod
+    def archive_recipe(cls, recipe_hash: str, recipe_name: str = None):
+        """Archive a recipe by its hash."""
+        if not cls.is_archived(recipe_hash):
+            archived = cls(recipe_hash=recipe_hash, recipe_name=recipe_name)
+            from database import db
+            db.session.add(archived)
+            db.session.commit()
+
+    @classmethod
+    def unarchive_recipe(cls, recipe_hash: str):
+        """Remove a recipe from the archive."""
+        archived = cls.query.filter_by(recipe_hash=recipe_hash).first()
+        if archived:
+            from database import db
+            db.session.delete(archived)
+            db.session.commit()
