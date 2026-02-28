@@ -2,6 +2,44 @@
 
 > **MANDATORY**: Read this file before ANY changes. Update `Version_History.md` with dates for all changes.
 
+## ⚠️ CRITICAL: Database & .gitignore Protection Rules
+
+**🚨 NEVER DELETE FILES LISTED IN .gitignore**
+
+Files in `.gitignore` are there for a reason - they are TOO LARGE or contain USER DATA that should NOT be version controlled:
+
+### Absolute Rules:
+1. **NEVER delete `instance/gut_health.db`**
+   - This is the user's database containing all their health data
+   - It's in .gitignore because it's 372+ MB (too large for GitHub)
+   - Being in .gitignore does NOT mean it should be deleted
+   - Being in .gitignore means it should STAY LOCAL ONLY
+
+2. **NEVER delete any `data/usda/*.json` files**
+   - These are large external data files (100-3000+ MB)
+   - They are in .gitignore for the same reason
+   - If they exist locally, they are intentional - LEAVE THEM ALONE
+
+3. **NEVER delete any `data/ausnut/` files**
+   - Same principle - they're big, they're local, they're intentional
+
+### What .gitignore Actually Means:
+- ✅ DO NOT track these files in git
+- ✅ DO NOT push them to GitHub
+- ✅ DO NOT include them in commits
+- ❌ DO NOT delete them from the local filesystem
+- ❌ DO NOT remove them from the working directory
+
+### Before Making Changes Involving Files:
+1. Check if the file is in `.gitignore`
+2. If YES: Ask the user before touching it
+3. If it's a database or user data: NEVER delete it
+4. When in doubt: ASK THE USER FIRST
+
+This is not optional. Databases are irreplaceable user data.
+
+---
+
 ## App Overview
 - **Stack**: Flask + SQLite + Jinja2 templates + Bootstrap
 - **Purpose**: Track diet, symptoms, identify FODMAP/histamine food triggers
@@ -107,7 +145,19 @@ utils/
 - **External links**: Auto-open in new tab with `rel="noopener noreferrer"`
 
 ## Development Checklist
-1. Read this file first
+
+### File Operations & Git Safety Checklist (DO THIS FIRST)
+**BEFORE making ANY changes to files:**
+- [ ] **Check `.gitignore` first** - Is this file listed in `.gitignore`?
+- [ ] **If it's a database (.db) file:** STOP - Ask user before touching it
+- [ ] **If it's in `.gitignore` for size reasons:** STOP - Ask user before deleting
+- [ ] **If cleaning up git:** NEVER use `git rm` on ignored files without asking
+- [ ] **When removing files:** Verify they are tracked in git FIRST (`git status`)
+- [ ] **Large files:** If >100MB exists locally, it's intentional - LEAVE IT ALONE
+- [ ] **User data:** NEVER delete databases, backups, or user-generated files
+
+### General Development Rules
+1. Read CLAUDE.md completely before ANY changes
 2. Update `Version_History.md` with date and details
 3. Follow color scheme and typography tokens
 4. Keep all nav links in every sidebar
