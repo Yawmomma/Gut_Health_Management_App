@@ -3,9 +3,6 @@
 {% block title %}{{ content.title }} - Gut Health App{% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <style>
     /* Sidebar Navigation Styles */
     .sidebar-nav-item {
@@ -18,19 +15,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .education-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 12px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-body);
@@ -53,6 +53,57 @@
     }
     .card-body p {
         line-height: 1.6;
+        margin-bottom: 28px !important;
+        margin-top: 0 !important;
+    }
+    .card-body p:first-child {
+        margin-top: 0 !important;
+    }
+    .card-body p:last-child {
+        margin-bottom: 0 !important;
+    }
+    /* Reduce gap after subheading paragraphs (bold text only) - but NOT in lists */
+    .card-body > p:has(strong:only-child) {
+        margin-bottom: 8px !important;
+    }
+    /* Normalize list spacing - applies to both ol and ul */
+    .card-body ol,
+    .card-body ul {
+        margin-bottom: 1.5rem;
+    }
+    /* Default: minimal spacing for simple lists (single Enter between items) */
+    .card-body li {
+        margin-bottom: 0.35rem;
+    }
+    .card-body li:last-child {
+        margin-bottom: 0;
+    }
+    /* When list items contain paragraphs (created by blank lines), add more spacing */
+    .card-body li:has(> p) {
+        margin-bottom: 1rem;
+    }
+    /* Control paragraph margins inside list items */
+    .card-body li > p {
+        margin-bottom: 0.75rem;
+    }
+    .card-body li > p:last-child {
+        margin-bottom: 0;
+    }
+    /* Reduce gap when paragraph is followed by nested list */
+    .card-body li > p:has(+ ul),
+    .card-body li > p:has(+ ol) {
+        margin-bottom: 0.25rem;
+    }
+    /* Nested lists should have less spacing */
+    .card-body li li {
+        margin-bottom: 0.35rem;
+    }
+    /* Force all nested bullets to use filled disc style */
+    .card-body ul {
+        list-style-type: disc;
+    }
+    .card-body ol {
+        list-style-type: decimal;
     }
 
     /* In-chapter search highlighting */
@@ -67,12 +118,67 @@
         color: white;
         font-weight: 600;
     }
+
+    /* Table styling for markdown-generated tables */
+    .card-body table {
+        width: 100%;
+        margin: 20px 0;
+        border-collapse: collapse;
+        background-color: #D6BD98;
+        border: 2px solid #8BA48B;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .card-body table thead {
+        background-color: #1A3636;
+    }
+    .card-body table thead th {
+        color: #D6BD98 !important;
+        font-weight: 700;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #8BA48B;
+        font-size: var(--text-body);
+    }
+    .card-body table tbody td {
+        color: #1A3636 !important;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(139, 164, 139, 0.3);
+        font-size: var(--text-body);
+        line-height: 1.5;
+    }
+    .card-body table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .card-body table tbody tr:nth-child(even) {
+        background-color: rgba(139, 164, 139, 0.1);
+    }
+    .card-body table tbody tr:hover {
+        background-color: rgba(139, 164, 139, 0.2);
+    }
+
+    /* Link styling for markdown content */
+    .card-body a {
+        color: #D6BD98;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid transparent;
+    }
+    .card-body a:hover {
+        color: #fff;
+        text-decoration: underline;
+        border-bottom: 1px solid #D6BD98;
+    }
+    .card-body a:visited {
+        color: #c4aa85;
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
 <div class="row g-0">
     <!-- Left Sidebar: Navigation + Search -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="education-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-book"></i> Education</h6>
 
@@ -91,8 +197,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -104,7 +210,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -134,7 +240,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -220,7 +326,7 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area pt-3">
         <div class="row">
             <div class="col-md-9">
                 <!-- Chapter Header -->
@@ -250,6 +356,20 @@
 
 {% block extra_js %}
 <script>
+// Make all external links open in new tab
+document.addEventListener('DOMContentLoaded', function() {
+    const content = document.getElementById('chapter-content');
+    const links = content.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        // Check if it's an external link (starts with http/https)
+        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer'); // Security best practice
+        }
+    });
+});
+
 // In-chapter search functionality
 let currentMatches = [];
 let currentMatchIndex = -1;

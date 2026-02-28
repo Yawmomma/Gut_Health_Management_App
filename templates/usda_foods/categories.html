@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if data_type %}{{ data_type }} Categories{% else %}All Categories{% endif %} - USDA Food Database - Gut Health App
+{% endblock %}
+
+{% macro get_category_icon(category_name) %}
+    {% if 'Legume' in category_name %}bi-flower2
+    {% elif 'Vegetable' in category_name %}bi-basket
+    {% elif 'Sausage' in category_name or 'Luncheon' in category_name %}bi-grid-1x2
+    {% elif 'Nut' in category_name or 'Seed' in category_name %}bi-egg
+    {% elif 'Dairy' in category_name or 'Egg' in category_name %}bi-egg-fill
+    {% elif 'Fruit' in category_name %}bi-apple
+    {% elif 'Baked' in category_name %}bi-shop
+    {% elif 'Spice' in category_name or 'Herb' in category_name %}bi-stars
+    {% elif 'Fat' in category_name or 'Oil' in category_name %}bi-droplet-fill
+    {% elif 'Poultry' in category_name %}bi-feather
+    {% elif 'Soup' in category_name or 'Sauce' in category_name or 'Grav' in category_name %}bi-cup-hot
+    {% elif 'Finfish' in category_name or 'Shellfish' in category_name %}bi-tsunami
+    {% elif 'Restaurant' in category_name %}bi-shop-window
+    {% elif 'Beef' in category_name %}bi-square-fill
+    {% elif 'Sweet' in category_name %}bi-gift
+    {% elif 'Pork' in category_name %}bi-piggy-bank
+    {% elif 'Cereal' in category_name or 'Grain' in category_name or 'Pasta' in category_name %}bi-archive
+    {% elif 'Beverage' in category_name %}bi-cup-straw
+    {% elif 'Lamb' in category_name or 'Veal' in category_name or 'Game' in category_name %}bi-award
+    {% elif 'Snack' in category_name %}bi-bag
+    {% elif 'American Indian' in category_name or 'Alaska Native' in category_name %}bi-geo-alt
+    {% elif 'Baby' in category_name %}bi-heart-fill
+    {% elif 'Breakfast' in category_name %}bi-sun
+    {% elif 'Meal' in category_name or 'Entree' in category_name or 'Side Dish' in category_name %}bi-box
+    {% elif 'Fast Food' in category_name %}bi-lightning-fill
+    {% elif 'Unknown' in category_name %}bi-question-circle
+    {% else %}bi-folder-fill
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .usda-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .category-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .category-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        border-bottom: 1px solid rgba(26, 54, 54, 0.08);
+    }
+    .category-item:last-child {
+        border-bottom: none;
+    }
+    .category-item:hover {
+        background: rgba(214, 189, 152, 0.15);
+        padding-left: 16px;
+    }
+    .category-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background-color: rgba(214, 189, 152, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    .category-icon i {
+        font-size: 0.85rem;
+        color: #1A3636;
+    }
+    .category-icon.foundation {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
+    .category-icon.foundation i {
+        color: #28a745;
+    }
+    .category-icon.legacy {
+        background-color: rgba(13, 202, 240, 0.2);
+    }
+    .category-icon.legacy i {
+        color: #0dcaf0;
+    }
+    .category-name {
+        color: #1A3636;
+        font-weight: 600;
+        font-size: var(--text-body);
+        flex-grow: 1;
+    }
+    .category-count {
+        color: #677D6A;
+        font-size: var(--text-label);
+        font-weight: 500;
+        background: rgba(26, 54, 54, 0.08);
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: 8px;
+    }
+    .data-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: var(--text-micro);
+        font-weight: 600;
+    }
+    .badge-foundation {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+    .badge-legacy {
+        background-color: rgba(23, 162, 184, 0.15);
+        color: #17a2b8;
+    }
+    .stats-box {
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+    }
+    .stats-label {
+        color: var(--gold);
+        font-size: var(--text-label);
+    }
+    .stats-value {
+        color: var(--white-ish);
+        font-size: var(--text-value);
+        font-weight: 600;
+    }
+    .category-icon.survey {
+        background-color: rgba(255, 193, 7, 0.2);
+    }
+    .category-icon.survey i {
+        color: #ffc107;
+    }
+    .category-icon.branded {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+    .category-icon.branded i {
+        color: #dc3545;
+    }
+    .badge-survey {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+    .badge-branded {
+        background-color: rgba(253, 126, 20, 0.15);
+        color: #fd7e14;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0" style="margin-top: -1.5rem;">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="usda-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-database"></i> USDA Database</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="margin: 20px 0; border-top: 1px solid rgba(255, 255, 255, 0.3);"></div>
+
+            <!-- Search Form -->
+            <div class="mb-3">
+                <h6 class="text-body" style="font-weight: 600; color: #fff; margin-bottom: 8px;"><i class="bi bi-search"></i> Search USDA</h6>
+                <form action="{{ url_for('usda_foods.search') }}" method="get">
+                    {% if data_type %}
+                    <input type="hidden" name="type" value="{{ data_type }}">
+                    {% endif %}
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="q" class="form-control text-body" placeholder="Search foods..." style="border-color: rgba(255,255,255,0.3); background-color: rgba(255,255,255,0.15); color: #fff;">
+                        <button class="btn btn-outline-light btn-sm text-body" type="submit" style="padding: 4px 10px;">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <style>
+                    input[name="q"]::placeholder {
+                        color: rgba(255,255,255,0.6);
+                        opacity: 1;
+                    }
+                </style>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="sidebar-bottom-gap" style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px;">
+                <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4); text-align: left; font-size: 0.72rem; padding-left: 2px;">
+                    <i class="bi bi-link-45deg"></i> Quick Links
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('compendium.index') }}" class="btn btn-outline-light btn-sm w-100 text-body">
+                        <i class="bi bi-arrow-left"></i> Back to Food Compendium
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area pt-3">
+        <div class="row">
+            <div class="compendium-content-col">
+                <!-- Page Title -->
+                <div class="d-flex justify-content-between align-items-center mb-3" style="margin-top: 52px;">
+                    <h1 class="text-h2">
+                        <i class="bi bi-database"></i> USDA Database
+                    </h1>
+                </div>
+
+                <!-- Category Grid -->
+                {% if categories %}
+                <div class="card">
+                    <div class="card-header" style="padding: 6px 10px;">
+                        <div class="d-flex align-items-center justify-content-evenly">
+                            <a href="{{ url_for('usda_foods.categories') }}" class="btn btn-sm d-flex align-items-center {% if not data_type %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #6c757d; background: {% if not data_type %}rgba(108, 117, 125, 0.4){% else %}rgba(108, 117, 125, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-collection me-1"></i> All
+                            </a>
+                            <a href="{{ url_for('usda_foods.categories', type='Foundation') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Foundation' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #28a745; background: {% if data_type == 'Foundation' %}rgba(40, 167, 69, 0.4){% else %}rgba(40, 167, 69, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-patch-check-fill me-1"></i> Foundation
+                            </a>
+                            <a href="{{ url_for('usda_foods.categories', type='SR Legacy') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'SR Legacy' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #0dcaf0; background: {% if data_type == 'SR Legacy' %}rgba(13, 202, 240, 0.4){% else %}rgba(13, 202, 240, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-archive-fill me-1"></i> SR Legacy
+                            </a>
+                            {% if survey_count %}
+                            <a href="{{ url_for('usda_foods.categories', type='Survey') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Survey' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #ffc107; background: {% if data_type == 'Survey' %}rgba(255, 193, 7, 0.4){% else %}rgba(255, 193, 7, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-clipboard-data-fill me-1"></i> Survey
+                            </a>
+                            {% endif %}
+                            {% if branded_count %}
+                            <a href="{{ url_for('usda_foods.categories', type='Branded') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Branded' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #dc3545; background: {% if data_type == 'Branded' %}rgba(220, 53, 69, 0.4){% else %}rgba(220, 53, 69, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-bag-fill me-1"></i> Branded
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 6px 0;">
+                        <div class="category-list">
+                            {% for category in categories %}
+                            <a href="{{ url_for('usda_foods.search', category=category.id, type=data_type) }}" class="category-item">
+                                <div class="category-icon {% if data_type == 'Foundation' %}foundation{% elif data_type == 'SR Legacy' %}legacy{% elif data_type == 'Survey' %}survey{% elif data_type == 'Branded' %}branded{% endif %}">
+                                    <i class="bi {{ get_category_icon(category.description) }}"></i>
+                                </div>
+                                <span class="category-name">{{ category.description }}</span>
+                                <span class="category-count">{{ category.food_count }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <div class="card-header" style="padding: 6px 10px;">
+                        <div class="d-flex align-items-center justify-content-evenly">
+                            <a href="{{ url_for('usda_foods.categories') }}" class="btn btn-sm d-flex align-items-center {% if not data_type %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #6c757d; background: {% if not data_type %}rgba(108, 117, 125, 0.4){% else %}rgba(108, 117, 125, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-collection me-1"></i> All
+                            </a>
+                            <a href="{{ url_for('usda_foods.categories', type='Foundation') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Foundation' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #28a745; background: {% if data_type == 'Foundation' %}rgba(40, 167, 69, 0.4){% else %}rgba(40, 167, 69, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-patch-check-fill me-1"></i> Foundation
+                            </a>
+                            <a href="{{ url_for('usda_foods.categories', type='SR Legacy') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'SR Legacy' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #0dcaf0; background: {% if data_type == 'SR Legacy' %}rgba(13, 202, 240, 0.4){% else %}rgba(13, 202, 240, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-archive-fill me-1"></i> SR Legacy
+                            </a>
+                            {% if survey_count %}
+                            <a href="{{ url_for('usda_foods.categories', type='Survey') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Survey' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #ffc107; background: {% if data_type == 'Survey' %}rgba(255, 193, 7, 0.4){% else %}rgba(255, 193, 7, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-clipboard-data-fill me-1"></i> Survey
+                            </a>
+                            {% endif %}
+                            {% if branded_count %}
+                            <a href="{{ url_for('usda_foods.categories', type='Branded') }}" class="btn btn-sm d-flex align-items-center {% if data_type == 'Branded' %}active{% endif %}" style="font-size: var(--text-micro); border: none; border-left: 3px solid #dc3545; background: {% if data_type == 'Branded' %}rgba(220, 53, 69, 0.4){% else %}rgba(220, 53, 69, 0.15){% endif %}; color: #fff; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-bag-fill me-1"></i> Branded
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body text-center" style="padding: 24px;">
+                        {% if data_type_food_count > 0 %}
+                        <i class="bi bi-list-ul" style="font-size: 2rem; color: var(--gold);"></i>
+                        <p class="text-body mt-2 mb-2">{{ data_type }} foods are not organized into categories.</p>
+                        <a href="{{ url_for('usda_foods.search', type=data_type) }}" class="btn btn-sm" style="background-color: var(--gold); color: #1A3636; font-weight: 600;">
+                            <i class="bi bi-search"></i> Browse All {{ data_type_food_count }} {{ data_type }} Foods
+                        </a>
+                        {% else %}
+                        <i class="bi bi-folder-x" style="font-size: 2rem; color: var(--sage);"></i>
+                        <p class="text-body text-muted mt-2 mb-0">No categories found for this data source.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div><!-- /.compendium-content-col -->
+        </div><!-- /.row -->
+    </div>
+</div>
+{% endblock %}

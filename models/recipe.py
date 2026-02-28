@@ -18,6 +18,15 @@ class RecipeClassificationOption(db.Model):
     def __repr__(self):
         return f'<RecipeClassificationOption {self.option_type}: {self.value}>'
 
+    def to_dict(self):
+        """Convert classification option to dictionary"""
+        return {
+            'id': self.id,
+            'option_type': self.option_type,
+            'value': self.value,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 class Recipe(db.Model):
     """User-created recipes with ingredients from food library"""
     __tablename__ = 'recipes'
@@ -34,7 +43,7 @@ class Recipe(db.Model):
     notes = db.Column(db.Text)
 
     # PRIMARY CATEGORY (Meal Type)
-    category = db.Column(db.String(100))  # Breakfast & Brunch, Lunch & Meal Prep, Dinner, Snacks & Appetizers, Desserts & Baked Goods, Drinks & Smoothies, Salads, Sauces & Gravies
+    category = db.Column(db.String(100))  # Breakfast, Lunch, Dinner, Snacks, Desserts, Beverages, Salads, Sauces/Gravies
 
     # SUBCATEGORIES (stored as tags for searchability)
     subcategory = db.Column(db.String(200))  # e.g., "Green & Chopped Salads", "Protein Salads", etc.
@@ -81,6 +90,32 @@ class Recipe(db.Model):
             tags_list.extend([t.strip() for t in self.tags.split(',') if t.strip()])
         return tags_list
 
+    def to_dict(self):
+        """Convert recipe to dictionary"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'servings': self.servings,
+            'prep_time': self.prep_time,
+            'cook_time': self.cook_time,
+            'instructions': self.instructions,
+            'notes': self.notes,
+            'category': self.category,
+            'subcategory': self.subcategory,
+            'cuisine': self.cuisine,
+            'dietary_needs': [d.strip() for d in self.dietary_needs.split(',') if d.strip()] if self.dietary_needs else [],
+            'preparation_method': [p.strip() for p in self.preparation_method.split(',') if p.strip()] if self.preparation_method else [],
+            'occasion': [o.strip() for o in self.occasion.split(',') if o.strip()] if self.occasion else [],
+            'difficulty': self.difficulty,
+            'tags': [t.strip() for t in self.tags.split(',') if t.strip()] if self.tags else [],
+            'image_path': self.image_path,
+            'source_url': self.source_url,
+            'ingredients': [ing.to_dict() for ing in self.ingredients],
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class RecipeIngredient(db.Model):
     """Junction table for recipes and foods"""
@@ -98,6 +133,18 @@ class RecipeIngredient(db.Model):
 
     def __repr__(self):
         return f'<RecipeIngredient {self.quantity}>'
+
+    def to_dict(self):
+        """Convert recipe ingredient to dictionary"""
+        return {
+            'id': self.id,
+            'recipe_id': self.recipe_id,
+            'food_id': self.food_id,
+            'food_name': self.food.name if self.food else None,
+            'food_category': self.food.category if self.food else None,
+            'quantity': self.quantity,
+            'notes': self.notes
+        }
 
 
 class SavedMeal(db.Model):
@@ -121,6 +168,18 @@ class SavedMeal(db.Model):
     def __repr__(self):
         return f'<SavedMeal {self.name}>'
 
+    def to_dict(self):
+        """Convert saved meal to dictionary"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'meal_type': self.meal_type,
+            'image_path': self.image_path,
+            'items': [item.to_dict() for item in self.meal_items],
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 
 class SavedMealItem(db.Model):
     """Junction table for saved meals and foods"""
@@ -138,6 +197,17 @@ class SavedMealItem(db.Model):
     def __repr__(self):
         return f'<SavedMealItem {self.portion_size}>'
 
+    def to_dict(self):
+        """Convert saved meal item to dictionary"""
+        return {
+            'id': self.id,
+            'saved_meal_id': self.saved_meal_id,
+            'food_id': self.food_id,
+            'food_name': self.food.name if self.food else None,
+            'food_category': self.food.category if self.food else None,
+            'portion_size': self.portion_size
+        }
+
 
 class ArchivedExternalRecipe(db.Model):
     """Track archived/hidden recipes from external dataset"""
@@ -150,6 +220,15 @@ class ArchivedExternalRecipe(db.Model):
 
     def __repr__(self):
         return f'<ArchivedExternalRecipe {self.recipe_name}>'
+
+    def to_dict(self):
+        """Convert archived recipe to dictionary"""
+        return {
+            'id': self.id,
+            'recipe_hash': self.recipe_hash,
+            'recipe_name': self.recipe_name,
+            'archived_at': self.archived_at.isoformat() if self.archived_at else None
+        }
 
     @classmethod
     def get_archived_hashes(cls) -> set:
@@ -166,7 +245,6 @@ class ArchivedExternalRecipe(db.Model):
         """Archive a recipe by its hash."""
         if not cls.is_archived(recipe_hash):
             archived = cls(recipe_hash=recipe_hash, recipe_name=recipe_name)
-            from database import db
             db.session.add(archived)
             db.session.commit()
 
@@ -175,6 +253,33 @@ class ArchivedExternalRecipe(db.Model):
         """Remove a recipe from the archive."""
         archived = cls.query.filter_by(recipe_hash=recipe_hash).first()
         if archived:
-            from database import db
             db.session.delete(archived)
             db.session.commit()
+
+
+class RecipeShare(db.Model):
+    """Track shareable recipe links"""
+    __tablename__ = 'recipe_shares'
+
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
+    share_token = db.Column(db.String(36), unique=True, nullable=False, index=True)  # UUID
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    recipe = db.relationship('Recipe', backref='shares')
+
+    def __repr__(self):
+        return f'<RecipeShare {self.share_token[:8]}>'
+
+    def to_dict(self):
+        """Convert recipe share to dictionary"""
+        return {
+            'id': self.id,
+            'recipe_id': self.recipe_id,
+            'recipe_name': self.recipe.name if self.recipe else None,
+            'share_token': self.share_token,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None
+        }

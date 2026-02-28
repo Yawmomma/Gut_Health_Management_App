@@ -1,0 +1,3962 @@
+{% extends "base.html" %}
+
+
+
+{% block title %}Edit {{ food.name }} - Gut Health App{% endblock %}
+
+
+
+{% block extra_css %}
+
+<style>
+
+    .fodmap-grid {
+
+        display: grid;
+
+        grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+
+        gap: 4px;
+
+    }
+
+
+
+    .histamine-grid {
+
+        display: grid;
+
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+
+        gap: 4px;
+
+    }
+
+
+
+    .fodmap-card {
+
+        border: none;
+
+        border-radius: 0;
+
+        padding: 6px 4px;
+
+        background-color: transparent;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 6px;
+
+        border-right: 1px solid var(--sage);
+
+    }
+
+
+
+    .fodmap-card:last-child {
+
+        border-right: none;
+
+    }
+
+
+
+    .fodmap-card label,
+
+    .fodmap-card small {
+
+        color: var(--white-ish) !important;
+
+    }
+
+
+
+    .fodmap-card small {
+
+        font-size: var(--text-label);
+
+        color: var(--sage) !important;
+
+    }
+
+
+
+    .fodmap-text-content {
+
+        flex: 1;
+
+    }
+
+
+
+    .color-selector {
+
+        display: flex;
+
+        gap: 6px;
+
+        flex-direction: column;
+
+    }
+
+
+
+    .color-option {
+
+        width: 18px;
+
+        height: 18px;
+
+        border-radius: 50%;
+
+        border: 1px solid transparent;
+
+        cursor: pointer;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-weight: normal;
+
+        font-size: 0;
+
+        transition: all 0.2s;
+
+        position: relative;
+
+    }
+
+
+
+    .color-option:hover {
+
+        transform: scale(1.15);
+
+        border-color: rgba(255, 255, 255, 0.3);
+
+    }
+
+
+
+    .color-option.selected {
+
+        border-color: #000000;
+
+        box-shadow: 0 0 0 1px #000000;
+
+        transform: scale(1.1);
+
+    }
+
+
+
+    .color-option.selected::after {
+
+        content: '✓';
+
+        font-size: 9px;
+
+        color: white;
+
+        font-weight: normal;
+
+        text-shadow: 0 0 2px rgba(0,0,0,0.5);
+
+    }
+
+
+
+    /* Pastel colors by default */
+
+    .green { background-color: #a8e6b3; color: white; }
+
+    .amber { background-color: #ffe8a1; color: #333; }
+
+    .red { background-color: #f5b7bd; color: white; }
+
+
+
+    /* Darker colors when selected */
+
+    .green.selected { background-color: #28a745; }
+
+    .amber.selected { background-color: #ffc107; color: white; }
+
+    .amber.selected::after { color: #333; }
+
+    .red.selected { background-color: #dc3545; }
+
+    /* Traffic light circles - make them bigger and more visible */
+
+    .color-option[data-field$="traffic_light"] {
+
+        width: 22px;
+
+        height: 22px;
+
+        border: 2px solid rgba(0, 0, 0, 0.2);
+
+    }
+
+    .color-option[data-field$="traffic_light"].selected {
+
+        border: 2px solid #000000;
+
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+
+    }
+
+    /* Traffic light colors - always use bold colors, not pastels */
+
+    .color-option[data-field$="traffic_light"].green {
+
+        background-color: #28a745 !important;
+
+    }
+
+    .color-option[data-field$="traffic_light"].amber {
+
+        background-color: #ffc107 !important;
+
+        color: white !important;
+
+    }
+
+    .color-option[data-field$="traffic_light"].red {
+
+        background-color: #dc3545 !important;
+
+    }
+
+
+
+    /* Section containers with borders */
+
+    .fodmap-section,
+
+    .additional-section {
+
+        border: var(--bevel);
+
+        border-radius: 16px;
+
+        padding: 20px;
+
+        margin-bottom: 20px;
+
+        background-color: var(--bg-deep);
+
+    }
+
+
+
+    .collapsible-section {
+
+        display: block;
+
+        border: var(--bevel);
+
+        border-radius: 8px;
+
+        margin-bottom: 12px;
+
+        background-color: rgba(139, 164, 139, 0.15);
+        width: 100%;
+        box-sizing: border-box;
+        max-width: 100%;
+
+    }
+
+
+
+    .collapsible-section.safe {
+
+        border-left: 3px solid #28a745;
+
+    }
+
+
+
+    .collapsible-section.moderate {
+
+        border-left: 3px solid #ffc107;
+
+    }
+
+
+
+    .collapsible-section.high {
+
+        border-left: 3px solid #dc3545;
+
+    }
+
+
+
+    .collapsible-section.additional {
+
+        background-color: var(--bg-deep);
+
+    }
+
+
+
+    .collapsible-summary {
+
+        list-style: none;
+
+        cursor: pointer;
+
+        padding: 10px;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        font-size: var(--text-title);
+
+        color: var(--white-ish);
+
+    }
+
+
+
+    .collapsible-summary::-webkit-details-marker {
+
+        display: none;
+
+    }
+
+
+
+    .collapsible-summary .chevron {
+
+        margin-left: auto;
+
+        transition: transform 0.2s ease;
+
+    }
+
+
+
+    .collapsible-section[open] .collapsible-summary .chevron {
+
+        transform: rotate(180deg);
+
+    }
+
+
+
+    .collapsible-body {
+
+        padding: 8px 10px 12px;
+
+        border-top: 1px solid rgba(214, 189, 152, 0.2);
+
+    }
+
+    #edit-food-form .form-control,
+    #edit-food-form .form-select,
+    #edit-food-form textarea {
+        font-size: var(--text-label);
+        padding: 4px 6px;
+    }
+
+    #edit-food-form .form-label {
+        font-size: var(--text-label);
+    }
+
+    #edit-food-form .collapsible-section.additional table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    #edit-food-form .collapsible-section.additional th,
+    #edit-food-form .collapsible-section.additional td {
+        padding: 4px 4px;
+        font-size: var(--text-micro);
+        line-height: 1.2;
+        min-width: 0;
+    }
+
+    #edit-food-form .collapsible-section.additional input.form-control,
+    #edit-food-form .collapsible-section.additional input.form-control-sm,
+    #edit-food-form .collapsible-section.additional select.form-select-sm {
+        font-size: var(--text-micro);
+        padding: 2px 4px;
+        height: 26px;
+    }
+
+    #edit-food-form .collapsible-section.additional td input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    #edit-food-form .collapsible-section.additional textarea.form-control {
+        font-size: var(--text-micro);
+        padding: 4px 6px;
+    }
+
+    #edit-food-form .collapsible-section.additional .btn-outline-danger {
+        background-color: #fff;
+        border-color: #fff;
+        color: #1A3636;
+    }
+
+    #edit-food-form .nutrition-columns > [class*="col-"] {
+        min-width: 0;
+    }
+
+
+
+    /* Serving section header styling (kept for compatibility) */
+
+    .serving-header {
+
+        cursor: pointer;
+
+        padding: 15px;
+
+        border-radius: 8px;
+
+        margin-bottom: 10px;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        transition: all 0.3s;
+
+    }
+
+
+
+    .serving-header:hover {
+
+        transform: translateX(5px);
+
+    }
+
+
+
+    .serving-header.safe {
+
+        background-color: rgba(40, 167, 69, 0.15);
+
+        border-left: 4px solid #28a745;
+
+    }
+
+
+
+    .serving-header.moderate {
+
+        background-color: rgba(255, 193, 7, 0.15);
+
+        border-left: 4px solid #ffc107;
+
+    }
+
+
+
+    .serving-header.high {
+
+        background-color: rgba(220, 53, 69, 0.15);
+
+        border-left: 4px solid #dc3545;
+
+    }
+
+
+
+    .serving-indicator {
+
+        width: 40px;
+
+        height: 40px;
+
+        border-radius: 50%;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-weight: bold;
+
+    }
+
+
+
+    .serving-indicator.safe { background-color: #28a745; }
+
+    .serving-indicator.moderate { background-color: #ffc107; }
+
+    .serving-indicator.high { background-color: #dc3545; }
+
+
+
+    /* Light tan for serving size and notes */
+
+    .serving-size-field,
+
+    #notes {
+
+        background-color: var(--bg-deep) !important;
+
+        border: 1px solid rgba(214, 189, 152, 0.2) !important;
+
+        color: var(--white-ish) !important;
+
+    }
+
+
+
+    .serving-size-field::placeholder,
+
+    #notes::placeholder {
+
+        color: var(--sage) !important;
+
+        opacity: 0.7 !important;
+
+    }
+
+
+
+    .serving-size-field:focus,
+
+    #notes:focus {
+
+        background-color: var(--bg-deep) !important;
+
+        border-color: rgba(214, 189, 152, 0.35) !important;
+
+        color: var(--white-ish) !important;
+
+        box-shadow: 0 0 0 0.2rem rgba(214, 189, 152, 0.15) !important;
+
+    }
+
+
+
+    .section-divider {
+
+        border-top: 2px solid var(--sage);
+
+        margin: 20px 0;
+
+        opacity: 0.3;
+
+    }
+
+
+
+    /* Nutrition row delete buttons - smaller styling matching food list */
+
+    .nutrition-delete-btn {
+
+        padding: 0.15rem 0.3rem !important;
+
+        width: auto !important;
+
+        min-width: 24px;
+        background-color: #fff !important;
+        border: 1px solid #fff !important;
+        color: #1A3636 !important;
+
+    }
+
+
+
+    .nutrition-delete-btn .bi-trash {
+
+        font-size: 0.60rem;
+
+    }
+
+
+
+    /* Remove spinner buttons from number inputs */
+
+    input[type="number"]::-webkit-inner-spin-button,
+
+    input[type="number"]::-webkit-outer-spin-button {
+
+        -webkit-appearance: none;
+
+        margin: 0;
+
+    }
+
+
+
+    input[type="number"] {
+
+        -moz-appearance: textfield;
+
+        appearance: textfield;
+
+    }
+
+
+
+    /* Nutrition Tab Buttons */
+
+    .nutrition-tab {
+
+        background-color: transparent;
+
+        color: var(--gold);
+
+        border: 1px solid var(--sage);
+
+        transition: all 0.2s;
+
+    }
+
+
+
+    .nutrition-tab:hover {
+
+        background-color: rgba(214, 189, 152, 0.1);
+
+        border-color: var(--gold);
+
+    }
+
+
+
+    .nutrition-tab.active {
+
+        background-color: var(--gold);
+
+        color: var(--bg-deep);
+
+        border-color: var(--gold);
+
+        font-weight: 600;
+
+    }
+
+</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<!-- Spacer to match dashboard vertical alignment -->
+
+<div style="height: 20px; margin-bottom: 5px;"></div>
+
+
+
+<style>
+
+    .sidebar-nav-item {
+
+        transition: transform 0.2s ease;
+
+        border-radius: 6px;
+
+        margin-bottom: 2px;
+
+    }
+
+    .sidebar-nav-item:hover {
+
+        transform: translateX(3px);
+
+        background: rgba(214, 189, 152, 0.15) !important;
+
+    }
+
+    .sidebar-column {
+
+        position: fixed;
+
+        top: 50px;
+
+        left: 0;
+
+        width: 200px;
+
+        height: calc(100vh - 50px);
+
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+
+        overflow-y: auto;
+
+        z-index: 100;
+
+    }
+
+    .foods-sidebar {
+
+        padding: 12px;
+
+        padding-top: 40px;
+
+    }
+
+    .main-content-area {
+
+        padding-left: 15px;
+
+        margin-left: 200px;
+
+    }
+
+    .section-title {
+
+        font-size: var(--text-title);
+
+        font-weight: 700;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.5px;
+
+        margin-bottom: 12px;
+
+        padding-bottom: 8px;
+
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+
+        text-align: center;
+
+    }
+
+</style>
+
+
+
+<!-- Main Layout with Sidebar -->
+
+<div class="row g-0">
+
+    <!-- Left Sidebar: Navigation -->
+
+    <div class="sidebar-column">
+
+        <div class="foods-sidebar">
+
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> Food Compendium</h6>
+
+
+
+            <!-- Dashboard -->
+
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <rect x="3" y="3" width="7" height="7"/>
+
+                            <rect x="14" y="3" width="7" height="7"/>
+
+                            <rect x="14" y="14" width="7" height="7"/>
+
+                            <rect x="3" y="14" width="7" height="7"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- Food Compendium -->
+
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+
+                            <path d="M7 2v20"/>
+
+                            <path d="M3 2h8"/>
+
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+
+                            <path d="M18 14v8"/>
+
+                            <path d="M21 2c0 4-3 6-3 10"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- Diary -->
+
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- Recipes -->
+
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- Education -->
+
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- Settings -->
+
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                            <circle cx="12" cy="12" r="3"/>
+
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+
+                        </svg>
+
+                    </div>
+
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+
+                </div>
+
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+
+
+            <!-- Separator line -->
+
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 12px 20px 0;"></div>
+
+
+
+            <!-- Action Buttons -->
+
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
+                <button type="submit" form="edit-food-form" class="btn btn-sm w-100 text-body" style="background: #1A3636; border: 1px solid #1A3636; color: #fff;">
+                    <i class="bi bi-check-circle"></i> Update Food
+                </button>
+
+                <a href="{{ url_for('compendium.detail', food_id=food.id) }}" class="btn btn-sm w-100 text-body" style="background: #1A3636; border: 1px solid #1A3636; color: #fff;">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+
+                <a href="{{ url_for('compendium.detail', food_id=food.id) }}" class="btn btn-outline-light btn-sm" class="text-body" style="width: 100%;">
+
+                    <i class="bi bi-arrow-left"></i> Back to Food Details
+
+                </a>
+
+
+
+                <a href="{{ url_for('compendium.index') }}" class="btn btn-outline-light btn-sm" class="text-body" style="width: 100%;">
+
+                    <i class="bi bi-book"></i> Back to Food Compendium
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Right Content Area -->
+
+    <div class="main-content-area" style="padding-top: 40px;">
+
+        <h1 class="mb-4"><i class="bi bi-pencil-square"></i> Edit {{ food.name }}</h1>
+
+
+
+<div class="row">
+
+    <div class="col-md-9">
+
+        <div class="card">
+
+            <div class="card-body">
+
+                <form method="POST" id="edit-food-form" novalidate>
+
+                    <!-- Basic Information -->
+
+                    <h5 class="mb-3"><i class="bi bi-tag"></i> Basic Information</h5>
+
+
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-6">
+
+                            <label for="food_name" class="form-label"><strong>Food/Drink Name *</strong></label>
+
+                            <input type="text" class="form-control form-control-lg" id="food_name" name="food_name"
+
+                                   value="{{ food.name }}" placeholder="e.g., Kippers, Green Tea, Sourdough Bread" required>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label for="category" class="form-label"><strong>Category *</strong></label>
+
+                            <select class="form-select form-select-lg" id="category" name="category" required>
+
+                                <option value="">Choose...</option>
+
+                                <option value="Vegetables" {% if food.category == 'Vegetables' %}selected{% endif %}>Vegetables</option>
+
+                                <option value="Fruits" {% if food.category == 'Fruits' %}selected{% endif %}>Fruits</option>
+
+                                <option value="Grains" {% if food.category == 'Grains' %}selected{% endif %}>Grains</option>
+
+                                <option value="Proteins" {% if food.category == 'Proteins' %}selected{% endif %}>Proteins</option>
+
+                                <option value="Dairy" {% if food.category == 'Dairy' %}selected{% endif %}>Dairy</option>
+
+                                <option value="Nuts & Seeds" {% if food.category == 'Nuts & Seeds' %}selected{% endif %}>Nuts & Seeds</option>
+
+                                <option value="Fats/Oils" {% if food.category == 'Fats/Oils' %}selected{% endif %}>Fats/Oils</option>
+
+                                <option value="Herbs & Spices" {% if food.category == 'Herbs & Spices' %}selected{% endif %}>Herbs & Spices</option>
+
+                                <option value="Beverages" {% if food.category == 'Beverages' %}selected{% endif %}>Beverages</option>
+
+                                <option value="Packaged Food" {% if food.category == 'Packaged Food' %}selected{% endif %}>Packaged Food</option>
+
+                                <option value="Other" {% if food.category == 'Other' %}selected{% endif %}>Other</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <!-- FODMAP & Histamine Content by Serving Size -->
+
+                    <div class="fodmap-section">
+
+                        <h5 class="mb-3"><i class="bi bi-diagram-3"></i> FODMAP & Histamine Content by Serving Size</h5>
+
+
+
+                        <div class="d-flex flex-column">
+
+                            <!-- Safe Serving -->
+
+                            <details class="collapsible-section safe">
+
+                                <summary class="collapsible-summary">
+
+                                    {% set safe_color = '#28a745' if (food.safe_traffic_light or 'Green') == 'Green' else ('#ffc107' if (food.safe_traffic_light or 'Green') == 'Amber' else '#dc3545') %}
+                                    <i class="bi bi-circle-fill" id="safe-summary-circle" style="color: {{ safe_color }};"></i> <span id="safe-summary-text">{{ food.safe_serving_type or 'Safe Serving' }}</span>
+
+                                    <i class="bi bi-chevron-down chevron"></i>
+
+                                </summary>
+
+                                <div class="collapsible-body">
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="safe_serving" class="form-label mb-1" class="text-body"><strong>Serving Size *</strong></label>
+
+                                    <div class="d-flex gap-1 mb-1">
+
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="safe_serving" name="safe_serving"
+
+                                               value="{{ food.safe_serving or '' }}" placeholder="e.g., 75" required style="width: 100px; font-size: var(--text-body);">
+
+                                        <input type="text" class="form-control form-control-sm" id="safe_serving_unit" name="safe_serving_unit"
+
+                                               value="{{ food.safe_serving_unit or '' }}" placeholder="g, ml" required style="width: 60px; font-size: var(--text-body);">
+
+                                    </div>
+
+                                    <div class="d-flex gap-1 mb-2">
+
+                                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('safe_serving')" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator"></i> Convert
+
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#calculatorModal" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator-fill"></i> Calc
+
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="safe_serving_type" class="form-label mb-1" class="text-body"><strong>Serving Type:</strong></label>
+
+                                    <select class="form-select form-select-sm" id="safe_serving_type" name="safe_serving_type" class="text-body" style="margin-bottom: 4px;">
+
+                                        <option value="">Select...</option>
+
+                                        <option value="1 serve" {% if food.safe_serving_type == '1 serve' %}selected{% endif %}>1 serve</option>
+
+                                        <option value="low serve" {% if food.safe_serving_type == 'low serve' %}selected{% endif %}>low serve</option>
+
+                                        <option value="moderate serve" {% if food.safe_serving_type == 'moderate serve' %}selected{% endif %}>moderate serve</option>
+
+                                        <option value="high serve" {% if food.safe_serving_type == 'high serve' %}selected{% endif %}>high serve</option>
+
+                                    </select>
+
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="safe_serving_note" name="safe_serving_note"
+
+                                           value="{{ food.safe_serving_note or '' }}" placeholder="e.g., (1/2 cup) - per meal" class="text-body">
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label class="form-label mb-1" class="text-body"><strong>Traffic Light:</strong></label>
+
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+
+                                        <div class="color-option green {% if (food.safe_traffic_light or 'Green') == 'Green' %}selected{% endif %}"
+
+                                             data-field="safe_traffic_light" data-value="Green"
+
+                                             onclick="selectTrafficLight('safe', 'Green', this)"></div>
+
+                                        <div class="color-option amber {% if (food.safe_traffic_light or 'Green') == 'Amber' %}selected{% endif %}"
+
+                                             data-field="safe_traffic_light" data-value="Amber"
+
+                                             onclick="selectTrafficLight('safe', 'Amber', this)"></div>
+
+                                        <div class="color-option red {% if (food.safe_traffic_light or 'Green') == 'Red' %}selected{% endif %}"
+
+                                             data-field="safe_traffic_light" data-value="Red"
+
+                                             onclick="selectTrafficLight('safe', 'Red', this)"></div>
+
+                                        <input type="hidden" name="safe_traffic_light" id="safe_traffic_light" value="{{ food.safe_traffic_light or 'Green' }}">
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <h6 class="text-white-ish mt-2 mb-1" class="text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+
+                                <div class="fodmap-grid mb-2">
+
+                                    {% set safe_fodmaps = {
+
+                                        'fructose': food.safe_fructose or food.fructose or 'Green',
+
+                                        'sorbitol': food.safe_sorbitol or food.sorbitol or 'Green',
+
+                                        'lactose': food.safe_lactose or food.lactose or 'Green',
+
+                                        'gos': food.safe_gos or food.gos or 'Green',
+
+                                        'mannitol': food.safe_mannitol or food.mannitol or 'Green',
+
+                                        'fructans': food.safe_fructans or food.fructans or 'Green',
+
+                                        'polyols': food.safe_polyols or food.polyols or 'Green'
+
+                                    } %}
+
+                                    {% for fodmap_name, fodmap_value in safe_fodmaps.items() %}
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if fodmap_value == 'Green' %}selected{% endif %}" data-field="safe_{{ fodmap_name }}" data-value="Green"></div>
+
+                                            <div class="color-option amber {% if fodmap_value == 'Amber' %}selected{% endif %}" data-field="safe_{{ fodmap_name }}" data-value="Amber"></div>
+
+                                            <div class="color-option red {% if fodmap_value == 'Red' %}selected{% endif %}" data-field="safe_{{ fodmap_name }}" data-value="Red"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>{{ fodmap_name.capitalize() }}</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="safe_{{ fodmap_name }}" id="safe_{{ fodmap_name }}" value="{{ fodmap_value }}">
+
+                                    </div>
+
+                                    {% endfor %}
+
+                                </div>
+
+
+
+                                <div class="section-divider"></div>
+
+
+
+                                <h6 class="text-white-ish mb-1" class="text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+
+                                <div class="histamine-grid">
+
+                                    {% set safe_histamine_level = food.safe_histamine_level or food.histamine_level or 'Low' %}
+
+                                    {% set safe_dao = food.safe_dao_blocker or food.dao_blocker or 'No' %}
+
+                                    {% set safe_liberator = food.safe_histamine_liberator or food.histamine_liberator or 'No' %}
+
+
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if safe_histamine_level == 'Low' %}selected{% endif %}" data-field="safe_histamine_level" data-value="Low"></div>
+
+                                            <div class="color-option amber {% if safe_histamine_level == 'Medium' %}selected{% endif %}" data-field="safe_histamine_level" data-value="Medium"></div>
+
+                                            <div class="color-option red {% if safe_histamine_level == 'High' %}selected{% endif %}" data-field="safe_histamine_level" data-value="High"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Level</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="safe_histamine_level" id="safe_histamine_level" value="{{ safe_histamine_level }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if safe_dao == 'No' %}selected{% endif %}" data-field="safe_dao_blocker" data-value="No"></div>
+
+                                            <div class="color-option red {% if safe_dao == 'Yes' %}selected{% endif %}" data-field="safe_dao_blocker" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>DAO Blocker</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="safe_dao_blocker" id="safe_dao_blocker" value="{{ safe_dao }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if safe_liberator == 'No' %}selected{% endif %}" data-field="safe_histamine_liberator" data-value="No"></div>
+
+                                            <div class="color-option red {% if safe_liberator == 'Yes' %}selected{% endif %}" data-field="safe_histamine_liberator" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Liberator</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="safe_histamine_liberator" id="safe_histamine_liberator" value="{{ safe_liberator }}">
+
+                                    </div>
+
+                                </div>
+
+                            </details>
+
+
+
+                            <!-- Moderate Serving -->
+
+                            <details class="collapsible-section moderate">
+
+                                <summary class="collapsible-summary">
+
+                                    {% set moderate_color = '#28a745' if (food.moderate_traffic_light or 'Amber') == 'Green' else ('#ffc107' if (food.moderate_traffic_light or 'Amber') == 'Amber' else '#dc3545') %}
+                                    <i class="bi bi-circle-fill" id="moderate-summary-circle" style="color: {{ moderate_color }};"></i> <span id="moderate-summary-text">{{ food.moderate_serving_type or 'Moderate Serving' }}</span>
+
+                                    <i class="bi bi-chevron-down chevron"></i>
+
+                                </summary>
+
+                                <div class="collapsible-body">
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="moderate_serving" class="form-label mb-1" class="text-body"><strong>Serving Size *</strong></label>
+
+                                    <div class="d-flex gap-1 mb-1">
+
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="moderate_serving" name="moderate_serving"
+
+                                               value="{{ food.moderate_serving or '' }}" placeholder="e.g., 150" required style="width: 100px; font-size: var(--text-body);">
+
+                                        <input type="text" class="form-control form-control-sm" id="moderate_serving_unit" name="moderate_serving_unit"
+
+                                               value="{{ food.moderate_serving_unit or '' }}" placeholder="g, ml" required style="width: 60px; font-size: var(--text-body);">
+
+                                    </div>
+
+                                    <div class="d-flex gap-1 mb-2">
+
+                                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('moderate_serving')" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator"></i> Convert
+
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#calculatorModal" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator-fill"></i> Calc
+
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="moderate_serving_type" class="form-label mb-1" class="text-body"><strong>Serving Type:</strong></label>
+
+                                    <select class="form-select form-select-sm" id="moderate_serving_type" name="moderate_serving_type" class="text-body" style="margin-bottom: 4px;">
+
+                                        <option value="">Select...</option>
+
+                                        <option value="1 serve" {% if food.moderate_serving_type == '1 serve' %}selected{% endif %}>1 serve</option>
+
+                                        <option value="low serve" {% if food.moderate_serving_type == 'low serve' %}selected{% endif %}>low serve</option>
+
+                                        <option value="moderate serve" {% if food.moderate_serving_type == 'moderate serve' %}selected{% endif %}>moderate serve</option>
+
+                                        <option value="high serve" {% if food.moderate_serving_type == 'high serve' %}selected{% endif %}>high serve</option>
+
+                                    </select>
+
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="moderate_serving_note" name="moderate_serving_note"
+
+                                           value="{{ food.moderate_serving_note or '' }}" placeholder="e.g., (1 cup) - per meal" class="text-body">
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label class="form-label mb-1" class="text-body"><strong>Traffic Light:</strong></label>
+
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+
+                                        <div class="color-option green {% if (food.moderate_traffic_light or 'Amber') == 'Green' %}selected{% endif %}"
+
+                                             data-field="moderate_traffic_light" data-value="Green"
+
+                                             onclick="selectTrafficLight('moderate', 'Green', this)"></div>
+
+                                        <div class="color-option amber {% if (food.moderate_traffic_light or 'Amber') == 'Amber' %}selected{% endif %}"
+
+                                             data-field="moderate_traffic_light" data-value="Amber"
+
+                                             onclick="selectTrafficLight('moderate', 'Amber', this)"></div>
+
+                                        <div class="color-option red {% if (food.moderate_traffic_light or 'Amber') == 'Red' %}selected{% endif %}"
+
+                                             data-field="moderate_traffic_light" data-value="Red"
+
+                                             onclick="selectTrafficLight('moderate', 'Red', this)"></div>
+
+                                        <input type="hidden" name="moderate_traffic_light" id="moderate_traffic_light" value="{{ food.moderate_traffic_light or 'Amber' }}">
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <h6 class="text-white-ish mt-2 mb-1" class="text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+
+                                <div class="fodmap-grid mb-2">
+
+                                    {% set moderate_fodmaps = {
+
+                                        'fructose': food.moderate_fructose or 'Amber',
+
+                                        'sorbitol': food.moderate_sorbitol or 'Amber',
+
+                                        'lactose': food.moderate_lactose or 'Amber',
+
+                                        'gos': food.moderate_gos or 'Amber',
+
+                                        'mannitol': food.moderate_mannitol or 'Amber',
+
+                                        'fructans': food.moderate_fructans or 'Amber',
+
+                                        'polyols': food.moderate_polyols or 'Amber'
+
+                                    } %}
+
+                                    {% for fodmap_name, fodmap_value in moderate_fodmaps.items() %}
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if fodmap_value == 'Green' %}selected{% endif %}" data-field="moderate_{{ fodmap_name }}" data-value="Green"></div>
+
+                                            <div class="color-option amber {% if fodmap_value == 'Amber' %}selected{% endif %}" data-field="moderate_{{ fodmap_name }}" data-value="Amber"></div>
+
+                                            <div class="color-option red {% if fodmap_value == 'Red' %}selected{% endif %}" data-field="moderate_{{ fodmap_name }}" data-value="Red"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>{{ fodmap_name.capitalize() }}</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="moderate_{{ fodmap_name }}" id="moderate_{{ fodmap_name }}" value="{{ fodmap_value }}">
+
+                                    </div>
+
+                                    {% endfor %}
+
+                                </div>
+
+
+
+                                <div class="section-divider"></div>
+
+
+
+                                <h6 class="text-white-ish mb-1" class="text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+
+                                <div class="histamine-grid">
+
+                                    {% set moderate_histamine_level = food.moderate_histamine_level or 'Medium' %}
+
+                                    {% set moderate_dao = food.moderate_dao_blocker or 'No' %}
+
+                                    {% set moderate_liberator = food.moderate_histamine_liberator or 'No' %}
+
+
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if moderate_histamine_level == 'Low' %}selected{% endif %}" data-field="moderate_histamine_level" data-value="Low"></div>
+
+                                            <div class="color-option amber {% if moderate_histamine_level == 'Medium' %}selected{% endif %}" data-field="moderate_histamine_level" data-value="Medium"></div>
+
+                                            <div class="color-option red {% if moderate_histamine_level == 'High' %}selected{% endif %}" data-field="moderate_histamine_level" data-value="High"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Level</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="moderate_histamine_level" id="moderate_histamine_level" value="{{ moderate_histamine_level }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if moderate_dao == 'No' %}selected{% endif %}" data-field="moderate_dao_blocker" data-value="No"></div>
+
+                                            <div class="color-option red {% if moderate_dao == 'Yes' %}selected{% endif %}" data-field="moderate_dao_blocker" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>DAO Blocker</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="moderate_dao_blocker" id="moderate_dao_blocker" value="{{ moderate_dao }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if moderate_liberator == 'No' %}selected{% endif %}" data-field="moderate_histamine_liberator" data-value="No"></div>
+
+                                            <div class="color-option red {% if moderate_liberator == 'Yes' %}selected{% endif %}" data-field="moderate_histamine_liberator" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Liberator</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="moderate_histamine_liberator" id="moderate_histamine_liberator" value="{{ moderate_liberator }}">
+
+                                    </div>
+
+                                </div>
+
+                            </details>
+
+
+
+                            <!-- High Serving -->
+
+                            <details class="collapsible-section high">
+
+                                <summary class="collapsible-summary">
+
+                                    {% set high_color = '#28a745' if (food.high_traffic_light or 'Red') == 'Green' else ('#ffc107' if (food.high_traffic_light or 'Red') == 'Amber' else '#dc3545') %}
+                                    <i class="bi bi-circle-fill" id="high-summary-circle" style="color: {{ high_color }};"></i> <span id="high-summary-text">{{ food.high_serving_type or 'High Serving' }}</span>
+
+                                    <i class="bi bi-chevron-down chevron"></i>
+
+                                </summary>
+
+                                <div class="collapsible-body">
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="high_serving" class="form-label mb-1" class="text-body"><strong>Serving Size *</strong></label>
+
+                                    <div class="d-flex gap-1 mb-1">
+
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="high_serving" name="high_serving"
+
+                                               value="{{ food.high_serving or '' }}" placeholder="e.g., 300" required style="width: 100px; font-size: var(--text-body);">
+
+                                        <input type="text" class="form-control form-control-sm" id="high_serving_unit" name="high_serving_unit"
+
+                                               value="{{ food.high_serving_unit or '' }}" placeholder="g, ml" required style="width: 60px; font-size: var(--text-body);">
+
+                                    </div>
+
+                                    <div class="d-flex gap-1 mb-2">
+
+                                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('high_serving')" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator"></i> Convert
+
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#calculatorModal" class="text-label" style="padding: 2px 6px;">
+
+                                            <i class="bi bi-calculator-fill"></i> Calc
+
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <div class="mb-2">
+
+                                    <label for="high_serving_type" class="form-label mb-1" class="text-body"><strong>Serving Type:</strong></label>
+
+                                    <select class="form-select form-select-sm" id="high_serving_type" name="high_serving_type" class="text-body" style="margin-bottom: 4px;">
+
+                                        <option value="">Select...</option>
+
+                                        <option value="1 serve" {% if food.high_serving_type == '1 serve' %}selected{% endif %}>1 serve</option>
+
+                                        <option value="low serve" {% if food.high_serving_type == 'low serve' %}selected{% endif %}>low serve</option>
+
+                                        <option value="moderate serve" {% if food.high_serving_type == 'moderate serve' %}selected{% endif %}>moderate serve</option>
+
+                                        <option value="high serve" {% if food.high_serving_type == 'high serve' %}selected{% endif %}>high serve</option>
+
+                                    </select>
+
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="high_serving_note" name="high_serving_note"
+
+                                           value="{{ food.high_serving_note or '' }}" placeholder="e.g., (2 cups) - per meal" class="text-body">
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label class="form-label mb-1" class="text-body"><strong>Traffic Light:</strong></label>
+
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+
+                                        <div class="color-option green {% if (food.high_traffic_light or 'Red') == 'Green' %}selected{% endif %}"
+
+                                             data-field="high_traffic_light" data-value="Green"
+
+                                             onclick="selectTrafficLight('high', 'Green', this)"></div>
+
+                                        <div class="color-option amber {% if (food.high_traffic_light or 'Red') == 'Amber' %}selected{% endif %}"
+
+                                             data-field="high_traffic_light" data-value="Amber"
+
+                                             onclick="selectTrafficLight('high', 'Amber', this)"></div>
+
+                                        <div class="color-option red {% if (food.high_traffic_light or 'Red') == 'Red' %}selected{% endif %}"
+
+                                             data-field="high_traffic_light" data-value="Red"
+
+                                             onclick="selectTrafficLight('high', 'Red', this)"></div>
+
+                                        <input type="hidden" name="high_traffic_light" id="high_traffic_light" value="{{ food.high_traffic_light or 'Red' }}">
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <h6 class="text-white-ish mt-2 mb-1" class="text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+
+                                <div class="fodmap-grid mb-2">
+
+                                    {% set high_fodmaps = {
+
+                                        'fructose': food.high_fructose or 'Red',
+
+                                        'sorbitol': food.high_sorbitol or 'Red',
+
+                                        'lactose': food.high_lactose or 'Red',
+
+                                        'gos': food.high_gos or 'Red',
+
+                                        'mannitol': food.high_mannitol or 'Red',
+
+                                        'fructans': food.high_fructans or 'Red',
+
+                                        'polyols': food.high_polyols or 'Red'
+
+                                    } %}
+
+                                    {% for fodmap_name, fodmap_value in high_fodmaps.items() %}
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if fodmap_value == 'Green' %}selected{% endif %}" data-field="high_{{ fodmap_name }}" data-value="Green"></div>
+
+                                            <div class="color-option amber {% if fodmap_value == 'Amber' %}selected{% endif %}" data-field="high_{{ fodmap_name }}" data-value="Amber"></div>
+
+                                            <div class="color-option red {% if fodmap_value == 'Red' %}selected{% endif %}" data-field="high_{{ fodmap_name }}" data-value="Red"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>{{ fodmap_name.capitalize() }}</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="high_{{ fodmap_name }}" id="high_{{ fodmap_name }}" value="{{ fodmap_value }}">
+
+                                    </div>
+
+                                    {% endfor %}
+
+                                </div>
+
+
+
+                                <div class="section-divider"></div>
+
+
+
+                                <h6 class="text-white-ish mb-1" class="text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+
+                                <div class="histamine-grid">
+
+                                    {% set high_histamine_level = food.high_histamine_level or 'High' %}
+
+                                    {% set high_dao = food.high_dao_blocker or 'Yes' %}
+
+                                    {% set high_liberator = food.high_histamine_liberator or 'Yes' %}
+
+
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if high_histamine_level == 'Low' %}selected{% endif %}" data-field="high_histamine_level" data-value="Low"></div>
+
+                                            <div class="color-option amber {% if high_histamine_level == 'Medium' %}selected{% endif %}" data-field="high_histamine_level" data-value="Medium"></div>
+
+                                            <div class="color-option red {% if high_histamine_level == 'High' %}selected{% endif %}" data-field="high_histamine_level" data-value="High"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Level</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="high_histamine_level" id="high_histamine_level" value="{{ high_histamine_level }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if high_dao == 'No' %}selected{% endif %}" data-field="high_dao_blocker" data-value="No"></div>
+
+                                            <div class="color-option red {% if high_dao == 'Yes' %}selected{% endif %}" data-field="high_dao_blocker" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>DAO Blocker</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="high_dao_blocker" id="high_dao_blocker" value="{{ high_dao }}">
+
+                                    </div>
+
+                                    <div class="fodmap-card">
+
+                                        <div class="color-selector">
+
+                                            <div class="color-option green {% if high_liberator == 'No' %}selected{% endif %}" data-field="high_histamine_liberator" data-value="No"></div>
+
+                                            <div class="color-option red {% if high_liberator == 'Yes' %}selected{% endif %}" data-field="high_histamine_liberator" data-value="Yes"></div>
+
+                                        </div>
+
+                                        <div class="fodmap-text-content">
+
+                                            <label class="form-label mb-0" style="font-size: var(--text-label);"><strong>Histamine Liberator</strong></label>
+
+                                        </div>
+
+                                        <input type="hidden" name="high_histamine_liberator" id="high_histamine_liberator" value="{{ high_liberator }}">
+
+                                    </div>
+
+                                </div>
+
+                            </details>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="additional-section">
+                    <!-- Notes Section (Optional) -->
+                    <details class="collapsible-section additional">
+                        <summary class="collapsible-summary">
+                            <i class="bi bi-pencil-square"></i> Notes
+                            <small class="text-muted ms-2">(Optional)</small>
+                            <i class="bi bi-chevron-down chevron"></i>
+                        </summary>
+                        <div class="collapsible-body">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="Any special notes, preparation tips, or observations about this food...">{{ food.preparation_notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </details>
+                    </div>
+
+                    <!-- Nutritional Data Source Selector -->
+                    <div class="card mb-3" style="background-color: var(--bg-elevated); border: 1px solid rgba(214, 189, 152, 0.3); border-radius: 4px;">
+                        <div class="card-body" style="padding: 12px;">
+                            <h6 class="mb-2" style="color: var(--gold); font-size: var(--text-title);">
+                                <i class="bi bi-bar-chart"></i> Nutritional Data Source
+                            </h6>
+
+                            <!-- Tab buttons -->
+                            <div style="display: flex; gap: 4px; margin-bottom: 12px;">
+                                <button type="button" class="btn btn-sm nutrition-tab{% if food.usda_food and not food.ausnut_food %} active{% endif %}" onclick="selectNutritionTab('usda')" id="tab-btn-usda"
+                                    style="flex: 1; padding: 5px 8px; font-size: var(--text-body); border-radius: 4px;">
+                                    <i class="bi bi-database"></i> USDA
+                                </button>
+                                <button type="button" class="btn btn-sm nutrition-tab{% if food.ausnut_food %} active{% endif %}" onclick="selectNutritionTab('ausnut')" id="tab-btn-ausnut"
+                                    style="flex: 1; padding: 5px 8px; font-size: var(--text-body); border-radius: 4px;">
+                                    <i class="bi bi-globe-asia-australia"></i> AUSNUT
+                                </button>
+                                <button type="button" class="btn btn-sm nutrition-tab{% if not food.usda_food and not food.ausnut_food %} active{% endif %}" onclick="selectNutritionTab('custom')" id="tab-btn-custom"
+                                    style="flex: 1; padding: 5px 8px; font-size: var(--text-body); border-radius: 4px;">
+                                    <i class="bi bi-clipboard-data"></i> Custom
+                                </button>
+                            </div>
+
+                            <!-- USDA Tab Panel -->
+                            <div id="nutrition-panel-usda" style="{% if food.usda_food and not food.ausnut_food %}display: block;{% else %}display: none;{% endif %}">
+                                <p class="mb-2" style="font-size: var(--text-label); color: var(--white-ish); opacity: 0.8;">
+                                    Link this food to a USDA food item for comprehensive nutritional information.
+                                </p>
+                                <input type="hidden" id="usda_food_id" name="usda_food_id" value="{{ food.usda_food_id or '' }}">
+                                <div id="usda-link-display" style="{% if food.usda_food %}display: block;{% else %}display: none;{% endif %} background-color: rgba(214, 189, 152, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div style="flex: 1;">
+                                            <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold;" id="usda-food-name">
+                                                {% if food.usda_food %}{{ food.usda_food.description }}{% endif %}
+                                            </div>
+                                            <div style="font-size: var(--text-label); color: var(--sage); margin-top: 2px;">
+                                                <span id="usda-food-type" class="badge" style="font-size: var(--text-label); padding: 2px 6px;
+                                                    {% if food.usda_food %}
+                                                        {% if food.usda_food.data_type == 'Foundation' %}background-color: rgba(40, 167, 69, 0.3); color: #28a745;
+                                                        {% elif food.usda_food.data_type == 'SR Legacy' %}background-color: rgba(0, 123, 255, 0.3); color: #007bff;
+                                                        {% else %}background-color: rgba(108, 117, 125, 0.3); color: #6c757d;{% endif %}
+                                                    {% endif %}">
+                                                    {% if food.usda_food %}{{ food.usda_food.data_type }}{% endif %}
+                                                </span>
+                                                <span id="usda-food-category" style="margin-left: 6px;">
+                                                    {% if food.usda_food and food.usda_food.category %}{{ food.usda_food.category.description }}{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="clearUsdaLink()" style="padding: 2px 8px; font-size: var(--text-label); background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm" id="usda-search-btn" data-bs-toggle="modal" data-bs-target="#usdaSearchModal" style="{% if food.usda_food %}display: none;{% else %}display: inline-block;{% endif %} background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3); padding: 4px 12px; font-size: var(--text-body);">
+                                    <i class="bi bi-search"></i> Search USDA Database
+                                </button>
+                            </div>
+
+                            <!-- AUSNUT Tab Panel -->
+                            <div id="nutrition-panel-ausnut" style="{% if food.ausnut_food %}display: block;{% else %}display: none;{% endif %}">
+                                <p class="mb-2" style="font-size: var(--text-label); color: var(--white-ish); opacity: 0.8;">
+                                    Link this food to an AUSNUT 2023 food item for Australian nutritional information.
+                                </p>
+                                <input type="hidden" id="ausnut_food_id" name="ausnut_food_id" value="{{ food.ausnut_food_id or '' }}">
+                                <div id="ausnut-link-display" style="{% if food.ausnut_food %}display: block;{% else %}display: none;{% endif %} background-color: rgba(214, 189, 152, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div style="flex: 1;">
+                                            <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold;" id="ausnut-food-name">
+                                                {% if food.ausnut_food %}{{ food.ausnut_food.food_name }}{% endif %}
+                                            </div>
+                                            <div style="font-size: var(--text-label); color: var(--sage); margin-top: 2px;">
+                                                <span class="badge" style="font-size: var(--text-label); padding: 2px 6px; background-color: rgba(40, 167, 69, 0.3); color: #28a745;">AUSNUT 2023</span>
+                                                <span id="ausnut-food-survey-id" style="margin-left: 6px;">
+                                                    {% if food.ausnut_food %}ID: {{ food.ausnut_food.survey_id }}{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="clearAusnutLink()" style="padding: 2px 8px; font-size: var(--text-label); background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm" id="ausnut-search-btn" data-bs-toggle="modal" data-bs-target="#ausnutSearchModal" style="{% if food.ausnut_food %}display: none;{% else %}display: inline-block;{% endif %} background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3); padding: 4px 12px; font-size: var(--text-body);">
+                                    <i class="bi bi-search"></i> Search AUSNUT Database
+                                </button>
+                            </div>
+
+                            <!-- Custom Tab Panel -->
+                            <div id="nutrition-panel-custom" style="{% if not food.usda_food and not food.ausnut_food %}display: block;{% else %}display: none;{% endif %}">
+                                <p class="mb-2" style="font-size: var(--text-label); color: var(--white-ish); opacity: 0.8;">
+                                    <i class="bi bi-info-circle"></i> Manually add nutritional data if no external database food is linked.
+                                </p>
+                                <input type="hidden" id="custom_nutrients_json" name="custom_nutrients" value='{{ custom_nutrients|tojson|safe if custom_nutrients else "{}" }}'>
+
+                                <!-- Serving Sizes Section -->
+                                <div class="nutrition-section mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                        <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                            <i class="bi bi-rulers"></i> Serving Sizes
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="addNutrientRow('servings')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="servings-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 30px;">
+                                        <p class="text-muted text-center py-2 mb-0" id="servings-empty" style="font-size: var(--text-label);">No serving sizes added</p>
+                                    </div>
+                                </div>
+
+                                <!-- Energy Section -->
+                                <div class="nutrition-section mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                        <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                            <i class="bi bi-lightning-fill"></i> Energy
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="addNutrientRow('energy')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="energy-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 30px;">
+                                        <p class="text-muted text-center py-2 mb-0" id="energy-empty" style="font-size: var(--text-label);">No energy values added</p>
+                                    </div>
+                                </div>
+
+                                <!-- Proximates Section -->
+                                <div class="nutrition-section mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                        <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                            <i class="bi bi-diagram-3"></i> Proximates
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="addNutrientRow('proximates')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="proximates-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 30px;">
+                                        <p class="text-muted text-center py-2 mb-0" id="proximates-empty" style="font-size: var(--text-label);">No proximates added</p>
+                                    </div>
+                                </div>
+
+                                <!-- Vitamins Section -->
+                                <div class="nutrition-section mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                        <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                            <i class="bi bi-capsule"></i> Vitamins
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="addNutrientRow('vitamins')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="vitamins-container-custom" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 30px;">
+                                        <p class="text-muted text-center py-2 mb-0" id="vitamins-empty" style="font-size: var(--text-label);">No vitamins added</p>
+                                    </div>
+                                </div>
+
+                                <!-- Minerals Section -->
+                                <div class="nutrition-section mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                        <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                            <i class="bi bi-gem"></i> Minerals
+                                        </div>
+                                        <button type="button" class="btn btn-sm" onclick="addNutrientRow('minerals')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="minerals-container-custom" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 30px;">
+                                        <p class="text-muted text-center py-2 mb-0" id="minerals-empty" style="font-size: var(--text-label);">No minerals added</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    </div>
+
+
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div> <!-- Close main-content-area -->
+
+</div> <!-- Close row g-0 -->
+
+
+
+<!-- Simple Calculator Modal -->
+
+        <div class="modal fade" id="calculatorModal" tabindex="-1" aria-labelledby="calculatorModalLabel" aria-hidden="true">
+
+            <div class="modal-dialog">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+
+                        <h5 class="modal-title" id="calculatorModalLabel"><i class="bi bi-calculator-fill"></i> Simple Calculator</h5>
+
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="calculator-display mb-3">
+
+                            <input type="text" class="form-control form-control-lg text-end" id="calcDisplay" readonly value="0" style="font-size: 1.5rem; font-family: monospace;">
+
+                        </div>
+
+                        <div class="calculator-buttons">
+
+                            <div class="row g-2 mb-2">
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcClear()">C</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcBackspace()">⌫</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('/')">/</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('*')">×</button></div>
+
+                            </div>
+
+                            <div class="row g-2 mb-2">
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('7')">7</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('8')">8</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('9')">9</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('-')">-</button></div>
+
+                            </div>
+
+                            <div class="row g-2 mb-2">
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('4')">4</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('5')">5</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('6')">6</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('+')">+</button></div>
+
+                            </div>
+
+                            <div class="row g-2 mb-2">
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('1')">1</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('2')">2</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('3')">3</button></div>
+
+                                <div class="col-3 row-span-2"><button type="button" class="btn btn-primary w-100 h-100" onclick="calcEquals()" style="height: 100%;">=</button></div>
+
+                            </div>
+
+                            <div class="row g-2">
+
+                                <div class="col-6"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('0')">0</button></div>
+
+                                <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('.')">.</button></div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <small class="text-muted me-auto">
+
+                            <strong>Keyboard:</strong> Numbers, +, -, *, /, . | Enter = Calculate | Backspace = Delete | Esc = Clear
+
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Conversion Helper Modal -->
+
+        <div class="modal fade" id="conversionModal" tabindex="-1" aria-labelledby="conversionModalLabel" aria-hidden="true">
+
+            <div class="modal-dialog modal-lg">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+
+                        <h5 class="modal-title" id="conversionModalLabel"><i class="bi bi-calculator"></i> Cup/Tbsp to Grams Converter</h5>
+
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="row mb-3">
+
+                            <div class="col-md-6">
+
+                                <label for="conversionAmount" class="form-label"><strong>Amount</strong></label>
+
+                                <input type="number" class="form-control" id="conversionAmount" step="any" placeholder="e.g., 0.5, 1, 2">
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <label for="conversionUnit" class="form-label"><strong>Unit</strong></label>
+
+                                <select class="form-select" id="conversionUnit">
+
+                                    <option value="cup">Cup</option>
+
+                                    <option value="tbsp">Tablespoon (Tbsp)</option>
+
+                                    <option value="tsp">Teaspoon (tsp)</option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label for="conversionFoodType" class="form-label"><strong>Food Type</strong></label>
+
+                            <select class="form-select" id="conversionFoodType">
+
+                                <option value="">Select food type...</option>
+
+                                <optgroup label="Liquids">
+
+                                    <option value="liquid">Water/Milk/Juice (liquid)</option>
+
+                                </optgroup>
+
+                                <optgroup label="Grains & Flour">
+
+                                    <option value="flour">All-purpose Flour</option>
+
+                                    <option value="rice_cooked">Rice (cooked)</option>
+
+                                    <option value="rice_raw">Rice (raw)</option>
+
+                                    <option value="oats">Oats (rolled)</option>
+
+                                </optgroup>
+
+                                <optgroup label="Sugars">
+
+                                    <option value="sugar_white">Sugar (white granulated)</option>
+
+                                    <option value="sugar_brown">Sugar (brown)</option>
+
+                                    <option value="honey">Honey</option>
+
+                                </optgroup>
+
+                                <optgroup label="Vegetables">
+
+                                    <option value="veg_leafy">Leafy Greens (spinach, lettuce)</option>
+
+                                    <option value="veg_chopped">Chopped Vegetables</option>
+
+                                    <option value="veg_grated">Grated Vegetables (carrot)</option>
+
+                                </optgroup>
+
+                                <optgroup label="Fruits">
+
+                                    <option value="berries">Berries</option>
+
+                                    <option value="fruit_chopped">Chopped Fruit</option>
+
+                                </optgroup>
+
+                                <optgroup label="Nuts & Seeds">
+
+                                    <option value="nuts">Nuts (whole)</option>
+
+                                    <option value="nuts_chopped">Nuts (chopped)</option>
+
+                                    <option value="seeds">Seeds</option>
+
+                                </optgroup>
+
+                                <optgroup label="Dairy">
+
+                                    <option value="butter">Butter</option>
+
+                                    <option value="cheese_grated">Cheese (grated)</option>
+
+                                    <option value="yogurt">Yogurt</option>
+
+                                </optgroup>
+
+                            </select>
+
+                        </div>
+
+                        <button type="button" class="btn btn-primary" onclick="calculateConversion()">
+
+                            <i class="bi bi-calculator"></i> Calculate
+
+                        </button>
+
+                        <div id="conversionResult" class="mt-3" style="display: none;">
+
+                            <div class="alert alert-success">
+
+                                <h6><i class="bi bi-check-circle"></i> Conversion Result:</h6>
+
+                                <p class="mb-2"><strong id="conversionResultText"></strong></p>
+
+                                <button type="button" class="btn btn-sm btn-success" onclick="applyConversion()">
+
+                                    <i class="bi bi-check2"></i> Use This Value
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- USDA Food Search Modal -->
+<div class="modal fade" id="usdaSearchModal" tabindex="-1" aria-labelledby="usdaSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background-color: var(--bg-elevated); color: var(--white-ish);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(214, 189, 152, 0.3);">
+                <h5 class="modal-title" id="usdaSearchModalLabel" style="color: var(--gold);">
+                    <i class="bi bi-search"></i> Search USDA Food Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search input -->
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="usda-search-input" placeholder="Search for a food (e.g., banana, chicken breast)..." style="font-size: var(--text-body);">
+                    <small class="text-muted" style="font-size: var(--text-label);">Type at least 2 characters to search</small>
+                </div>
+
+                <!-- Loading indicator -->
+                <div id="usda-search-loading" style="display: none; text-align: center; padding: 20px;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Results container -->
+                <div id="usda-search-results" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted text-center" style="font-size: var(--text-label);">
+                        Enter a search term to find USDA foods
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(214, 189, 152, 0.3);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AUSNUT Food Search Modal -->
+<div class="modal fade" id="ausnutSearchModal" tabindex="-1" aria-labelledby="ausnutSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background-color: var(--bg-elevated); color: var(--white-ish);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(214, 189, 152, 0.3);">
+                <h5 class="modal-title" id="ausnutSearchModalLabel" style="color: var(--gold);">
+                    <i class="bi bi-search"></i> Search AUSNUT 2023 Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search input -->
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="ausnut-search-input" placeholder="Search for a food (e.g., banana, chicken breast)..." style="font-size: var(--text-body);">
+                    <small class="text-muted" style="font-size: var(--text-label);">Type at least 2 characters to search</small>
+                </div>
+
+                <!-- Loading indicator -->
+                <div id="ausnut-search-loading" style="display: none; text-align: center; padding: 20px;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Results container -->
+                <div id="ausnut-search-results" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted text-center" style="font-size: var(--text-label);">
+                        Enter a search term to find AUSNUT foods
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(214, 189, 152, 0.3);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<script>
+
+// ==================== TRAFFIC LIGHT SELECTOR ====================
+
+function selectTrafficLight(servingType, color, element) {
+    // Remove 'selected' from all traffic light circles for this serving type
+    const field = `${servingType}_traffic_light`;
+    const siblings = document.querySelectorAll(`[data-field="${field}"]`);
+    siblings.forEach(sib => sib.classList.remove('selected'));
+
+    // Add 'selected' to clicked circle
+    element.classList.add('selected');
+
+    // Update hidden input
+    const input = document.getElementById(field);
+    if (input) {
+        input.value = color;
+    }
+
+    // Update left border color of the collapsible section
+    const section = document.querySelector(`.collapsible-section.${servingType}`);
+    const colorMap = {
+        'Green': '#28a745',
+        'Amber': '#ffc107',
+        'Red': '#dc3545'
+    };
+    if (section) {
+        section.style.borderLeftColor = colorMap[color] || '#28a745';
+    }
+
+    // Update the summary circle color
+    const summaryCircle = document.getElementById(`${servingType}-summary-circle`);
+    if (summaryCircle) {
+        summaryCircle.style.color = colorMap[color] || '#28a745';
+    }
+}
+
+// ==================== SERVING TYPE TEXT UPDATE ====================
+
+function updateServingTypeText(servingType, selectedValue) {
+    const summaryText = document.getElementById(`${servingType}-summary-text`);
+    if (summaryText) {
+        // Use the selected value, or fall back to default text if empty
+        const defaultText = servingType === 'safe' ? 'Safe Serving' :
+                          (servingType === 'moderate' ? 'Moderate Serving' : 'High Serving');
+        summaryText.textContent = selectedValue || defaultText;
+    }
+}
+
+// Add event listeners to serving type dropdowns
+document.addEventListener('DOMContentLoaded', function() {
+    // Safe serving type
+    const safeServingType = document.getElementById('safe_serving_type');
+    if (safeServingType) {
+        safeServingType.addEventListener('change', function() {
+            updateServingTypeText('safe', this.value);
+        });
+    }
+
+    // Moderate serving type
+    const moderateServingType = document.getElementById('moderate_serving_type');
+    if (moderateServingType) {
+        moderateServingType.addEventListener('change', function() {
+            updateServingTypeText('moderate', this.value);
+        });
+    }
+
+    // High serving type
+    const highServingType = document.getElementById('high_serving_type');
+    if (highServingType) {
+        highServingType.addEventListener('change', function() {
+            updateServingTypeText('high', this.value);
+        });
+    }
+});
+
+// ==================== CUSTOM NUTRITION FUNCTIONS ====================
+
+let nutrientCounter = {
+    servings: 0,
+    energy: 0,
+    proximates: 0,
+    vitamins: 0,
+    minerals: 0
+};
+
+// Add a new nutrient row to the specified category
+function addNutrientRow(category) {
+    nutrientCounter[category]++;
+    const rowId = `${category}-row-${nutrientCounter[category]}`;
+    const container = document.getElementById(`${category}-container${category === 'vitamins' || category === 'minerals' ? '-custom' : ''}`);
+    const emptyMessage = document.getElementById(`${category}-empty`);
+
+    // Hide empty message
+    if (emptyMessage) {
+        emptyMessage.style.display = 'none';
+    }
+
+    // Create row based on category
+    let rowHTML = '';
+    if (category === 'servings') {
+        rowHTML = `
+            <div id="${rowId}" class="nutrient-row" style="display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <input type="text" class="form-control form-control-sm" placeholder="Serving description (e.g., 1 cup)"
+                    style="flex: 2; margin-right: 8px; font-size: var(--text-body);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Grams"
+                    style="flex: 1; margin-right: 8px; font-size: var(--text-body);"
+                    onchange="updateCustomNutrients()">
+                <span style="color: var(--sage); font-size: var(--text-label); margin-right: 8px;">g</span>
+                <button type="button" class="btn btn-sm" onclick="deleteNutrientRow('${rowId}', '${category}')"
+                    style="padding: 2px 6px; background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <i class="bi bi-trash" style="font-size: 0.65rem;"></i>
+                </button>
+            </div>
+        `;
+    } else {
+        rowHTML = `
+            <div id="${rowId}" class="nutrient-row" style="display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <input type="text" class="form-control form-control-sm" placeholder="Nutrient name"
+                    style="flex: 2; margin-right: 8px; font-size: var(--text-body); color: var(--white-ish);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Amount"
+                    style="flex: 1; margin-right: 8px; font-size: var(--text-body); text-align: right; color: var(--gold);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Unit"
+                    style="flex: 0.8; margin-right: 8px; font-size: var(--text-label); color: var(--sage);"
+                    onchange="updateCustomNutrients()">
+                <button type="button" class="btn btn-sm" onclick="deleteNutrientRow('${rowId}', '${category}')"
+                    style="padding: 2px 6px; background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <i class="bi bi-trash" style="font-size: 0.65rem;"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    container.insertAdjacentHTML('beforeend', rowHTML);
+    updateCustomNutrients();
+}
+
+// Delete a nutrient row
+function deleteNutrientRow(rowId, category) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+    }
+
+    // Check if container is empty, show empty message
+    const container = document.getElementById(`${category}-container${category === 'vitamins' || category === 'minerals' ? '-custom' : ''}`);
+    const rows = container.querySelectorAll('.nutrient-row');
+    const emptyMessage = document.getElementById(`${category}-empty`);
+
+    if (rows.length === 0 && emptyMessage) {
+        emptyMessage.style.display = 'block';
+    }
+
+    updateCustomNutrients();
+}
+
+// Collect all custom nutrient data and save to hidden input
+function updateCustomNutrients() {
+    const data = {
+        servings: [],
+        energy: [],
+        proximates: [],
+        vitamins: [],
+        minerals: []
+    };
+
+    // Helper function to extract data from a container
+    function extractNutrients(category, hasGramWeight = false) {
+        const containerSuffix = (category === 'vitamins' || category === 'minerals') ? '-custom' : '';
+        const container = document.getElementById(`${category}-container${containerSuffix}`);
+        const rows = container.querySelectorAll('.nutrient-row');
+
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (hasGramWeight) {
+                // Serving sizes: description + gram weight
+                const description = inputs[0].value.trim();
+                const gramWeight = inputs[1].value.trim();
+                if (description || gramWeight) {
+                    data[category].push({
+                        description: description,
+                        gram_weight: gramWeight
+                    });
+                }
+            } else {
+                // Other nutrients: name + amount + unit
+                const name = inputs[0].value.trim();
+                const amount = inputs[1].value.trim();
+                const unit = inputs[2].value.trim();
+                if (name || amount || unit) {
+                    data[category].push({
+                        name: name,
+                        amount: amount,
+                        unit: unit
+                    });
+                }
+            }
+        });
+    }
+
+    extractNutrients('servings', true);
+    extractNutrients('energy');
+    extractNutrients('proximates');
+    extractNutrients('vitamins');
+    extractNutrients('minerals');
+
+    // Save to hidden input as JSON
+    const hiddenInput = document.getElementById('custom_nutrients_json');
+    if (hiddenInput) {
+        hiddenInput.value = JSON.stringify(data);
+    }
+}
+
+// Pre-populate custom nutrients on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenInput = document.getElementById('custom_nutrients_json');
+    if (hiddenInput && hiddenInput.value) {
+        try {
+            const data = JSON.parse(hiddenInput.value);
+
+            // Populate each category
+            ['servings', 'energy', 'proximates', 'vitamins', 'minerals'].forEach(category => {
+                if (data[category] && data[category].length > 0) {
+                    data[category].forEach(item => {
+                        addNutrientRow(category);
+                        // Get the last added row and populate it
+                        const containerSuffix = (category === 'vitamins' || category === 'minerals') ? '-custom' : '';
+                        const container = document.getElementById(`${category}-container${containerSuffix}`);
+                        const rows = container.querySelectorAll('.nutrient-row');
+                        const lastRow = rows[rows.length - 1];
+                        const inputs = lastRow.querySelectorAll('input');
+
+                        if (category === 'servings') {
+                            inputs[0].value = item.description || '';
+                            inputs[1].value = item.gram_weight || '';
+                        } else {
+                            inputs[0].value = item.name || '';
+                            inputs[1].value = item.amount || '';
+                            inputs[2].value = item.unit || '';
+                        }
+                    });
+                }
+            });
+        } catch (e) {
+            console.error('Error parsing custom nutrients:', e);
+        }
+    }
+});
+
+// ==================== END CUSTOM NUTRITION FUNCTIONS ====================
+
+// Category change handler - make serving sizes optional for Packaged Food
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const servingFields = [
+        'safe_serving', 'safe_serving_unit',
+        'moderate_serving', 'moderate_serving_unit',
+        'high_serving', 'high_serving_unit'
+    ];
+
+    function toggleServingSizeRequired() {
+        const isPackagedFood = categorySelect.value === 'Packaged Food';
+        servingFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (isPackagedFood) {
+                    field.removeAttribute('required');
+                } else {
+                    field.setAttribute('required', 'required');
+                }
+            }
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', toggleServingSizeRequired);
+        // Run on page load to handle existing category
+        toggleServingSizeRequired();
+    }
+});
+
+// Color selector functionality
+
+document.querySelectorAll('.color-option').forEach(option => {
+
+    option.addEventListener('click', function() {
+
+        const field = this.dataset.field;
+
+        const value = this.dataset.value;
+
+
+
+        // Remove 'selected' class from siblings
+
+        this.parentElement.querySelectorAll('.color-option').forEach(opt => {
+
+            opt.classList.remove('selected');
+
+        });
+
+
+
+        // Add 'selected' to clicked option
+
+        this.classList.add('selected');
+
+
+
+        // Update hidden input value
+
+        document.getElementById(field).value = value;
+
+    });
+
+});
+
+
+
+// Conversion Helper Variables
+
+let currentConversionTarget = '';
+
+let calculatedGrams = 0;
+
+let originalInput = '';
+
+
+
+function setConversionTarget(targetId) {
+
+    currentConversionTarget = targetId;
+
+    document.getElementById('conversionResult').style.display = 'none';
+
+}
+
+
+
+// Conversion rates per cup in grams
+
+const conversionRates = {
+
+    // Liquids (1 cup = ~240ml = ~240g for water-based liquids)
+
+    liquid: { cup: 240, tbsp: 15, tsp: 5 },
+
+
+
+    // Grains & Flour
+
+    flour: { cup: 125, tbsp: 8, tsp: 2.6 },
+
+    rice_cooked: { cup: 195, tbsp: 12, tsp: 4 },
+
+    rice_raw: { cup: 185, tbsp: 11.5, tsp: 3.8 },
+
+    oats: { cup: 80, tbsp: 5, tsp: 1.7 },
+
+
+
+    // Sugars
+
+    sugar_white: { cup: 200, tbsp: 12.5, tsp: 4 },
+
+    sugar_brown: { cup: 220, tbsp: 14, tsp: 4.6 },
+
+    honey: { cup: 340, tbsp: 21, tsp: 7 },
+
+
+
+    // Vegetables
+
+    veg_leafy: { cup: 30, tbsp: 2, tsp: 0.6 },
+
+    veg_chopped: { cup: 150, tbsp: 9, tsp: 3 },
+
+    veg_grated: { cup: 110, tbsp: 7, tsp: 2.3 },
+
+
+
+    // Fruits
+
+    berries: { cup: 150, tbsp: 9, tsp: 3 },
+
+    fruit_chopped: { cup: 150, tbsp: 9, tsp: 3 },
+
+
+
+    // Nuts & Seeds
+
+    nuts: { cup: 140, tbsp: 9, tsp: 3 },
+
+    nuts_chopped: { cup: 115, tbsp: 7, tsp: 2.4 },
+
+    seeds: { cup: 150, tbsp: 9, tsp: 3 },
+
+
+
+    // Dairy
+
+    butter: { cup: 227, tbsp: 14, tsp: 4.7 },
+
+    cheese_grated: { cup: 110, tbsp: 7, tsp: 2.3 },
+
+    yogurt: { cup: 245, tbsp: 15, tsp: 5 }
+
+};
+
+
+
+function calculateConversion() {
+
+    const amount = parseFloat(document.getElementById('conversionAmount').value);
+
+    const unit = document.getElementById('conversionUnit').value;
+
+    const foodType = document.getElementById('conversionFoodType').value;
+
+
+
+    if (!amount || !foodType) {
+
+        alert('Please enter an amount and select a food type');
+
+        return;
+
+    }
+
+
+
+    const rates = conversionRates[foodType];
+
+    if (!rates) {
+
+        alert('Invalid food type selected');
+
+        return;
+
+    }
+
+
+
+    calculatedGrams = Math.round(amount * rates[unit]);
+
+
+
+    // Format the unit display
+
+    let unitDisplay = unit;
+
+    if (amount !== 1) {
+
+        if (unit === 'cup') unitDisplay = 'cups';
+
+        else if (unit === 'tbsp') unitDisplay = 'tablespoons';
+
+        else if (unit === 'tsp') unitDisplay = 'teaspoons';
+
+    } else {
+
+        if (unit === 'tbsp') unitDisplay = 'tablespoon';
+
+        else if (unit === 'tsp') unitDisplay = 'teaspoon';
+
+    }
+
+
+
+    // Format amount display
+
+    let amountDisplay = amount;
+
+    if (amount === 0.5) amountDisplay = '1/2';
+
+    else if (amount === 0.33 || amount === 0.333) amountDisplay = '1/3';
+
+    else if (amount === 0.66 || amount === 0.667) amountDisplay = '2/3';
+
+    else if (amount === 0.25) amountDisplay = '1/4';
+
+    else if (amount === 0.75) amountDisplay = '3/4';
+
+
+
+    originalInput = `${amountDisplay} ${unitDisplay}`;
+
+
+
+    document.getElementById('conversionResultText').textContent =
+
+        `${amountDisplay} ${unitDisplay} = ${calculatedGrams}g`;
+
+    document.getElementById('conversionResult').style.display = 'block';
+
+}
+
+
+
+function applyConversion() {
+
+    if (currentConversionTarget && calculatedGrams > 0) {
+
+        const targetInput = document.getElementById(currentConversionTarget);
+
+        targetInput.value = `${calculatedGrams}g or ${originalInput}`;
+
+
+
+        // Close the modal
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('conversionModal'));
+
+        modal.hide();
+
+
+
+        // Reset
+
+        document.getElementById('conversionAmount').value = '';
+
+        document.getElementById('conversionFoodType').value = '';
+
+        document.getElementById('conversionResult').style.display = 'none';
+
+    }
+
+}
+
+
+
+// Calculator Functions
+
+let calcCurrentValue = '0';
+
+let calcWaitingForOperand = false;
+
+
+
+window.calcClear = function() {
+
+    calcCurrentValue = '0';
+
+    calcWaitingForOperand = false;
+
+    document.getElementById('calcDisplay').value = calcCurrentValue;
+
+};
+
+
+
+window.calcBackspace = function() {
+
+    const display = document.getElementById('calcDisplay');
+
+    if (calcCurrentValue.length > 1) {
+
+        calcCurrentValue = calcCurrentValue.slice(0, -1);
+
+    } else {
+
+        calcCurrentValue = '0';
+
+    }
+
+    display.value = calcCurrentValue;
+
+};
+
+
+
+window.calcAppend = function(value) {
+
+    const display = document.getElementById('calcDisplay');
+
+
+
+    if (calcCurrentValue === '0' && value !== '.') {
+
+        calcCurrentValue = value;
+
+    } else if (calcCurrentValue === '0' && value === '.') {
+
+        calcCurrentValue = '0.';
+
+    } else {
+
+        calcCurrentValue += value;
+
+    }
+
+
+
+    display.value = calcCurrentValue;
+
+};
+
+
+
+window.calcEquals = function() {
+
+    const display = document.getElementById('calcDisplay');
+
+
+
+    try {
+
+        // Use Function constructor instead of eval for safety
+
+        const result = Function('"use strict"; return (' + calcCurrentValue + ')')();
+
+
+
+        if (isNaN(result) || !isFinite(result)) {
+
+            calcCurrentValue = 'Error';
+
+        } else {
+
+            // Round to 2 decimal places
+
+            calcCurrentValue = Math.round(result * 100) / 100;
+
+            calcCurrentValue = calcCurrentValue.toString();
+
+        }
+
+    } catch (e) {
+
+        calcCurrentValue = 'Error';
+
+    }
+
+
+
+    display.value = calcCurrentValue;
+
+    calcWaitingForOperand = true;
+
+};
+
+
+
+// Reset calculator when modal is opened
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const calcModal = document.getElementById('calculatorModal');
+
+    if (calcModal) {
+
+        calcModal.addEventListener('show.bs.modal', function() {
+
+            calcClear();
+
+        });
+
+    }
+
+});
+
+
+
+// Keyboard support for calculator
+
+document.addEventListener('keydown', function(event) {
+
+    // Only handle keyboard input when calculator modal is open
+
+    const calcModal = document.getElementById('calculatorModal');
+
+    if (!calcModal || !calcModal.classList.contains('show')) {
+
+        return;
+
+    }
+
+
+
+    const key = event.key;
+
+
+
+    // Prevent default for keys we handle
+
+    if (/^[0-9+\-*/=.]$/.test(key) || key === 'Enter' || key === 'Escape' || key === 'Backspace' || key === 'Delete') {
+
+        event.preventDefault();
+
+    }
+
+
+
+    // Numbers and operators
+
+    if (/^[0-9]$/.test(key)) {
+
+        calcAppend(key);
+
+    } else if (key === '+') {
+
+        calcAppend('+');
+
+    } else if (key === '-') {
+
+        calcAppend('-');
+
+    } else if (key === '*' || key === 'x' || key === 'X') {
+
+        calcAppend('*');
+
+    } else if (key === '/') {
+
+        calcAppend('/');
+
+    } else if (key === '.') {
+
+        calcAppend('.');
+
+    }
+
+    // Enter or = to calculate
+
+    else if (key === 'Enter' || key === '=') {
+
+        calcEquals();
+
+    }
+
+    // Backspace to delete last character
+
+    else if (key === 'Backspace') {
+
+        calcBackspace();
+
+    }
+
+    // Escape or Delete to clear
+
+    else if (key === 'Escape' || key === 'Delete') {
+
+        calcClear();
+
+    }
+
+});
+
+
+
+// Nutrition row management functions
+
+let customVitaminCounter = 0;
+
+let customMineralCounter = 0;
+
+let customMacronutrientCounter = 0;
+
+
+
+function removeNutritionRow(rowId) {
+
+    const row = document.getElementById(rowId);
+
+    if (row && confirm('Are you sure you want to remove this nutrition field?')) {
+
+        row.remove();
+
+    }
+
+}
+
+
+
+// Drag and drop functionality for nutrition rows
+
+let draggedElement = null;
+
+
+
+function initDragAndDrop() {
+
+    const containers = ['vitamins-container', 'minerals-container', 'macronutrients-container'];
+
+
+
+    containers.forEach(containerId => {
+
+        const container = document.getElementById(containerId);
+
+        if (!container) return;
+
+
+
+        // Add event listeners to all draggable rows
+
+        container.querySelectorAll('.nutrition-row[draggable="true"]').forEach(row => {
+
+            setupDragEvents(row);
+
+        });
+
+
+
+        // Container drop zone events
+
+        container.addEventListener('dragover', function(e) {
+
+            e.preventDefault();
+
+            const afterElement = getDragAfterElement(container, e.clientY);
+
+            if (draggedElement && afterElement) {
+
+                container.insertBefore(draggedElement, afterElement);
+
+            } else if (draggedElement) {
+
+                container.appendChild(draggedElement);
+
+            }
+
+        });
+
+
+
+        container.addEventListener('drop', function(e) {
+
+            e.preventDefault();
+
+        });
+
+    });
+
+}
+
+
+
+function setupDragEvents(element) {
+
+    element.addEventListener('dragstart', function(e) {
+
+        draggedElement = this;
+
+        this.style.opacity = '0.5';
+
+        e.dataTransfer.effectAllowed = 'move';
+
+    });
+
+
+
+    element.addEventListener('dragend', function(e) {
+
+        this.style.opacity = '1';
+
+        draggedElement = null;
+
+    });
+
+}
+
+
+
+function getDragAfterElement(container, y) {
+
+    const draggableElements = [...container.querySelectorAll('.nutrition-row:not(.dragging)')];
+
+
+
+    return draggableElements.reduce((closest, child) => {
+
+        const box = child.getBoundingClientRect();
+
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+
+            return { offset: offset, element: child };
+
+        } else {
+
+            return closest;
+
+        }
+
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+}
+
+
+
+// Initialize drag and drop on page load
+
+document.addEventListener('DOMContentLoaded', initDragAndDrop);
+
+
+
+function addCustomVitamin() {
+
+    customVitaminCounter++;
+
+    const container = document.getElementById('vitamins-container');
+
+    const rowId = `custom-vitamin-${customVitaminCounter}`;
+
+
+
+    const newRow = document.createElement('tr');
+
+    newRow.id = rowId;
+
+    newRow.innerHTML = `
+
+        <td style="width: 35% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_vitamin_name_${customVitaminCounter}"
+
+                   placeholder="e.g., Vitamin C, B12" required style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 21% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_vitamin_per_serve_${customVitaminCounter}"
+
+                   placeholder="0.0" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 21% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_vitamin_per_100_${customVitaminCounter}"
+
+                   placeholder="0.0" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 19% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_vitamin_rdi_${customVitaminCounter}"
+
+                   placeholder="%" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 4% !important; padding: 0px !important;">
+
+            <button type="button" class="btn btn-sm nutrition-delete-btn" style="padding: 2px 4px; font-size: 0.70rem;"
+
+                    onclick="removeNutritionRow('${rowId}')">
+
+                <i class="bi bi-trash"></i>
+
+            </button>
+
+        </td>
+
+    `;
+
+    container.appendChild(newRow);
+
+}
+
+
+
+function addCustomMineral() {
+
+    customMineralCounter++;
+
+    const container = document.getElementById('minerals-container');
+
+    const rowId = `custom-mineral-${customMineralCounter}`;
+
+
+
+    const newRow = document.createElement('tr');
+
+    newRow.id = rowId;
+
+    newRow.innerHTML = `
+
+        <td style="width: 35% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_mineral_name_${customMineralCounter}"
+
+                   placeholder="e.g., Iron, Zinc, Magnesium" required style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 21% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_mineral_per_serve_${customMineralCounter}"
+
+                   placeholder="0.0" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 21% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_mineral_per_100_${customMineralCounter}"
+
+                   placeholder="0.0" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 19% !important; padding: 0px !important;">
+
+            <input type="text" class="form-control form-control-sm"
+
+                   name="custom_mineral_rdi_${customMineralCounter}"
+
+                   placeholder="%" style="font-size: 0.58rem !important; padding: 2px !important; width: 100% !important; max-width: 100% !important;">
+
+        </td>
+
+        <td class="text-center" style="width: 4% !important; padding: 0px !important;">
+
+            <button type="button" class="btn btn-sm nutrition-delete-btn" style="padding: 2px 4px; font-size: 0.70rem;"
+
+                    onclick="removeNutritionRow('${rowId}')">
+
+                <i class="bi bi-trash"></i>
+
+            </button>
+
+        </td>
+
+    `;
+
+    container.appendChild(newRow);
+
+}
+
+
+
+function addCustomMacronutrient() {
+
+    customMacronutrientCounter++;
+
+    const container = document.getElementById('macronutrients-container');
+
+    const rowId = `custom-macro-${customMacronutrientCounter}`;
+
+
+
+    const newRow = document.createElement('table');
+
+    newRow.className = 'table table-borderless';
+
+    newRow.style.cssText = 'color: var(--white-ish); font-size: var(--text-label); margin-bottom: 2px; margin-top: 0; width: 100%;';
+
+    newRow.id = rowId;
+
+    newRow.innerHTML = `
+
+        <tbody>
+
+            <tr>
+
+                <td style="width: 35% !important; padding: 0px !important;">
+
+                    <input type="text" class="form-control form-control-sm"
+
+                           name="custom_macro_name_${customMacronutrientCounter}"
+
+                           placeholder="Omega-3" required style="font-size: var(--text-micro); padding: 2px;">
+
+                </td>
+
+                <td class="text-center" style="width: 20%; padding: 2px;">
+
+                    <input type="text" class="form-control form-control-sm"
+
+                           name="custom_macro_per_serve_${customMacronutrientCounter}"
+
+                           placeholder="0" style="font-size: var(--text-micro); padding: 2px;">
+
+                </td>
+
+                <td class="text-center" style="width: 20%; padding: 2px;">
+
+                    <input type="text" class="form-control form-control-sm"
+
+                           name="custom_macro_per_100_${customMacronutrientCounter}"
+
+                           placeholder="0" style="font-size: var(--text-micro); padding: 2px;">
+
+                </td>
+
+                <td class="text-center" style="width: 20%; padding: 2px;">
+
+                    <div class="d-flex align-items-center justify-content-center" style="gap: 2px;">
+
+                        <input type="text" class="form-control form-control-sm"
+
+                               name="custom_macro_rdi_percent_${customMacronutrientCounter}"
+
+                               placeholder="%" style="font-size: var(--text-micro); padding: 1px; max-width: 40px;">
+
+                        <button type="button" class="btn btn-outline-danger"
+
+                                onclick="removeNutritionRow('${rowId}')" style="font-size: var(--text-micro); padding: 0px 3px; line-height: 1;">
+
+                            <i class="bi bi-trash" style="font-size: var(--text-micro);"></i>
+
+                        </button>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    `;
+
+    container.appendChild(newRow);
+
+}
+
+
+
+{% if false %}
+// Old pre-population code removed - now handled by new-format DOMContentLoaded above
+
+
+
+            const newRow = document.createElement('div');
+
+            newRow.className = 'row mb-2';
+
+            newRow.id = rowId;
+
+            newRow.innerHTML = `
+
+                <div class="col-md-2">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_mineral_name_${customMineralCounter}"
+
+                           placeholder="e.g., Iron, Zinc" value="${mineral.name || ''}" required>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_mineral_per_serve_${customMineralCounter}"
+
+                           placeholder="Per Serve (mg)" value="${mineral.per_serve !== null && mineral.per_serve !== undefined ? mineral.per_serve : ''}">
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_mineral_per_100_${customMineralCounter}"
+
+                           placeholder="Per 100mL (mg)" value="${mineral.per_100 !== null && mineral.per_100 !== undefined ? mineral.per_100 : ''}">
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_mineral_rdi_${customMineralCounter}"
+
+                           placeholder="RDI %" value="${mineral.rdi || ''}">
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <button type="button" class="btn btn-sm btn-outline-danger nutrition-delete-btn"
+
+                            onclick="removeNutritionRow('${rowId}')">
+
+                        <i class="bi bi-trash"></i>
+
+                    </button>
+
+                </div>
+
+            `;
+
+            container.appendChild(newRow);
+
+        });
+
+    }
+
+
+
+    // Pre-populate custom macronutrients
+
+    if (customNutrients.macros) {
+
+        customNutrients.macros.forEach(function(macro, index) {
+
+            customMacronutrientCounter++;
+
+            const container = document.getElementById('macronutrients-container');
+
+            const rowId = `custom-macro-${customMacronutrientCounter}`;
+
+
+
+            const newRow = document.createElement('div');
+
+            newRow.className = 'row mb-2';
+
+            newRow.id = rowId;
+
+            newRow.innerHTML = `
+
+                <div class="col-md-2">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_macro_name_${customMacronutrientCounter}"
+
+                           placeholder="e.g., Omega-3" value="${macro.name || ''}" required>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_macro_per_serve_${customMacronutrientCounter}"
+
+                           placeholder="Per Serve (g)" value="${macro.per_serve !== null && macro.per_serve !== undefined ? macro.per_serve : ''}">
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <input type="text" class="form-control serving-size-field"
+
+                           name="custom_macro_per_100_${customMacronutrientCounter}"
+
+                           placeholder="Per 100mL (g)" value="${macro.per_100 !== null && macro.per_100 !== undefined ? macro.per_100 : ''}">
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <button type="button" class="btn btn-sm btn-outline-danger nutrition-delete-btn"
+
+                            onclick="removeNutritionRow('${rowId}')">
+
+                        <i class="bi bi-trash"></i>
+
+                    </button>
+
+                </div>
+
+            `;
+
+            container.appendChild(newRow);
+
+        });
+
+    }
+
+});
+
+{% endif %}
+
+// Nutrition Tab Switcher
+function selectNutritionTab(tab) {
+    // Hide all panels
+    document.getElementById('nutrition-panel-usda').style.display = 'none';
+    document.getElementById('nutrition-panel-ausnut').style.display = 'none';
+    document.getElementById('nutrition-panel-custom').style.display = 'none';
+
+    // Remove active class from all tabs
+    document.getElementById('tab-btn-usda').classList.remove('active');
+    document.getElementById('tab-btn-ausnut').classList.remove('active');
+    document.getElementById('tab-btn-custom').classList.remove('active');
+
+    // Show selected panel and activate tab
+    document.getElementById('nutrition-panel-' + tab).style.display = 'block';
+    document.getElementById('tab-btn-' + tab).classList.add('active');
+}
+
+// AUSNUT Food Search Functions
+let ausnutSearchTimeout = null;
+
+function clearAusnutLink() {
+    document.getElementById('ausnut_food_id').value = '';
+    document.getElementById('ausnut-link-display').style.display = 'none';
+    document.getElementById('ausnut-search-btn').style.display = 'inline-block';
+}
+
+function selectAusnutFood(foodId, foodName, surveyId) {
+    // Set hidden input
+    document.getElementById('ausnut_food_id').value = foodId;
+
+    // Update display
+    document.getElementById('ausnut-food-name').textContent = foodName;
+    document.getElementById('ausnut-food-survey-id').textContent = 'ID: ' + surveyId;
+
+    // Show display, hide search button
+    document.getElementById('ausnut-link-display').style.display = 'block';
+    document.getElementById('ausnut-search-btn').style.display = 'none';
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('ausnutSearchModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function performAusnutSearch(query) {
+    const resultsContainer = document.getElementById('ausnut-search-results');
+    const loadingIndicator = document.getElementById('ausnut-search-loading');
+
+    if (query.length < 2) {
+        resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter at least 2 characters to search</p>';
+        return;
+    }
+
+    // Show loading
+    loadingIndicator.style.display = 'block';
+    resultsContainer.innerHTML = '';
+
+    // Perform AJAX search
+    fetch(`/api/v1/ausnut/search?q=${encodeURIComponent(query)}&limit=50`)
+        .then(response => response.json())
+        .then(result => {
+            loadingIndicator.style.display = 'none';
+            const data = result.foods || [];
+
+            if (data.length > 0) {
+                resultsContainer.innerHTML = '';
+                data.forEach(food => {
+                    const foodItem = document.createElement('div');
+                    foodItem.className = 'ausnut-search-result';
+                    foodItem.style.cssText = 'padding: 10px; margin-bottom: 8px; background-color: rgba(214, 189, 152, 0.1); border-radius: 4px; cursor: pointer; transition: background-color 0.2s;';
+                    foodItem.onmouseover = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.2)'; };
+                    foodItem.onmouseout = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.1)'; };
+                    foodItem.onclick = function() {
+                        selectAusnutFood(food.id, food.food_name, food.survey_id);
+                    };
+
+                    foodItem.innerHTML = `
+                        <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold; margin-bottom: 4px;">${food.food_name}</div>
+                        <div style="font-size: var(--text-label); color: var(--sage);">
+                            <span class="badge" style="font-size: var(--text-label); padding: 2px 6px; background-color: rgba(40, 167, 69, 0.3); color: #28a745;">AUSNUT 2023</span>
+                            <span style="margin-left: 8px;">ID: ${food.survey_id}</span>
+                        </div>
+                    `;
+
+                    resultsContainer.appendChild(foodItem);
+                });
+            } else {
+                resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">No foods found. Try a different search term.</p>';
+            }
+        })
+        .catch(error => {
+            loadingIndicator.style.display = 'none';
+            resultsContainer.innerHTML = '<p class="text-danger text-center" style="font-size: var(--text-label);">Error searching foods. Please try again.</p>';
+            console.error('AUSNUT search error:', error);
+        });
+}
+
+// Set up AUSNUT search input handler
+document.addEventListener('DOMContentLoaded', function() {
+    const ausnutSearchInput = document.getElementById('ausnut-search-input');
+    if (ausnutSearchInput) {
+        ausnutSearchInput.addEventListener('input', function() {
+            clearTimeout(ausnutSearchTimeout);
+            const query = this.value.trim();
+            ausnutSearchTimeout = setTimeout(() => performAusnutSearch(query), 300);
+        });
+
+        // Clear results when modal is closed
+        const ausnutModal = document.getElementById('ausnutSearchModal');
+        if (ausnutModal) {
+            ausnutModal.addEventListener('hidden.bs.modal', function() {
+                document.getElementById('ausnut-search-input').value = '';
+                document.getElementById('ausnut-search-results').innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter a search term to find AUSNUT foods</p>';
+            });
+        }
+    }
+});
+
+// USDA Food Search Functions
+let usdaSearchTimeout = null;
+
+function clearUsdaLink() {
+    document.getElementById('usda_food_id').value = '';
+    document.getElementById('usda-link-display').style.display = 'none';
+    document.getElementById('usda-search-btn').style.display = 'inline-block';
+}
+
+function selectUsdaFood(foodId, foodName, foodType, foodCategory) {
+    // Set hidden input
+    document.getElementById('usda_food_id').value = foodId;
+
+    // Update display
+    document.getElementById('usda-food-name').textContent = foodName;
+
+    // Set badge color based on data type
+    const typeBadge = document.getElementById('usda-food-type');
+    typeBadge.textContent = foodType;
+    if (foodType === 'Foundation') {
+        typeBadge.style.backgroundColor = 'rgba(40, 167, 69, 0.3)';
+        typeBadge.style.color = '#28a745';
+    } else if (foodType === 'SR Legacy') {
+        typeBadge.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+        typeBadge.style.color = '#007bff';
+    } else {
+        typeBadge.style.backgroundColor = 'rgba(108, 117, 125, 0.3)';
+        typeBadge.style.color = '#6c757d';
+    }
+
+    document.getElementById('usda-food-category').textContent = foodCategory || '';
+
+    // Show display, hide search button
+    document.getElementById('usda-link-display').style.display = 'block';
+    document.getElementById('usda-search-btn').style.display = 'none';
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('usdaSearchModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function performUsdaSearch(query) {
+    const resultsContainer = document.getElementById('usda-search-results');
+    const loadingIndicator = document.getElementById('usda-search-loading');
+
+    if (query.length < 2) {
+        resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter at least 2 characters to search</p>';
+        return;
+    }
+
+    // Show loading
+    loadingIndicator.style.display = 'block';
+    resultsContainer.innerHTML = '';
+
+    // Perform AJAX search
+    fetch(`/compendium/api/usda-search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            loadingIndicator.style.display = 'none';
+
+            if (data.foods && data.foods.length > 0) {
+                resultsContainer.innerHTML = '';
+                data.foods.forEach(food => {
+                    const foodItem = document.createElement('div');
+                    foodItem.className = 'usda-search-result';
+                    foodItem.style.cssText = 'padding: 10px; margin-bottom: 8px; background-color: rgba(214, 189, 152, 0.1); border-radius: 4px; cursor: pointer; transition: background-color 0.2s;';
+                    foodItem.onmouseover = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.2)'; };
+                    foodItem.onmouseout = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.1)'; };
+                    foodItem.onclick = function() {
+                        selectUsdaFood(food.id, food.description, food.data_type, food.category);
+                    };
+
+                    let badgeColor = '';
+                    if (food.data_type === 'Foundation') {
+                        badgeColor = 'background-color: rgba(40, 167, 69, 0.3); color: #28a745;';
+                    } else if (food.data_type === 'SR Legacy') {
+                        badgeColor = 'background-color: rgba(0, 123, 255, 0.3); color: #007bff;';
+                    } else {
+                        badgeColor = 'background-color: rgba(108, 117, 125, 0.3); color: #6c757d;';
+                    }
+
+                    foodItem.innerHTML = `
+                        <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold; margin-bottom: 4px;">${food.description}</div>
+                        <div style="font-size: var(--text-label); color: var(--sage);">
+                            <span class="badge" style="font-size: var(--text-label); padding: 2px 6px; ${badgeColor}">${food.data_type}</span>
+                            ${food.category ? '<span style="margin-left: 8px;">' + food.category + '</span>' : ''}
+                        </div>
+                    `;
+
+                    resultsContainer.appendChild(foodItem);
+                });
+            } else {
+                resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">No foods found. Try a different search term.</p>';
+            }
+        })
+        .catch(error => {
+            loadingIndicator.style.display = 'none';
+            resultsContainer.innerHTML = '<p class="text-danger text-center" style="font-size: var(--text-label);">Error searching foods. Please try again.</p>';
+            console.error('USDA search error:', error);
+        });
+}
+
+// Set up USDA search input handler
+document.addEventListener('DOMContentLoaded', function() {
+    const usdaSearchInput = document.getElementById('usda-search-input');
+    if (usdaSearchInput) {
+        usdaSearchInput.addEventListener('input', function() {
+            clearTimeout(usdaSearchTimeout);
+            const query = this.value.trim();
+            usdaSearchTimeout = setTimeout(() => performUsdaSearch(query), 300);
+        });
+
+        // Clear results when modal is closed
+        document.getElementById('usdaSearchModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('usda-search-input').value = '';
+            document.getElementById('usda-search-results').innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter a search term to find USDA foods</p>';
+        });
+    }
+
+    // Initialize border colors on page load based on saved traffic light values
+    function initializeBorderColors() {
+        const colorMap = {
+            'Green': '#28a745',
+            'Amber': '#ffc107',
+            'Red': '#dc3545'
+        };
+
+        ['safe', 'moderate', 'high'].forEach(servingType => {
+            const trafficLightInput = document.getElementById(`${servingType}_traffic_light`);
+            const section = document.querySelector(`.collapsible-section.${servingType}`);
+
+            if (trafficLightInput && section) {
+                const value = trafficLightInput.value;
+                section.style.borderLeftColor = colorMap[value] || colorMap['Green'];
+            }
+        });
+    }
+
+    // Call initialization
+    initializeBorderColors();
+
+    // Handle color-option clicks for all FODMAP/Histamine ratings AND traffic lights
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const field = this.dataset.field;
+            const value = this.dataset.value;
+
+            // Remove 'selected' from siblings with the same data-field
+            const siblings = document.querySelectorAll(`[data-field="${field}"]`);
+            siblings.forEach(sib => sib.classList.remove('selected'));
+
+            // Add 'selected' to this option
+            this.classList.add('selected');
+
+            // Update the hidden input
+            const input = document.getElementById(field);
+            if (input) {
+                input.value = value;
+            }
+
+            // Update left border color for traffic light selectors
+            if (field.includes('traffic_light')) {
+                const servingType = field.split('_')[0]; // 'safe', 'moderate', or 'high'
+                const section = document.querySelector(`.collapsible-section.${servingType}`);
+
+                if (section) {
+                    // Map traffic light values to border colors
+                    const colorMap = {
+                        'Green': '#28a745',
+                        'Amber': '#ffc107',
+                        'Red': '#dc3545'
+                    };
+                    section.style.borderLeftColor = colorMap[value] || '#28a745';
+                }
+            }
+        });
+    });
+});
+
+</script>
+
+{% endblock %}
+

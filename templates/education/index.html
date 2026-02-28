@@ -95,6 +95,32 @@
         border-left-color: var(--gold);
         background-color: rgba(214, 189, 152, 0.1);
     }
+    .sidebar-quick-topics {
+        padding-right: 12px;
+        margin-bottom: 12px;
+    }
+    .sidebar-quick-topics .quick-topic-link {
+        display: block;
+        width: 100%;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #1A3636;
+        background-color: #1A3636;
+        color: #fff;
+        font-size: var(--text-label);
+        text-decoration: none;
+        transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .sidebar-quick-topics .quick-topic-link:hover {
+        transform: translateX(3px);
+        background-color: #254545;
+        border-color: #254545;
+        color: #fff;
+    }
+    .sidebar-quick-topics .quick-topic-link.active {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 1px rgba(214, 189, 152, 0.35);
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
@@ -119,8 +145,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -132,7 +158,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -162,7 +188,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -231,7 +257,32 @@
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
 
-            <!-- Upload Section -->
+            <!-- Quick Topics -->
+            <div class="sidebar-quick-topics">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-lightbulb"></i> Quick Topics</h6>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('education.index', topic='FODMAPs') }}" class="quick-topic-link {% if current_topic == 'FODMAPs' %}active{% endif %}">
+                        <i class="bi bi-diagram-3"></i> FODMAPs
+                    </a>
+                    <a href="{{ url_for('education.index', topic='Histamine') }}" class="quick-topic-link {% if current_topic == 'Histamine' %}active{% endif %}">
+                        <i class="bi bi-activity"></i> Histamine
+                    </a>
+                    <a href="{{ url_for('education.index', topic='Vagus') }}" class="quick-topic-link {% if current_topic == 'Vagus' %}active{% endif %}">
+                        <i class="bi bi-heart-pulse"></i> Vagus Nerve
+                    </a>
+                    <a href="{{ url_for('education.index', topic='Stress') }}" class="quick-topic-link {% if current_topic == 'Stress' %}active{% endif %}">
+                        <i class="bi bi-person-hearts"></i> Stress & Gut
+                    </a>
+                    {% if current_topic %}
+                    <a href="{{ url_for('education.index') }}" class="quick-topic-link">
+                        <i class="bi bi-x-circle"></i> Clear Filter
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Upload Section (Admin Only) -->
+            {% if admin_mode %}
             <div style="padding-right: 12px;">
                 <div class="upload-zone mb-2" id="upload-zone">
                     <i class="bi bi-cloud-upload" style="font-size: 2rem; color: var(--gold);"></i>
@@ -248,6 +299,7 @@
                     <i class="bi bi-pencil-square"></i> <span id="edit-delete-text">Edit/Delete Mode</span>
                 </button>
             </div>
+            {% endif %}
 
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
@@ -273,45 +325,18 @@
 </div>
 
 <!-- Quick Topics Card -->
-<div class="row mb-3">
-    <div class="col-md-9">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Quick Topics</h5>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ url_for('education.index', topic='FODMAPs') }}" class="btn btn-outline-primary btn-sm {% if current_topic == 'FODMAPs' %}active{% endif %}">
-                        <i class="bi bi-diagram-3"></i> FODMAPs
-                    </a>
-                    <a href="{{ url_for('education.index', topic='Histamine') }}" class="btn btn-outline-info btn-sm {% if current_topic == 'Histamine' %}active{% endif %}">
-                        <i class="bi bi-activity"></i> Histamine
-                    </a>
-                    <a href="{{ url_for('education.index', topic='Vagus') }}" class="btn btn-outline-success btn-sm {% if current_topic == 'Vagus' %}active{% endif %}">
-                        <i class="bi bi-heart-pulse"></i> Vagus Nerve
-                    </a>
-                    <a href="{{ url_for('education.index', topic='Stress') }}" class="btn btn-outline-warning btn-sm {% if current_topic == 'Stress' %}active{% endif %}">
-                        <i class="bi bi-person-hearts"></i> Stress & Gut
-                    </a>
-                    {% if current_topic %}
-                    <a href="{{ url_for('education.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Clear Filter
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div class="row">
     <!-- Book-Style Table of Contents -->
     <div class="col-md-9">
-        <!-- Mode Badges (shown when in edit/reorder mode) -->
+        <!-- Mode Badges (Admin Only - shown when in edit/reorder mode) -->
+        {% if admin_mode %}
         <div class="mb-2 text-end">
             <span id="reorder-mode-badge" class="badge bg-warning" style="display: none;">Reorder Mode Active</span>
             <span id="edit-delete-mode-badge" class="badge bg-info" style="display: none;">Edit/Delete Mode Active</span>
         </div>
 
-        <!-- Edit/Delete Action Buttons -->
+        <!-- Edit/Delete Action Buttons (Admin Only) -->
         <div id="edit-delete-actions" class="mb-3 d-none">
             <div class="d-flex gap-2 align-items-center">
                 <span id="selected-count" class="text-muted">0 selected</span>
@@ -326,6 +351,7 @@
                 </button>
             </div>
         </div>
+        {% endif %}
 
         {% if chapters %}
             <!-- Book TOC Container -->
@@ -340,11 +366,13 @@
                     {% for chapter in chapters %}
                         {% set chapter_num = chapter.chapter_number|string %}
                         {% set is_roman = chapter_num[0] in ['i', 'v', 'x'] %}
-                        {% set is_subchapter = '.' in chapter_num and not is_roman %}
+                        {% set dot_count = chapter_num.count('.') %}
+                        {% set is_subchapter = dot_count == 1 and not is_roman %}
+                        {% set is_subsubchapter = dot_count >= 2 and not is_roman %}
                         {% set main_chapter_num = chapter_num.split('.')[0] if '.' in chapter_num else chapter_num %}
 
-                        {# Part heading when section changes (skip for front matter/roman numerals) #}
-                        {% if not is_roman and not is_subchapter and chapter.section != ns.current_section %}
+                        {# Chapter heading when section changes (skip for front matter/roman numerals) #}
+                        {% if not is_roman and not is_subchapter and not is_subsubchapter and chapter.section != ns.current_section %}
                             {% if not ns.first_section %}
                                 <div style="margin-top: 15px;"></div>
                             {% endif %}
@@ -353,17 +381,17 @@
                             {% set ns.part_counter = ns.part_counter + 1 %}
                             <div class="toc-part" style="margin-bottom: 8px; margin-top: {% if loop.index0 > 0 %}15px{% else %}0{% endif %};">
                                 <div class="text-h2" style="letter-spacing: 1.5px; text-transform: uppercase; color: #1A3636 !important;">
-                                    PART {{ ns.part_counter }}: {{ chapter.section|upper }}
+                                    {{ ns.part_counter }} {{ chapter.section|upper }}
                                 </div>
                             </div>
                         {% endif %}
 
                         {# TOC Entry #}
-                        <div class="toc-entry chapter-item {% if is_subchapter %}toc-subentry{% elif is_roman %}toc-frontmatter{% else %}toc-chapter{% endif %}"
+                        <div class="toc-entry chapter-item {% if is_subsubchapter %}toc-subsubentry{% elif is_subchapter %}toc-subentry{% elif is_roman %}toc-frontmatter{% else %}toc-chapter{% endif %}"
                              data-id="{{ chapter.id }}"
                              data-chapter-number="{{ chapter.chapter_number }}"
                              data-title="{{ chapter.title }}"
-                             style="position: relative; margin-bottom: {% if is_subchapter %}3px{% elif is_roman %}4px{% else %}5px{% endif %}; padding-left: {% if is_subchapter %}30px{% else %}0{% endif %};">
+                             style="position: relative; margin-bottom: {% if is_subsubchapter %}2px{% elif is_subchapter %}3px{% elif is_roman %}4px{% else %}5px{% endif %}; padding-left: {% if is_subsubchapter %}60px{% elif is_subchapter %}30px{% else %}0{% endif %};">
 
                             <!-- Controls (hidden by default, shown in edit/reorder mode) -->
                             <span class="drag-handle" style="display: none; position: absolute; left: -25px; top: 2px; cursor: grab; color: #fff;">
@@ -375,12 +403,12 @@
 
                             <!-- TOC Line -->
                             <div class="toc-line" style="display: flex; align-items: baseline; line-height: var(--lh-normal);">
-                                <span class="toc-chapter-num" style="flex-shrink: 0; margin-right: 8px; {% if is_subchapter %}font-size: var(--text-label); font-weight: var(--fw-label); color: #ffffff !important;{% elif is_roman %}font-size: var(--text-body); font-weight: 500; font-style: italic; color: rgba(255, 255, 255, 0.85);{% else %}font-size: var(--text-body); font-weight: var(--fw-value); color: #ffffff !important;{% endif %}">
+                                <span class="toc-chapter-num" style="flex-shrink: 0; margin-right: 8px; {% if is_subsubchapter %}font-size: var(--text-micro); font-weight: var(--fw-label); color: rgba(255, 255, 255, 0.9) !important;{% elif is_subchapter %}font-size: var(--text-label); font-weight: var(--fw-label); color: #ffffff !important;{% elif is_roman %}font-size: var(--text-body); font-weight: 500; font-style: italic; color: rgba(255, 255, 255, 0.85);{% else %}font-size: var(--text-body); font-weight: var(--fw-value); color: #ffffff !important;{% endif %}">
                                     {{ chapter.chapter_number }}
                                 </span>
                                 <a href="{{ url_for('education.chapter', chapter_id=chapter.id) }}"
                                    class="toc-title chapter-link"
-                                   style="flex-grow: 1; text-decoration: none; {% if is_subchapter %}font-size: var(--text-label); font-weight: var(--fw-label); color: #ffffff !important;{% elif is_roman %}font-size: var(--text-body); font-weight: 500; color: #ffffff !important;{% else %}font-size: var(--text-body); font-weight: var(--fw-label); color: #ffffff !important;{% endif %}">
+                                   style="flex-grow: 1; text-decoration: none; {% if is_subsubchapter %}font-size: var(--text-micro); font-weight: var(--fw-label); color: rgba(255, 255, 255, 0.9) !important;{% elif is_subchapter %}font-size: var(--text-label); font-weight: var(--fw-label); color: #ffffff !important;{% elif is_roman %}font-size: var(--text-body); font-weight: 500; color: #ffffff !important;{% else %}font-size: var(--text-body); font-weight: var(--fw-label); color: #ffffff !important;{% endif %}">
                                     {{ chapter.title }}
                                 </a>
                             </div>
@@ -388,7 +416,8 @@
                     {% endfor %}
                 </div>
 
-                <!-- Reorder Controls -->
+                <!-- Reorder Controls (Admin Only) -->
+                {% if admin_mode %}
                 <div class="mt-4 text-center" id="save-order-btn" style="display: none;">
                     <button class="btn btn-success" id="save-order">
                         <i class="bi bi-check-circle"></i> Save New Order
@@ -397,6 +426,7 @@
                         <i class="bi bi-x-circle"></i> Cancel
                     </button>
                 </div>
+                {% endif %}
             </div>
         {% else %}
             <div class="text-center py-5" style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px;">
@@ -413,6 +443,7 @@
 
 {% block extra_js %}
 <script>
+{% if admin_mode %}
 let reorderMode = false;
 let editDeleteMode = false;
 let originalOrder = [];
@@ -735,5 +766,6 @@ bulkDeleteBtn.addEventListener('click', () => {
 document.getElementById('cancel-edit-delete').addEventListener('click', () => {
     disableEditDeleteMode();
 });
+{% endif %}
 </script>
 {% endblock %}

@@ -4,6 +4,43 @@
 
 {% block extra_css %}
 <style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .diary-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
     .bristol-chart {
         display: flex;
         flex-direction: column;
@@ -210,8 +247,150 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="diary-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-clipboard-pulse"></i> {% if existing_bowel %}Edit{% else %}Log{% endif %} Bowel</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Action Buttons -->
+            <div style="padding-right: 12px;">
+                <button type="submit" form="bowel-form" class="btn btn-sm btn-success w-100 mb-2" style="font-size: 0.7rem;">
+                    <i class="bi bi-save"></i> Save Entry
+                </button>
+                <a href="{{ url_for('diary.index') }}" class="btn btn-sm btn-secondary w-100 mb-2" style="font-size: 0.7rem;">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+
+                <!-- Separator -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0;"></div>
+
+                <a href="javascript:history.back()" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <a href="{{ url_for('diary.index') }}" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-calendar3"></i> Calendar
+                </a>
+                {% if existing_entry %}
+                <a href="{{ url_for('diary.day_view', date_string=existing_entry.entry_date.strftime('%Y-%m-%d')) }}" class="btn btn-sm w-100 mb-2" style="font-size: 0.7rem; border: 1px solid #1A3636; background: #1A3636; color: #fff;">
+                    <i class="bi bi-calendar-day"></i> Day View
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area pt-2">
+        <div class="row">
+            <div class="col-md-9">
         <h1 class="mb-4"><i class="bi bi-clipboard-pulse"></i> {% if existing_bowel %}Edit{% else %}Log{% endif %} Bowel Movement</h1>
 
         <div class="card">
@@ -471,30 +650,13 @@
                         <div id="warning-content"></div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                        <div class="d-flex gap-2">
-                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Back
-                            </a>
-                            <a href="{{ url_for('diary.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-calendar3"></i> Calendar
-                            </a>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ url_for('diary.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-save"></i> Save Entry
-                            </button>
-                        </div>
-                    </div>
                 </form>
             </div>
         </div>
-    </div>
-</div>
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div><!-- /.main-content-area -->
+</div><!-- /.row g-0 -->
 {% endblock %}
 
 {% block extra_js %}

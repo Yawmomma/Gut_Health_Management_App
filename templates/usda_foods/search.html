@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if current_category %}{{ current_category.description }} - {% endif %}USDA Food Database - Gut Health App
+{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .usda-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    .food-list-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        transition: background 0.15s ease;
+    }
+    .food-list-item:hover {
+        background: rgba(214, 189, 152, 0.08);
+    }
+    .food-list-item:last-child {
+        border-bottom: none;
+    }
+    .food-name {
+        flex: 1;
+        font-size: var(--text-value);
+        font-weight: 500;
+        color: var(--white-ish);
+        text-decoration: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .food-name:hover {
+        color: var(--gold);
+    }
+    .food-category {
+        font-size: var(--text-label);
+        color: var(--sage);
+        width: 150px;
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .data-type-badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 8px;
+        font-size: var(--text-micro);
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    .badge-foundation {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+    .badge-legacy {
+        background-color: rgba(23, 162, 184, 0.15);
+        color: #17a2b8;
+    }
+    .badge-survey {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+    .badge-branded {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+    .category-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 8px;
+        background: rgba(26, 54, 54, 0.5);
+        border-radius: 6px;
+    }
+    .category-filter a {
+        font-size: var(--text-micro);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #fff;
+        text-decoration: none;
+        background: rgba(255,255,255,0.1);
+        transition: background 0.15s ease;
+    }
+    .category-filter a:hover, .category-filter a.active {
+        background: var(--gold);
+        color: #1A3636;
+    }
+    .results-header {
+        margin-bottom: 8px;
+    }
+    .results-count {
+        font-size: var(--text-label);
+        color: var(--sage);
+    }
+    .alphabet-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 8px 10px;
+        background: var(--bg-elevated);
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+    .alphabet-nav a {
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--text-label);
+        font-weight: 600;
+        border-radius: 4px;
+        color: var(--white-ish);
+        text-decoration: none;
+        background: rgba(255,255,255,0.1);
+        transition: all 0.15s ease;
+    }
+    .alphabet-nav a:hover {
+        background: var(--gold);
+        color: #1A3636;
+    }
+    .alphabet-nav a.active {
+        background: var(--gold);
+        color: #1A3636;
+    }
+    .alphabet-nav a.disabled {
+        color: var(--sage);
+        opacity: 0.4;
+        pointer-events: none;
+        cursor: default;
+    }
+    .alphabet-nav .clear-filter {
+        width: auto;
+        padding: 0 8px;
+        margin-left: 8px;
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    .alphabet-nav .clear-filter:hover {
+        background: #dc3545;
+        color: #fff;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0" style="margin-top: -1.5rem;">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="usda-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-database"></i> USDA Database</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="margin: 20px 0; border-top: 1px solid rgba(255, 255, 255, 0.3);"></div>
+
+            <!-- Search Form -->
+            <div class="mb-3">
+                <h6 class="text-body" style="font-weight: 600; color: #fff; margin-bottom: 8px;"><i class="bi bi-search"></i> Search USDA</h6>
+                <form action="{{ url_for('usda_foods.search') }}" method="get">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="q" class="form-control text-body" value="{{ query }}" placeholder="Search foods..." style="border-color: rgba(255,255,255,0.3); background-color: rgba(255,255,255,0.15); color: #fff;">
+                        <button class="btn btn-outline-light btn-sm text-body" type="submit" style="padding: 4px 10px;">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <style>
+                    input[name="q"]::placeholder {
+                        color: rgba(255,255,255,0.6);
+                        opacity: 1;
+                    }
+                </style>
+            </div>
+
+            <!-- Category Filter -->
+            {% if categories %}
+            <div class="mb-3">
+                <h6 class="text-body" style="font-weight: 600; color: #fff; margin-bottom: 8px;"><i class="bi bi-funnel"></i> Categories</h6>
+                <div class="category-filter">
+                    <a href="{{ url_for('usda_foods.search', q=query, type=data_type) }}" class="{% if not current_category %}active{% endif %}">All</a>
+                    {% for cat in categories %}
+                    <a href="{{ url_for('usda_foods.search', category=cat.id, q=query, type=data_type) }}" class="{% if current_category and current_category.id == cat.id %}active{% endif %}">{{ cat.description }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('usda_foods.categories') }}" class="btn btn-outline-light btn-sm w-100 text-body">
+                    <i class="bi bi-grid"></i> Browse Categories
+                </a>
+                <a href="{{ url_for('compendium.index') }}" class="btn btn-outline-light btn-sm w-100 text-body">
+                    <i class="bi bi-arrow-left"></i> Back to Food Compendium
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area pt-3">
+        <div class="row">
+            <div class="compendium-search-content-col">
+                <!-- Page Title -->
+                <div class="d-flex justify-content-between align-items-center mb-2" style="margin-top: 40px;">
+                    <h1 class="text-h2">
+                        <i class="bi bi-database"></i>
+                        {% if current_category %}
+                            {{ current_category.description }}
+                        {% elif query %}
+                            Search: "{{ query }}"
+                        {% else %}
+                            USDA Foods
+                        {% endif %}
+                    </h1>
+                    {% if data_type %}
+                    <span class="data-type-badge {% if data_type == 'Foundation' %}badge-foundation{% elif data_type == 'SR Legacy' %}badge-legacy{% elif data_type == 'Survey' %}badge-survey{% elif data_type == 'Branded' %}badge-branded{% endif %}" style="font-size: var(--text-label); padding: 4px 10px;">
+                        {% if data_type == 'Foundation' %}<i class="bi bi-patch-check-fill me-1"></i>{% elif data_type == 'SR Legacy' %}<i class="bi bi-archive-fill me-1"></i>{% elif data_type == 'Survey' %}<i class="bi bi-clipboard-data-fill me-1"></i>{% elif data_type == 'Branded' %}<i class="bi bi-bag-fill me-1"></i>{% endif %}{{ data_type }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Alphabet Navigation (shown when viewing a category) -->
+                {% if current_category and available_letters %}
+                <div class="alphabet-nav">
+                    {% for l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+                        {% if l in available_letters %}
+                            <a href="{{ url_for('usda_foods.search', category=current_category.id, type=data_type, letter=l) }}"
+                               class="{% if letter == l %}active{% endif %}">{{ l }}</a>
+                        {% else %}
+                            <a class="disabled">{{ l }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if letter %}
+                        <a href="{{ url_for('usda_foods.search', category=current_category.id, type=data_type) }}" class="clear-filter">
+                            <i class="bi bi-x"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Results Header -->
+                <div class="results-header">
+                    <span class="results-count">
+                        {{ food_count }} food{% if food_count != 1 %}s{% endif %}
+                        {% if letter %} starting with "{{ letter }}"{% endif %}
+                        {% if showing_limited %}<span class="text-warning">(limited)</span>{% endif %}
+                    </span>
+                </div>
+
+                <!-- Food List -->
+                <div class="card">
+                    <div class="card-body" style="padding: 0;">
+                        {% if foods %}
+                        <div class="food-list">
+                            {% for food in foods %}
+                            <div class="food-list-item">
+                                <a href="{{ url_for('usda_foods.detail', food_id=food.id) }}" class="food-name">
+                                    {{ food.description }}
+                                </a>
+                                <span class="data-type-badge {% if food.data_type == 'Foundation' %}badge-foundation{% elif food.data_type == 'SR Legacy' %}badge-legacy{% elif food.data_type == 'Survey' %}badge-survey{% elif food.data_type == 'Branded' %}badge-branded{% endif %}">
+                                    {{ food.data_type[:1] }}
+                                </span>
+                                <span class="food-category">{{ food.category.description if food.category else '' }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-search" style="font-size: 2rem; color: var(--sage);"></i>
+                            <p class="text-body text-muted mt-2 mb-0">No foods found. Try a different search term.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if showing_limited %}
+                <div class="alert alert-warning mt-2 text-body" style="padding: 8px 12px;">
+                    <i class="bi bi-info-circle"></i> Results limited. Use search or select a category to narrow down.
+                </div>
+                {% endif %}
+            </div><!-- /.compendium-search-content-col -->
+        </div><!-- /.row -->
+    </div>
+</div>
+{% endblock %}

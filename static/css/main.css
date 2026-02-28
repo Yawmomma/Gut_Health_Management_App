@@ -114,9 +114,9 @@ main {
     box-sizing: border-box;
 }
 .dashboard-content-col,
-.food-guide-content-col,
-.food-search-content-col,
-.food-detail-content-col,
+.compendium-content-col,
+.compendium-search-content-col,
+.compendium-detail-content-col,
 .recipe-detail-content-col,
 .content-col {
     width: 100% !important;
@@ -745,3 +745,114 @@ pre {
         font-size: 1.75rem !important;
     }
 } */
+
+/* ============================================
+   SIDEBAR STYLES (Consolidated from templates)
+   ============================================ */
+
+/* Fixed sidebar container */
+.sidebar-column {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 200px;
+    height: calc(100vh - 50px);
+    background: linear-gradient(135deg, #8BA48B, #677D6A);
+    overflow-y: auto;
+    z-index: 100;
+}
+
+/* Inner sidebar padding */
+.dashboard-sidebar {
+    padding: 12px;
+    padding-top: 40px;
+}
+
+/* Navigation item styling */
+.sidebar-nav-item {
+    transition: transform 0.2s ease;
+    border-radius: 6px;
+    margin-bottom: 2px;
+}
+
+.sidebar-nav-item:hover {
+    transform: translateX(3px);
+    background: rgba(214, 189, 152, 0.15) !important;
+}
+
+/* Quick action buttons in sidebar */
+.quick-action-btn-sidebar {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    background-color: #1A3636 !important;
+    border: 1px solid #1A3636 !important;
+}
+
+.quick-action-btn-sidebar:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+/* Outline variant for sidebar buttons */
+.quick-action-btn-outline {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    background-color: transparent !important;
+    border: 1px solid #1A3636 !important;
+    color: #fff !important;
+}
+
+.quick-action-btn-outline:hover {
+    transform: translateY(-1px);
+    background-color: rgba(26, 54, 54, 0.3) !important;
+}
+
+/* Section title styling (used in sidebar and content) */
+.section-title {
+    font-size: var(--text-title);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+    text-align: center;
+}
+
+.section-title-thin {
+    font-size: var(--text-title);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(214, 189, 152, 0.5);
+    text-align: left;
+}
+
+/* Watch list styling (dashboard) */
+.watch-item {
+    transition: background 0.2s ease;
+}
+
+.watch-item:hover {
+    background: rgba(214, 189, 152, 0.1) !important;
+}
+
+.watch-list-box {
+    background-color: var(--bg-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: var(--shadow-thick);
+}
+
+.watch-list-title {
+    border-bottom: var(--bevel);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+}
+
+/* Section divider */
+.section-divider {
+    border-bottom: 1px solid rgba(214, 189, 152, 0.5);
+    margin: 25px 0;
+}

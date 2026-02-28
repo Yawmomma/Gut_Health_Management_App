@@ -3,9 +3,6 @@
 {% block title %}Edit Chapter - {{ content.title }}{% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <style>
     .sidebar-nav-item {
         transition: transform 0.2s ease;
@@ -17,19 +14,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .education-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 12px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-body);
@@ -76,6 +76,116 @@
         border-radius: 8px;
         margin: 15px 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .preview-card p {
+        line-height: 1.6;
+        margin-bottom: 28px !important;
+        margin-top: 0 !important;
+    }
+    .preview-card p:first-child {
+        margin-top: 0 !important;
+    }
+    .preview-card p:last-child {
+        margin-bottom: 0 !important;
+    }
+    /* Reduce gap after subheading paragraphs (bold text only) - but NOT in lists */
+    .preview-card > p:has(strong:only-child) {
+        margin-bottom: 8px !important;
+    }
+    /* Normalize list spacing - applies to both ol and ul */
+    .preview-card ol,
+    .preview-card ul {
+        margin-bottom: 1.5rem;
+    }
+    /* Default: minimal spacing for simple lists (single Enter between items) */
+    .preview-card li {
+        margin-bottom: 0.35rem;
+    }
+    .preview-card li:last-child {
+        margin-bottom: 0;
+    }
+    /* When list items contain paragraphs (created by blank lines), add more spacing */
+    .preview-card li:has(> p) {
+        margin-bottom: 1rem;
+    }
+    /* Control paragraph margins inside list items */
+    .preview-card li > p {
+        margin-bottom: 0.75rem;
+    }
+    .preview-card li > p:last-child {
+        margin-bottom: 0;
+    }
+    /* Reduce gap when paragraph is followed by nested list */
+    .preview-card li > p:has(+ ul),
+    .preview-card li > p:has(+ ol) {
+        margin-bottom: 0.25rem;
+    }
+    /* Nested lists should have less spacing */
+    .preview-card li li {
+        margin-bottom: 0.35rem;
+    }
+    /* Force all nested bullets to use filled disc style */
+    .preview-card ul {
+        list-style-type: disc;
+    }
+    .preview-card ol {
+        list-style-type: decimal;
+    }
+
+    /* Table styling for markdown-generated tables */
+    .preview-card table {
+        width: 100%;
+        margin: 20px 0;
+        border-collapse: collapse;
+        background-color: #fff;
+        border: 2px solid #8BA48B;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .preview-card table thead {
+        background-color: #1A3636;
+    }
+    .preview-card table thead th {
+        color: #D6BD98 !important;
+        font-weight: 700;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #8BA48B;
+        font-size: var(--text-body);
+    }
+    .preview-card table tbody td {
+        color: #1A3636 !important;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(139, 164, 139, 0.3);
+        font-size: var(--text-body);
+        line-height: 1.5;
+    }
+    .preview-card table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .preview-card table tbody tr:nth-child(even) {
+        background-color: rgba(139, 164, 139, 0.1);
+    }
+    .preview-card table tbody tr:hover {
+        background-color: rgba(139, 164, 139, 0.2);
+    }
+
+    /* Link styling for markdown content */
+    .preview-card a {
+        color: #1A3636;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid transparent;
+    }
+    .preview-card a:hover {
+        color: #8BA48B;
+        text-decoration: underline;
+        border-bottom: 1px solid #8BA48B;
+    }
+    .preview-card a:visited {
+        color: #40534c;
     }
 
     /* Markdown editor styling */
@@ -175,12 +285,21 @@
         object-fit: cover;
         border-radius: 4px;
     }
+
+    /* Chapter filter items styling */
+    .chapter-filter-item:hover {
+        background-color: rgba(214, 189, 152, 0.2) !important;
+        transform: translateX(2px);
+    }
+    .chapter-filter-item:active {
+        transform: translateX(3px);
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
 <div class="row g-0">
     <!-- Left Sidebar: Navigation -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="education-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-pencil-square"></i> Edit Chapter</h6>
 
@@ -196,14 +315,14 @@
                 </div>
             </a>
 
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M3 2h8"/><path d="M21 2v10c0 1.1-.9 2-2 2h-1"/><path d="M18 14v8"/><path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -225,7 +344,7 @@
                             <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/><path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/><line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -268,43 +387,41 @@
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
 
-            <!-- Existing Sections/Topics List -->
-            <div style="padding-right: 12px; margin-bottom: 15px;">
-                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-folder"></i> Sections/Topics</h6>
-                <div style="background-color: rgba(0,0,0,0.15); border-radius: 6px; padding: 8px;">
+            <!-- Chapters List -->
+            <div style="margin-bottom: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-book"></i> Chapters:</h6>
+                <div style="background: #1A3636; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px;">
                     {% if sections_with_parts %}
                         {% for section in sections_with_parts %}
-                            <div style="padding: 3px 6px; margin-bottom: 3px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.6); padding-left: 6px; font-size: 0.58rem; line-height: 1.3; background-color: rgba(214, 189, 152, 0.1); border-radius: 3px;">
-                                <span style="font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.3px;">PART {{ section.part_number }}:</span>
+                            <div class="chapter-filter-item" data-part="{{ section.part_number }}" style="padding: 3px 6px; margin-bottom: 3px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.6); padding-left: 6px; font-size: 0.58rem; line-height: 1.3; background-color: rgba(214, 189, 152, 0.1); border-radius: 3px; cursor: pointer; transition: all 0.2s ease;">
                                 <span style="font-weight: 600; color: rgba(255,255,255,0.95);">{{ section.name }}</span>
                             </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">No sections yet.</p>
+                        <p class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">No chapters yet.</p>
                     {% endif %}
                 </div>
-                <small class="text-muted d-block mt-1" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">Existing section names</small>
+                <small class="text-muted d-block mt-1" style="color: #000; font-size: 0.55rem;">Click a chapter to view its sections</small>
             </div>
 
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
 
-            <!-- Existing Chapters List -->
-            <div style="padding-right: 12px; margin-bottom: 15px;">
-                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-list-ol"></i> Other Chapters</h6>
-                <div class="existing-chapters-list" style="max-height: 400px; overflow-y: auto; background-color: rgba(0,0,0,0.15); border-radius: 6px; padding: 8px;">
+            <!-- Chapter Sections List -->
+            <div style="margin-bottom: 15px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-list-ol"></i> Chapter Sections:</h6>
+                <div id="chapter-sections-list" class="existing-chapters-list" style="max-height: 400px; overflow-y: auto; background: #1A3636; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px;">
+                    <p id="placeholder-text" class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">Select a chapter above to view sections</p>
                     {% if existing_chapters %}
                         {% for chapter in existing_chapters %}
-                            <div style="padding: 2px 4px; margin-bottom: 2px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.4); padding-left: 5px; font-size: 0.55rem; line-height: 1.2;">
+                            <div class="chapter-section-item" data-part="{{ (chapter.chapter_number|string).split('.')[0] }}" style="padding: 2px 4px; margin-bottom: 2px; color: rgba(255,255,255,0.9); border-left: 2px solid rgba(214, 189, 152, 0.4); padding-left: 5px; font-size: 0.55rem; line-height: 1.2; display: none;">
                                 <span style="font-weight: 600; color: var(--gold);">{{ chapter.chapter_number }}</span>
                                 <span style="color: rgba(255,255,255,0.85);">{{ chapter.title }}</span>
                             </div>
                         {% endfor %}
-                    {% else %}
-                        <p class="text-muted mb-0" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">No other chapters.</p>
                     {% endif %}
                 </div>
-                <small class="text-muted d-block mt-1" style="color: rgba(255,255,255,0.6); font-size: 0.55rem;">Reference for chapter placement.</small>
+                <small class="text-muted d-block mt-1" style="color: #000; font-size: 0.55rem;">Sections within selected chapter</small>
             </div>
 
             <!-- Separator -->
@@ -326,32 +443,32 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area pt-3">
         <div class="row">
             <div class="col-md-9">
                 <!-- Header -->
                 <div class="mb-4">
                     <h1 class="text-h2 mb-2"><i class="bi bi-pencil-square"></i> Edit Chapter {{ content.chapter_number }}</h1>
-                    <p class="text-muted text-body">Edit the chapter details and markdown content.</p>
                 </div>
 
                 <!-- Form -->
                 <form method="POST" action="{{ url_for('education.edit_chapter', chapter_id=content.id) }}" id="edit-form">
-                    <!-- Chapter Details Card -->
+                    <!-- Chapter Details & Images Combined Card -->
                     <div class="card mb-3 form-card-dark">
-                        <div class="card-body">
-                            <h5 class="card-title text-title mb-3"><i class="bi bi-info-circle"></i> Chapter Details</h5>
+                        <div class="card-body" style="padding: 10px;">
+                            <h5 class="card-title text-title mb-2"><i class="bi bi-info-circle"></i> Chapter Details & Images</h5>
 
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="chapter_number" class="form-label text-label">Chapter Number</label>
+                            <!-- Chapter fields in compact row layout -->
+                            <div class="row mb-2">
+                                <div class="col-md-2">
+                                    <label for="chapter_number" class="form-label text-label mb-1">Chapter #</label>
                                     <input type="text" class="form-control form-control-sm" id="chapter_number"
                                            name="chapter_number" value="{{ content.chapter_number }}" required>
-                                    <small class="text-muted text-micro">e.g., "1", "2.1", "i", "iv"</small>
+                                    <small class="text-muted text-micro">e.g., 1, 2.1, 3.2.1</small>
                                 </div>
 
-                                <div class="col-md-8">
-                                    <label for="section" class="form-label text-label">Section/Topic</label>
+                                <div class="col-md-4">
+                                    <label for="section" class="form-label text-label mb-1">Section/Topic</label>
                                     <input type="text" class="form-control form-control-sm" id="section"
                                            name="section" value="{{ content.section }}" list="section-options" required>
                                     <datalist id="section-options">
@@ -359,35 +476,35 @@
                                             <option value="{{ section.name }}">
                                         {% endfor %}
                                     </datalist>
-                                    <small class="text-muted text-micro">Select existing or type new section</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="title" class="form-label text-label mb-1">Chapter Title</label>
+                                    <input type="text" class="form-control form-control-sm" id="title"
+                                           name="title" value="{{ content.title }}" required>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="title" class="form-label text-label">Chapter Title</label>
-                                <input type="text" class="form-control form-control-sm" id="title"
-                                       name="title" value="{{ content.title }}" required>
-                                <small class="text-muted text-micro">Enter your custom chapter title</small>
-                            </div>
-                        </div>
-                    </div>
+                            <!-- Separator -->
+                            <hr style="border-color: rgba(214, 189, 152, 0.3); margin: 8px 0;">
 
-                    <!-- Add Images Card -->
-                    <div class="card mb-3 form-card-dark">
-                        <div class="card-body">
-                            <h5 class="card-title text-title mb-3"><i class="bi bi-image"></i> Add Images</h5>
-                            <div class="image-upload-zone mb-3" id="image-upload-zone">
-                                <i class="bi bi-cloud-upload" style="font-size: 2rem; color: #D6BD98;"></i>
-                                <p class="text-label mb-1" style="color: rgba(255,255,255,0.9);">Drop image here (PNG, JPG, JPEG, GIF, WEBP)</p>
-                                <small class="text-muted">or click to browse</small>
-                                <input type="file" id="image-input" accept=".png,.jpg,.jpeg,.gif,.webp" style="display: none;">
-                            </div>
-                            <div class="alert alert-info mb-0" style="font-size: var(--text-label);">
-                                <strong><i class="bi bi-info-circle"></i> How to use:</strong><br>
-                                1. Upload an image using the box above<br>
-                                2. Copy the markdown code that appears<br>
-                                3. Paste it into your markdown editor below<br>
-                                4. Edit the "Image description" text to describe your image
+                            <!-- Image upload section (compact) -->
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <label class="form-label text-label mb-1"><i class="bi bi-image"></i> Add Images</label>
+                                    <div class="image-upload-zone" id="image-upload-zone" style="padding: 12px; margin-bottom: 0;">
+                                        <i class="bi bi-cloud-upload" style="font-size: 1.5rem; color: #D6BD98;"></i>
+                                        <p class="text-micro mb-0" style="color: rgba(255,255,255,0.9);">Drop image or click to browse</p>
+                                        <input type="file" id="image-input" accept=".png,.jpg,.jpeg,.gif,.webp" style="display: none;">
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label text-label mb-1">&nbsp;</label>
+                                    <div style="font-size: var(--text-micro); color: rgba(214, 189, 152, 0.9); line-height: 1.3;">
+                                        <strong><i class="bi bi-info-circle"></i> How to use:</strong><br>
+                                        1. Upload image → 2. Copy markdown code → 3. Paste into editor below
+                                    </div>
+                                </div>
                             </div>
                             <div id="uploaded-images-list" class="uploaded-images mt-2"></div>
                         </div>
@@ -441,6 +558,65 @@
 
 {% block extra_js %}
 <script>
+// Make all external links open in new tab
+function makeLinksExternal(container) {
+    const links = container.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+        }
+    });
+}
+
+// Apply to initial preview
+document.addEventListener('DOMContentLoaded', function() {
+    const preview = document.getElementById('html-preview');
+    if (preview) makeLinksExternal(preview);
+});
+
+// Tab key support in markdown editor
+document.getElementById('markdown_source').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault(); // Prevent default tab behavior (focus change)
+
+        const textarea = e.target;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        if (e.shiftKey) {
+            // Shift+Tab: Remove indentation
+            const textBefore = textarea.value.substring(0, start);
+            const lastLineStart = textBefore.lastIndexOf('\n') + 1;
+            const currentLine = textarea.value.substring(lastLineStart, end);
+
+            // Check if line starts with tab or spaces
+            if (currentLine.startsWith('\t')) {
+                textarea.value = textarea.value.substring(0, lastLineStart) +
+                                currentLine.substring(1) +
+                                textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start - 1;
+            } else if (currentLine.startsWith('    ')) {
+                textarea.value = textarea.value.substring(0, lastLineStart) +
+                                currentLine.substring(4) +
+                                textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start - 4;
+            }
+        } else {
+            // Tab: Insert 4 spaces (or \t if you prefer)
+            const tabChar = '    '; // 4 spaces (change to '\t' for actual tab)
+
+            textarea.value = textarea.value.substring(0, start) +
+                           tabChar +
+                           textarea.value.substring(end);
+
+            // Move cursor after the inserted tab
+            textarea.selectionStart = textarea.selectionEnd = start + tabChar.length;
+        }
+    }
+});
+
 // Update preview when markdown is edited
 document.getElementById('update-preview-btn').addEventListener('click', function() {
     const markdownSource = document.getElementById('markdown_source').value;
@@ -456,7 +632,11 @@ document.getElementById('update-preview-btn').addEventListener('click', function
     .then(response => response.json())
     .then(data => {
         if (data.html) {
-            document.getElementById('html-preview').innerHTML = data.html;
+            const preview = document.getElementById('html-preview');
+            preview.innerHTML = data.html;
+
+            // Make external links open in new tab
+            makeLinksExternal(preview);
 
             // Switch to preview tab
             const previewTab = new bootstrap.Tab(document.getElementById('preview-tab'));
@@ -615,5 +795,78 @@ function handleImageUpload(file) {
     // Reset file input
     imageInput.value = '';
 }
+
+// Chapter filtering functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const chapterFilterItems = document.querySelectorAll('.chapter-filter-item');
+    const chapterSectionItems = document.querySelectorAll('.chapter-section-item');
+    const placeholderText = document.getElementById('placeholder-text');
+    let selectedPart = null;
+
+    chapterFilterItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const partNumber = this.getAttribute('data-part');
+
+            // Toggle selection
+            if (selectedPart === partNumber) {
+                // Deselect
+                selectedPart = null;
+                this.style.backgroundColor = 'rgba(214, 189, 152, 0.1)';
+                this.style.transform = 'none';
+
+                // Hide all sections and show placeholder
+                chapterSectionItems.forEach(section => {
+                    section.style.display = 'none';
+                });
+                placeholderText.style.display = 'block';
+            } else {
+                // Deselect previous
+                chapterFilterItems.forEach(i => {
+                    i.style.backgroundColor = 'rgba(214, 189, 152, 0.1)';
+                    i.style.transform = 'none';
+                });
+
+                // Select new
+                selectedPart = partNumber;
+                this.style.backgroundColor = 'rgba(214, 189, 152, 0.25)';
+                this.style.transform = 'translateX(3px)';
+
+                // Hide placeholder
+                placeholderText.style.display = 'none';
+
+                // Filter and show matching sections
+                let hasVisibleSections = false;
+                chapterSectionItems.forEach(section => {
+                    const sectionPart = section.getAttribute('data-part');
+                    if (sectionPart === partNumber) {
+                        section.style.display = 'block';
+                        hasVisibleSections = true;
+                    } else {
+                        section.style.display = 'none';
+                    }
+                });
+
+                // If no sections found, show placeholder
+                if (!hasVisibleSections) {
+                    placeholderText.style.display = 'block';
+                    placeholderText.textContent = 'No sections found for this chapter';
+                }
+            }
+        });
+
+        // Add hover effect
+        item.addEventListener('mouseenter', function() {
+            if (selectedPart !== this.getAttribute('data-part')) {
+                this.style.backgroundColor = 'rgba(214, 189, 152, 0.2)';
+            }
+        });
+
+        item.addEventListener('mouseleave', function() {
+            if (selectedPart !== this.getAttribute('data-part')) {
+                this.style.backgroundColor = 'rgba(214, 189, 152, 0.1)';
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

@@ -57,6 +57,11 @@
     .recipe-meta-row .form-label i {
         margin-right: 6px;
     }
+    @media (min-width: 768px) {
+        .recipe-meta-row {
+            flex-wrap: nowrap;
+        }
+    }
     .custom-option-field {
         display: none;
     }
@@ -83,8 +88,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -96,7 +101,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                    <span class="text-label" style="color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -126,7 +131,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -196,6 +201,21 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Form Actions -->
+            <div class="quick-actions-container">
+                <div class="d-flex flex-column gap-2">
+                    <button type="button" class="btn btn-sm btn-success w-100 text-label" onclick="document.getElementById('editRecipeForm').submit();">
+                        <i class="bi bi-check-circle me-1"></i> Update Recipe
+                    </button>
+                    <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}" class="btn btn-sm btn-outline-light w-100 text-label">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Recipe
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -205,66 +225,190 @@
             <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="text-h2"><i class="bi bi-pencil text-warning"></i> Edit Recipe</h1>
-            <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Recipe
-            </a>
         </div>
 
-        <form method="POST" action="{{ url_for('recipes.edit_recipe', recipe_id=recipe.id) }}" enctype="multipart/form-data">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Recipe Information</h5>
+        <form method="POST" action="{{ url_for('recipes.edit_recipe', recipe_id=recipe.id) }}" enctype="multipart/form-data" id="editRecipeForm">
+            {% if recipe.preparation_method %}
+                {% set selected_prep_value = recipe.preparation_method.split(',')[0] | trim %}
+            {% else %}
+                {% set selected_prep_value = '' %}
+            {% endif %}
+            {% set prep_in_list = selected_prep_value in preparation_methods %}
+
+            {% if recipe.occasion %}
+                {% set selected_occasion_value = recipe.occasion.split(',')[0] | trim %}
+            {% else %}
+                {% set selected_occasion_value = '' %}
+            {% endif %}
+            {% set occasion_in_list = selected_occasion_value in occasions %}
+
+            {% if recipe.dietary_needs %}
+                {% set selected_dietary_needs_raw = recipe.dietary_needs.split(',') %}
+                {% set selected_dietary_needs = [] %}
+                {% for item in selected_dietary_needs_raw %}
+                    {% set _ = selected_dietary_needs.append(item.strip()) %}
+                {% endfor %}
+            {% else %}
+                {% set selected_dietary_needs = [] %}
+            {% endif %}
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Recipe Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label for="name" class="form-label"><strong>Recipe Name *</strong></label>
+                                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chicken Stir Fry" value="{{ recipe.name }}">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label"><strong>Current Photo</strong></label>
+                                {% if recipe.image_path %}
+                                    <div class="mb-2">
+                                        <img src="{{ url_for('static', filename=recipe.image_path) }}" alt="{{ recipe.name }}" style="width: 100%; height: auto; max-height: 240px; object-fit: cover;" class="img-thumbnail">
+                                        <p class="text-muted small mb-0">Current photo (upload a new one to replace)</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-2">
+                                <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
+                                <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
+                            </div>
+                            <div class="mb-2 mt-0">
+                                <label for="description" class="form-label"><strong>Description</strong></label>
+                                <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of your recipe">{{ recipe.description or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-7 mb-3">
-                            <label for="name" class="form-label"><strong>Recipe Name *</strong></label>
-                            <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chicken Stir Fry" value="{{ recipe.name }}">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Meal Details</h5>
                         </div>
-                        <div class="col-md-5 mb-3">
-                            <label for="recipe_photo" class="form-label"><strong>Recipe Photo</strong></label>
-                            {% if recipe.image_path %}
-                                <div class="mb-2">
-                                    <img src="{{ url_for('static', filename=recipe.image_path) }}" alt="{{ recipe.name }}" style="max-width: 200px; max-height: 200px; object-fit: cover;" class="img-thumbnail">
-                                    <p class="text-muted small mb-0">Current photo (upload a new one to replace)</p>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Meal Type (Category)</strong></label>
+                                <select class="form-select" id="preview_category">
+                                    <option value="">Select...</option>
+                                    {% for meal_type in meal_types %}
+                                    <option value="{{ meal_type }}" {% if recipe.category == meal_type %}selected{% endif %}>{{ meal_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong><i class="bi bi-clock"></i> Prep Time</strong></label>
+                                <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 min" value="{{ recipe.prep_time or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong><i class="bi bi-fire"></i> Cook Time</strong></label>
+                                <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 min" value="{{ recipe.cook_time or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong><i class="bi bi-people"></i> Servings</strong></label>
+                                <input type="number" class="form-control" id="servings" name="servings" value="{{ recipe.servings }}" min="1">
+                            </div>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes, tips, or variations...">{{ recipe.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-tags"></i> Tags & Filters (Preview)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><strong>Cuisine / Origin</strong></label>
+                                    <select class="form-select" id="preview_cuisine">
+                                        <option value="">Select...</option>
+                                        {% for cuisine in cuisines %}
+                                        <option value="{{ cuisine }}" {% if recipe.cuisine == cuisine %}selected{% endif %}>{{ cuisine }}</option>
+                                        {% endfor %}
+                                        <option value="__custom__" {% if recipe.cuisine and recipe.cuisine not in cuisines %}selected{% endif %}>Custom...</option>
+                                    </select>
+                                    <div class="mt-2">
+                                        <input type="text" class="form-control" id="preview_custom_cuisine" placeholder="Enter a custom cuisine" value="{% if recipe.cuisine and recipe.cuisine not in cuisines %}{{ recipe.cuisine }}{% endif %}">
+                                    </div>
                                 </div>
-                            {% endif %}
-                            <input type="file" class="form-control" id="recipe_photo" name="recipe_photo" accept="image/*">
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label"><strong>Description</strong></label>
-                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of your recipe">{{ recipe.description or '' }}</textarea>
-                    </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><strong>Preparation Method</strong></label>
+                                    <select class="form-select" id="preview_preparation_method">
+                                        <option value="">Select...</option>
+                                        {% for method in preparation_methods %}
+                                        <option value="{{ method }}" {% if selected_prep_value == method %}selected{% endif %}>{{ method }}</option>
+                                        {% endfor %}
+                                        <option value="__custom__" {% if selected_prep_value and not prep_in_list %}selected{% endif %}>Custom...</option>
+                                    </select>
+                                    <div class="mt-2">
+                                        <input type="text" class="form-control" id="preview_custom_preparation_method" placeholder="Enter a custom preparation method" value="{% if selected_prep_value and not prep_in_list %}{{ selected_prep_value }}{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="row recipe-meta-row">
-                        <div class="col-md-4 mb-3">
-                            <label for="prep_time" class="form-label"><strong><i class="bi bi-clock"></i> Prep Time</strong></label>
-                            <input type="text" class="form-control" id="prep_time" name="prep_time" placeholder="e.g., 15 min" value="{{ recipe.prep_time or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="cook_time" class="form-label"><strong><i class="bi bi-fire"></i> Cook Time</strong></label>
-                            <input type="text" class="form-control" id="cook_time" name="cook_time" placeholder="e.g., 30 min" value="{{ recipe.cook_time or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="servings" class="form-label"><strong><i class="bi bi-people"></i> Servings</strong></label>
-                            <input type="number" class="form-control" id="servings" name="servings" value="{{ recipe.servings }}" min="1">
-                        </div>
-                    </div>
-                    <div class="row recipe-meta-row">
-                        <div class="col-md-6 mb-3">
-                            <label for="difficulty" class="form-label"><strong><i class="bi bi-speedometer2"></i> Difficulty</strong></label>
-                            <select class="form-select" id="difficulty" name="difficulty">
-                                <option value="">Select...</option>
-                                {% for level in difficulty_levels %}
-                                <option value="{{ level }}" {% if recipe.difficulty == level %}selected{% endif %}>{{ level }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="source_url" class="form-label"><strong><i class="bi bi-link-45deg"></i> Source Link</strong></label>
-                            <input type="url" class="form-control" id="source_url" name="source_url" placeholder="https://..." value="{{ recipe.source_url or '' }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><strong>Occasion / Holiday</strong></label>
+                                    <select class="form-select" id="preview_occasion">
+                                        <option value="">Select...</option>
+                                        {% for occ in occasions %}
+                                        <option value="{{ occ }}" {% if selected_occasion_value == occ %}selected{% endif %}>{{ occ }}</option>
+                                        {% endfor %}
+                                        <option value="__custom__" {% if selected_occasion_value and not occasion_in_list %}selected{% endif %}>Custom...</option>
+                                    </select>
+                                    <div class="mt-2">
+                                        <input type="text" class="form-control" id="preview_custom_occasion" placeholder="Enter a custom occasion" value="{% if selected_occasion_value and not occasion_in_list %}{{ selected_occasion_value }}{% endif %}">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><strong><i class="bi bi-speedometer2"></i> Difficulty</strong></label>
+                                    <select class="form-select" id="preview_difficulty">
+                                        <option value="">Select...</option>
+                                        {% for level in difficulty_levels %}
+                                        <option value="{{ level }}" {% if recipe.difficulty == level %}selected{% endif %}>{{ level }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
+                                {% set custom_dietary_values = selected_dietary_needs | reject('in', dietary_needs) | list %}
+                                <select class="form-select" id="preview_dietary_needs" multiple>
+                                    {% for dietary_need in dietary_needs %}
+                                    <option value="{{ dietary_need }}" {% if dietary_need in selected_dietary_needs %}selected{% endif %}>{{ dietary_need }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="mt-2">
+                                    <input type="text" class="form-control" id="preview_custom_dietary_needs" placeholder="Enter custom dietary needs" value="{% if custom_dietary_values %}{{ custom_dietary_values | join(', ') }}{% endif %}">
+                                </div>
+                                <small class="text-muted">Click to toggle selections. Add custom values and press Enter.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Custom Tags</strong></label>
+                                <input type="text" class="form-control" id="preview_tags" placeholder="Add additional tags (comma-separated)" value="{{ recipe.tags or '' }}">
+                                <small class="text-muted">Optional custom tags beyond the categories above</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Suggested Tags Preview</strong></label>
+                                <div class="p-3 bg-light border rounded">
+                                    <small class="text-muted">Preview only. Suggested tags appear below in the live form.</small>
+                                </div>
+                                <small class="text-muted">This section mirrors the live preview below.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -293,23 +437,9 @@
                                 <option value="{{ subcat }}" {% if recipe.subcategory == subcat %}selected{% endif %}>{{ subcat }}</option>
                                 {% endfor %}
                             </select>
-                            <small class="text-muted">Only applies to Salads and Sauces & Gravies</small>
+                            <small style="color: rgba(255,255,255,0.7);">Only applies to Salads and Sauces & Gravies</small>
                         </div>
                     </div>
-
-                    {% if recipe.preparation_method %}
-                        {% set selected_prep_value = recipe.preparation_method.split(',')[0] | trim %}
-                    {% else %}
-                        {% set selected_prep_value = '' %}
-                    {% endif %}
-                    {% set prep_in_list = selected_prep_value in preparation_methods %}
-
-                    {% if recipe.occasion %}
-                        {% set selected_occasion_value = recipe.occasion.split(',')[0] | trim %}
-                    {% else %}
-                        {% set selected_occasion_value = '' %}
-                    {% endif %}
-                    {% set occasion_in_list = selected_occasion_value in occasions %}
 
                     <div class="row">
                         <div class="col-md-6">
@@ -355,27 +485,26 @@
                                     <small class="text-muted">Type a custom occasion here to add it to the list for future recipes</small>
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="difficulty" class="form-label"><strong><i class="bi bi-speedometer2"></i> Difficulty</strong></label>
+                                <select class="form-select" id="difficulty" name="difficulty">
+                                    <option value="">Select...</option>
+                                    {% for level in difficulty_levels %}
+                                    <option value="{{ level }}" {% if recipe.difficulty == level %}selected{% endif %}>{{ level }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label"><strong>Dietary Needs / Restrictions</strong> (Select all that apply)</label>
-                                {% if recipe.dietary_needs %}
-                                    {% set selected_dietary_needs = recipe.dietary_needs.split(',') %}
-                                {% else %}
-                                    {% set selected_dietary_needs = [] %}
-                                {% endif %}
-                                <div class="row">
+                                <div class="row" id="dietaryNeedsOptions">
                                     {% for dietary_need in dietary_needs %}
                                     <div class="col-md-6 col-lg-4 mb-2">
                                         <div class="form-check">
-                                            {% set is_selected = false %}
-                                            {% for selected in selected_dietary_needs %}
-                                                {% if selected.strip() == dietary_need.strip() %}
-                                                    {% set is_selected = true %}
-                                                {% endif %}
-                                            {% endfor %}
-                                            <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}" {% if is_selected %}checked{% endif %}>
+                                            <input class="form-check-input" type="checkbox" name="dietary_needs" value="{{ dietary_need }}" id="dietary_{{ loop.index }}" {% if dietary_need in selected_dietary_needs %}checked{% endif %}>
                                             <label class="form-check-label" for="dietary_{{ loop.index }}">
                                                 {{ dietary_need }}
                                             </label>
@@ -434,21 +563,6 @@
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="bi bi-sticky"></i> Notes</h5>
-                </div>
-                <div class="card-body">
-                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes, tips, or variations...">{{ recipe.notes or '' }}</textarea>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2 mb-4">
-                <button type="submit" class="btn btn-success btn-lg">
-                    <i class="bi bi-check-circle"></i> Update Recipe
-                </button>
-                <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
-            </div>
         </form>
             </div>
         </div>
@@ -471,15 +585,7 @@
                 <div class="mb-3">
                     <label for="quickFoodCategory" class="form-label"><strong>Category *</strong></label>
                     <select class="form-select" id="quickFoodCategory">
-                        <option value="Vegetables">Vegetables</option>
-                        <option value="Fruits">Fruits</option>
-                        <option value="Grains">Grains</option>
-                        <option value="Proteins">Proteins</option>
-                        <option value="Dairy">Dairy</option>
-                        <option value="Nuts & Seeds">Nuts & Seeds</option>
-                        <option value="Herbs & Spices">Herbs & Spices</option>
-                        <option value="Beverages">Beverages</option>
-                        <option value="Other">Other</option>
+                        <option value="">Loading categories...</option>
                     </select>
                 </div>
                 <div class="row">
@@ -536,6 +642,68 @@
     </div>
 </div>
 
+<!-- Food Picker Modal -->
+<div class="modal fade" id="foodPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: linear-gradient(135deg, #1A3636, #2d4a4a); border: 2px solid #8BA48B; color: #e0e7e1;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(139,164,139,0.3); padding: 10px 16px;">
+                <h6 class="modal-title" id="foodPickerTitle" style="color: #D6BD98; font-size: var(--text-title);"><i class="bi bi-search"></i> Select Food</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 12px 16px; min-height: 300px; max-height: 450px; overflow-y: auto;">
+                <div id="picker-screen-db">
+                    <p style="font-size: var(--text-body); color: rgba(255,255,255,0.7); margin-bottom: 12px;">Choose a food database to browse:</p>
+                    <div class="d-flex flex-column gap-3">
+                        <button type="button" class="btn btn-lg w-100 text-start d-flex align-items-center" style="background: rgba(139,164,139,0.2); border: 1px solid #8BA48B; color: #e0e7e1; padding: 14px 16px;" onclick="pickerSelectDb('fodmap')">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(214,189,152,0.2); display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                <i class="bi bi-heart-pulse" style="color: #D6BD98; font-size: 1.1rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: var(--text-value);">FODMAP Database</div>
+                                <small style="color: rgba(255,255,255,0.6); font-size: var(--text-label);">Foods with FODMAP & histamine ratings</small>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: rgba(255,255,255,0.4);"></i>
+                        </button>
+                        <button type="button" class="btn btn-lg w-100 text-start d-flex align-items-center" style="background: rgba(139,164,139,0.2); border: 1px solid #8BA48B; color: #e0e7e1; padding: 14px 16px;" onclick="pickerSelectDb('usda')">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(214,189,152,0.2); display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                <i class="bi bi-database" style="color: #D6BD98; font-size: 1.1rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: var(--text-value);">USDA Database</div>
+                                <small style="color: rgba(255,255,255,0.6); font-size: var(--text-label);">USDA FoodData Central nutritional data</small>
+                            </div>
+                            <i class="bi bi-chevron-right ms-auto" style="color: rgba(255,255,255,0.4);"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="picker-screen-categories" style="display: none;">
+                    <div class="d-flex align-items-center mb-2">
+                        <button type="button" class="btn btn-sm me-2" style="color: #D6BD98; border: 1px solid rgba(214,189,152,0.3); padding: 2px 8px;" onclick="pickerBackToDb()">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                        <span id="picker-db-label" style="font-size: var(--text-body); color: rgba(255,255,255,0.7);"></span>
+                    </div>
+                    <div id="picker-categories-list" style="display: flex; flex-direction: column; gap: 2px;">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-light"></div> Loading categories...</div>
+                    </div>
+                </div>
+                <div id="picker-screen-foods" style="display: none;">
+                    <div class="d-flex align-items-center mb-2">
+                        <button type="button" class="btn btn-sm me-2" style="color: #D6BD98; border: 1px solid rgba(214,189,152,0.3); padding: 2px 8px;" onclick="pickerBackToCategories()">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                        <span id="picker-category-label" style="font-size: var(--text-body); color: rgba(255,255,255,0.7);"></span>
+                    </div>
+                    <input type="text" id="picker-food-filter" class="form-control form-control-sm mb-2" placeholder="Filter foods..." style="background: rgba(255,255,255,0.95); border: 1px solid #8BA48B; font-size: var(--text-body);" oninput="filterPickerFoods()">
+                    <div id="picker-foods-list" style="display: flex; flex-direction: column; gap: 1px;">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-light"></div> Loading foods...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let ingredientCount = 0;
 
@@ -549,16 +717,35 @@ function addIngredient(foodId = null, quantity = '', notes = '') {
     ingredientCount++;
     const container = document.getElementById('ingredients-container');
     const ingredientDiv = document.createElement('div');
-    ingredientDiv.className = 'ingredient-row mb-3 p-3 border rounded';
+    ingredientDiv.className = 'ingredient-row mb-2 p-2 border rounded';
     ingredientDiv.id = `ingredient-${ingredientCount}`;
+
+    // Find the food name if a foodId is provided
+    let foodName = '';
+    if (foodId) {
+        const food = foods.find(f => f.id === foodId);
+        if (food) foodName = food.name;
+    }
+
     ingredientDiv.innerHTML = `
         <div class="row align-items-center">
             <div class="col-md-5 mb-2">
                 <label class="form-label text-label"><strong>Food</strong></label>
-                <select class="form-select food-select" name="food_ids[]" onchange="updateFoodInfo(${ingredientCount})">
-                    <option value="">Choose a food...</option>
-                    ${foods.map(food => `<option value="${food.id}" ${foodId == food.id ? 'selected' : ''}>${food.name} (${food.category})</option>`).join('')}
-                </select>
+                <input type="hidden" class="food-id-hidden" name="food_ids[]" value="${foodId || ''}">
+                <div class="food-input-wrapper" style="position: relative;">
+                    <input type="text" class="form-control food-search-input" placeholder="Type to search or click browse..."
+                           autocomplete="off" data-ingredient-id="${ingredientCount}"
+                           oninput="onFoodSearchInput(${ingredientCount})"
+                           style="padding-right: 34px;" value="${foodName}">
+                    <button type="button" class="btn btn-sm" title="Browse food databases"
+                            style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8BA48B; padding: 2px 6px;"
+                            onclick="openFoodPicker(${ingredientCount})">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <div class="food-autocomplete-dropdown" id="autocomplete-${ingredientCount}"
+                         style="display:none; position:absolute; top:100%; left:0; right:0; z-index:1050; max-height:200px; overflow-y:auto; background:#fff; border:1px solid #8BA48B; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                    </div>
+                </div>
             </div>
             <div class="col-md-3 mb-2">
                 <label class="form-label text-label"><strong>Quantity</strong></label>
@@ -570,12 +757,11 @@ function addIngredient(foodId = null, quantity = '', notes = '') {
             </div>
             <div class="col-md-1 mb-2">
                 <label class="form-label small">&nbsp;</label>
-                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeIngredient(${ingredientCount})">
+                <button type="button" class="btn btn-sm w-100 d-flex align-items-center justify-content-center" style="border: 1px solid rgba(255,255,255,0.5); color: #fff; height: 31px;" onclick="removeIngredient(${ingredientCount})">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
         </div>
-        <div id="food-info-${ingredientCount}" class="mt-2"></div>
     `;
     container.appendChild(ingredientDiv);
 
@@ -591,43 +777,7 @@ function removeIngredient(id) {
 }
 
 function updateFoodInfo(ingredientId) {
-    const select = document.querySelector(`#ingredient-${ingredientId} .food-select`);
-    const foodId = parseInt(select.value);
-    const infoDiv = document.getElementById(`food-info-${ingredientId}`);
-
-    if (!foodId) {
-        infoDiv.innerHTML = '';
-        return;
-    }
-
-    const food = foods.find(f => f.id === foodId);
-    if (!food) return;
-
-    let fodmapBadges = '';
-    const fodmaps = ['fructans', 'gos', 'lactose', 'fructose', 'polyols', 'mannitol', 'sorbitol'];
-    fodmaps.forEach(fodmap => {
-        if (food[fodmap]) {
-            const color = food[fodmap].toLowerCase() === 'green' ? 'success' :
-                         food[fodmap].toLowerCase() === 'amber' ? 'warning' : 'danger';
-            fodmapBadges += `<span class="badge bg-${color} me-1">${fodmap}: ${food[fodmap]}</span>`;
-        }
-    });
-
-    let histamineBadge = '';
-    if (food.histamine_level) {
-        const color = food.histamine_level.toLowerCase() === 'low' ? 'success' :
-                     food.histamine_level.toLowerCase() === 'medium' ? 'warning' : 'danger';
-        histamineBadge = `<span class="badge bg-${color}">Histamine: ${food.histamine_level}</span>`;
-    }
-
-    infoDiv.innerHTML = `
-        <div class="alert alert-info mb-0 py-2">
-            <small>
-                ${fodmapBadges}
-                ${histamineBadge}
-            </small>
-        </div>
-    `;
+    // No-op: FODMAP badges removed for cleaner ingredient display
 }
 
 function getCuisineValue() {
@@ -885,6 +1035,188 @@ document.addEventListener('DOMContentLoaded', function() {
     dietaryCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSuggestedTags);
     });
+
+    // Preview dietary needs: enable click-to-toggle without shift
+    const previewDietarySelect = document.getElementById('preview_dietary_needs');
+    if (previewDietarySelect) {
+        previewDietarySelect.addEventListener('mousedown', function(e) {
+            const option = e.target;
+            if (option && option.tagName === 'OPTION') {
+                e.preventDefault();
+                option.selected = !option.selected;
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    // Add custom dietary needs into both preview select and live checkbox list
+    const previewCustomDietaryInput = document.getElementById('preview_custom_dietary_needs');
+    if (previewCustomDietaryInput && previewDietarySelect) {
+        const addCustomDietaryNeeds = () => {
+            const raw = previewCustomDietaryInput.value.trim();
+            if (!raw) return;
+            const values = raw.split(',').map(v => v.trim()).filter(Boolean);
+            const existing = new Set(Array.from(previewDietarySelect.options).map(o => o.value));
+
+            values.forEach(value => {
+                if (!existing.has(value)) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    opt.textContent = value;
+                    opt.selected = true;
+                    previewDietarySelect.appendChild(opt);
+                    existing.add(value);
+                } else {
+                    Array.from(previewDietarySelect.options).forEach(o => {
+                        if (o.value === value) o.selected = true;
+                    });
+                }
+
+                const liveContainer = document.getElementById('dietaryNeedsOptions');
+                if (liveContainer && !liveContainer.querySelector(`input[value="${CSS.escape(value)}"]`)) {
+                    const index = liveContainer.querySelectorAll('.form-check-input').length + 1;
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6 col-lg-4 mb-2';
+                    col.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="dietary_needs" value="${value}" id="dietary_custom_${index}" checked>
+                            <label class="form-check-label" for="dietary_custom_${index}">${value}</label>
+                        </div>
+                    `;
+                    liveContainer.appendChild(col);
+                }
+            });
+
+            previewCustomDietaryInput.value = '';
+            updateSuggestedTags();
+        };
+
+        previewCustomDietaryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomDietaryNeeds();
+            }
+        });
+
+        previewCustomDietaryInput.addEventListener('blur', addCustomDietaryNeeds);
+    }
+
+    // Sync preview fields into live form fields so changes are saved
+    const previewCategory = document.getElementById('preview_category');
+    const liveCategory = document.getElementById('category');
+    if (previewCategory && liveCategory) {
+        previewCategory.addEventListener('change', () => {
+            liveCategory.value = previewCategory.value;
+            updateSubcategories();
+            updateSuggestedTags();
+        });
+    }
+
+    const previewCuisine = document.getElementById('preview_cuisine');
+    const liveCuisine = document.getElementById('cuisine');
+    const previewCustomCuisine = document.getElementById('preview_custom_cuisine');
+    const liveCustomCuisine = document.getElementById('custom_cuisine');
+    if (previewCuisine && liveCuisine) {
+        previewCuisine.addEventListener('change', () => {
+            liveCuisine.value = previewCuisine.value;
+            toggleCustomCuisine();
+            updateSuggestedTags();
+        });
+    }
+    if (previewCustomCuisine && liveCustomCuisine) {
+        previewCustomCuisine.addEventListener('input', () => {
+            liveCustomCuisine.value = previewCustomCuisine.value;
+            updateSuggestedTags();
+        });
+    }
+
+    const previewPrepMethod = document.getElementById('preview_preparation_method');
+    const livePrepMethod = document.getElementById('preparation_method');
+    const previewCustomPrep = document.getElementById('preview_custom_preparation_method');
+    const liveCustomPrep = document.getElementById('custom_preparation_method');
+    if (previewPrepMethod && livePrepMethod) {
+        previewPrepMethod.addEventListener('change', () => {
+            livePrepMethod.value = previewPrepMethod.value;
+            toggleCustomPreparationMethod();
+            updateSuggestedTags();
+        });
+    }
+    if (previewCustomPrep && liveCustomPrep) {
+        previewCustomPrep.addEventListener('input', () => {
+            liveCustomPrep.value = previewCustomPrep.value;
+            updateSuggestedTags();
+        });
+    }
+
+    const previewOccasion = document.getElementById('preview_occasion');
+    const liveOccasion = document.getElementById('occasion');
+    const previewCustomOccasion = document.getElementById('preview_custom_occasion');
+    const liveCustomOccasion = document.getElementById('custom_occasion');
+    if (previewOccasion && liveOccasion) {
+        previewOccasion.addEventListener('change', () => {
+            liveOccasion.value = previewOccasion.value;
+            toggleCustomOccasion();
+            updateSuggestedTags();
+        });
+    }
+    if (previewCustomOccasion && liveCustomOccasion) {
+        previewCustomOccasion.addEventListener('input', () => {
+            liveCustomOccasion.value = previewCustomOccasion.value;
+            updateSuggestedTags();
+        });
+    }
+
+    const previewDifficulty = document.getElementById('preview_difficulty');
+    const liveDifficulty = document.getElementById('difficulty');
+    if (previewDifficulty && liveDifficulty) {
+        previewDifficulty.addEventListener('change', () => {
+            liveDifficulty.value = previewDifficulty.value;
+            updateSuggestedTags();
+        });
+    }
+
+    const previewTags = document.getElementById('preview_tags');
+    const liveTags = document.getElementById('tags');
+    if (previewTags && liveTags) {
+        previewTags.addEventListener('input', () => {
+            liveTags.value = previewTags.value;
+        });
+    }
+
+    if (previewDietarySelect) {
+        previewDietarySelect.addEventListener('change', () => {
+            const selected = new Set(Array.from(previewDietarySelect.selectedOptions).map(o => o.value));
+            const liveCheckboxes = document.querySelectorAll('input[name="dietary_needs"]');
+            liveCheckboxes.forEach(cb => {
+                cb.checked = selected.has(cb.value);
+            });
+            updateSuggestedTags();
+        });
+    }
+
+    // Load FODMAP categories into quick-add modal when it opens
+    const quickAddModal = document.getElementById('quickAddFoodModal');
+    if (quickAddModal) {
+        quickAddModal.addEventListener('show.bs.modal', function() {
+            const select = document.getElementById('quickFoodCategory');
+            if (select.options.length <= 1) {
+                fetch('/api/v1/fodmap/categories')
+                    .then(r => r.json())
+                    .then(categories => {
+                        select.innerHTML = '';
+                        categories.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.name;
+                            opt.textContent = cat.name;
+                            select.appendChild(opt);
+                        });
+                    })
+                    .catch(() => {
+                        select.innerHTML = '<option value="Other">Other</option>';
+                    });
+            }
+        });
+    }
 });
 
 // Update subcategory options based on selected category
@@ -921,7 +1253,7 @@ async function quickAddFood() {
     };
 
     try {
-        const response = await fetch('/api/foods/quick-add', {
+        const response = await fetch('/api/v1/foods/quick-add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -933,16 +1265,9 @@ async function quickAddFood() {
 
         if (result.success) {
             // Add the new food to the foods array
-            foods.push(result.food);
+            foods.push(result.data);
 
-            // Update all existing ingredient dropdowns
-            const allSelects = document.querySelectorAll('.food-select');
-            allSelects.forEach(select => {
-                const newOption = document.createElement('option');
-                newOption.value = result.food.id;
-                newOption.textContent = `${result.food.name} (${result.food.category})`;
-                select.appendChild(newOption);
-            });
+            // Food is now available in the foods array for search/autocomplete
 
             // Close modal and reset form
             const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddFoodModal'));
@@ -966,5 +1291,221 @@ async function quickAddFood() {
         alert('An error occurred while adding the food');
     }
 }
+
+// Food Picker state
+let pickerActiveIngredientId = null;
+let pickerCurrentDb = null;
+let pickerFoodsCache = [];
+let autocompleteTimeout = null;
+
+function openFoodPicker(ingredientId) {
+    pickerActiveIngredientId = ingredientId;
+
+    // Reset to screen 1
+    document.getElementById('picker-screen-db').style.display = '';
+    document.getElementById('picker-screen-categories').style.display = 'none';
+    document.getElementById('picker-screen-foods').style.display = 'none';
+    document.getElementById('foodPickerTitle').innerHTML = '<i class="bi bi-search"></i> Select Food';
+
+    const modal = new bootstrap.Modal(document.getElementById('foodPickerModal'));
+    modal.show();
+}
+
+async function pickerSelectDb(db) {
+    pickerCurrentDb = db;
+    const label = db === 'fodmap' ? 'FODMAP Categories' : 'USDA Categories';
+
+    document.getElementById('picker-screen-db').style.display = 'none';
+    document.getElementById('picker-screen-categories').style.display = '';
+    document.getElementById('picker-screen-foods').style.display = 'none';
+    document.getElementById('picker-db-label').textContent = label;
+    document.getElementById('foodPickerTitle').innerHTML = `<i class="bi bi-folder"></i> ${label}`;
+
+    const listEl = document.getElementById('picker-categories-list');
+    listEl.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-light"></div> Loading...</div>';
+
+    try {
+        const url = db === 'fodmap' ? '/api/v1/fodmap/categories' : '/api/v1/usda/categories';
+        const resp = await fetch(url);
+        const rawData = await resp.json();
+        // FODMAP returns flat array, USDA returns {categories: [...]} with different field names
+        const categories = db === 'fodmap'
+            ? rawData
+            : (rawData.categories || []).map(c => ({id: c.id, name: c.description, count: c.food_count}));
+
+        if (categories.length === 0) {
+            listEl.innerHTML = '<p style="color: rgba(255,255,255,0.6); font-size: var(--text-body);">No categories found.</p>';
+            return;
+        }
+
+        listEl.innerHTML = categories.map(cat => {
+            const catId = db === 'fodmap' ? cat.name : cat.id;
+            return `<button type="button" class="btn btn-sm text-start w-100 d-flex justify-content-between align-items-center"
+                style="background: rgba(255,255,255,0.06); border: none; color: #e0e7e1; padding: 8px 10px; font-size: var(--text-body); border-left: 2px solid rgba(214,189,152,0.4);"
+                onmouseover="this.style.background='rgba(214,189,152,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'"
+                onclick="pickerSelectCategory('${catId.toString().replace(/'/g, "\\'")}', '${cat.name.replace(/'/g, "\\'")}')">
+                <span>${cat.name}</span>
+                <span class="badge" style="background: rgba(214,189,152,0.2); color: #D6BD98; font-size: var(--text-micro);">${cat.count}</span>
+            </button>`;
+        }).join('');
+    } catch (err) {
+        listEl.innerHTML = '<p style="color: #dc3545; font-size: var(--text-body);">Error loading categories.</p>';
+    }
+}
+
+function pickerBackToDb() {
+    document.getElementById('picker-screen-db').style.display = '';
+    document.getElementById('picker-screen-categories').style.display = 'none';
+    document.getElementById('picker-screen-foods').style.display = 'none';
+    document.getElementById('foodPickerTitle').innerHTML = '<i class="bi bi-search"></i> Select Food';
+}
+
+async function pickerSelectCategory(catId, catName) {
+    document.getElementById('picker-screen-categories').style.display = 'none';
+    document.getElementById('picker-screen-foods').style.display = '';
+    document.getElementById('picker-category-label').textContent = catName;
+    document.getElementById('foodPickerTitle').innerHTML = `<i class="bi bi-list"></i> ${catName}`;
+    document.getElementById('picker-food-filter').value = '';
+
+    const listEl = document.getElementById('picker-foods-list');
+    listEl.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-light"></div> Loading foods...</div>';
+
+    try {
+        const url = pickerCurrentDb === 'fodmap'
+            ? `/api/v1/fodmap/foods?category=${encodeURIComponent(catId)}`
+            : `/api/v1/usda/search?category_id=${encodeURIComponent(catId)}&per_page=500`;
+        const resp = await fetch(url);
+        const rawFoods = await resp.json();
+        // FODMAP returns flat array [{id, name, category}], USDA returns paginated {data: [...]}
+        pickerFoodsCache = pickerCurrentDb === 'fodmap'
+            ? rawFoods
+            : (rawFoods.data || []).map(f => ({id: f.id, name: f.description || f.name, category_id: f.category_id, source: 'usda'}));
+
+        renderPickerFoods(pickerFoodsCache);
+    } catch (err) {
+        listEl.innerHTML = '<p style="color: #dc3545; font-size: var(--text-body);">Error loading foods.</p>';
+    }
+}
+
+function pickerBackToCategories() {
+    document.getElementById('picker-screen-categories').style.display = '';
+    document.getElementById('picker-screen-foods').style.display = 'none';
+    const label = pickerCurrentDb === 'fodmap' ? 'FODMAP Categories' : 'USDA Categories';
+    document.getElementById('foodPickerTitle').innerHTML = `<i class="bi bi-folder"></i> ${label}`;
+}
+
+function renderPickerFoods(foodsList) {
+    const listEl = document.getElementById('picker-foods-list');
+
+    if (foodsList.length === 0) {
+        listEl.innerHTML = '<p style="color: rgba(255,255,255,0.6); font-size: var(--text-body); padding: 8px;">No foods found.</p>';
+        return;
+    }
+
+    listEl.innerHTML = foodsList.map(food => {
+        const source = food.source === 'usda' ? 'usda' : 'fodmap';
+        return `<button type="button" class="btn btn-sm text-start w-100"
+            style="background: rgba(255,255,255,0.04); border: none; color: #e0e7e1; padding: 6px 10px; font-size: var(--text-body); border-left: 2px solid rgba(139,164,139,0.3);"
+            onmouseover="this.style.background='rgba(214,189,152,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'"
+            onclick="pickerSelectFood(${food.id}, '${food.name.replace(/'/g, "\\'")}', '${source}')">
+            ${food.name}
+        </button>`;
+    }).join('');
+}
+
+function filterPickerFoods() {
+    const query = document.getElementById('picker-food-filter').value.toLowerCase().trim();
+    if (!query) {
+        renderPickerFoods(pickerFoodsCache);
+        return;
+    }
+    const filtered = pickerFoodsCache.filter(f => f.name.toLowerCase().includes(query));
+    renderPickerFoods(filtered);
+}
+
+function pickerSelectFood(foodId, foodName, source) {
+    const row = document.getElementById(`ingredient-${pickerActiveIngredientId}`);
+    if (!row) return;
+
+    const textInput = row.querySelector('.food-search-input');
+    const hiddenInput = row.querySelector('.food-id-hidden');
+
+    textInput.value = foodName;
+
+    if (source === 'fodmap') {
+        hiddenInput.value = foodId;
+        updateFoodInfo(pickerActiveIngredientId);
+    } else {
+        // USDA food - no FODMAP food_id
+        hiddenInput.value = '';
+    }
+
+    // Close the autocomplete dropdown if open
+    const dropdown = document.getElementById(`autocomplete-${pickerActiveIngredientId}`);
+    if (dropdown) dropdown.style.display = 'none';
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('foodPickerModal'));
+    if (modal) modal.hide();
+}
+
+// Autocomplete search
+function onFoodSearchInput(ingredientId) {
+    const row = document.getElementById(`ingredient-${ingredientId}`);
+    const textInput = row.querySelector('.food-search-input');
+    const hiddenInput = row.querySelector('.food-id-hidden');
+    const dropdown = document.getElementById(`autocomplete-${ingredientId}`);
+    const query = textInput.value.trim().toLowerCase();
+
+    // Clear previous food_id when user types
+    hiddenInput.value = '';
+
+    if (query.length < 2) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    clearTimeout(autocompleteTimeout);
+    autocompleteTimeout = setTimeout(() => {
+        // Search local foods array for matches
+        const matches = foods.filter(f => f.name.toLowerCase().includes(query)).slice(0, 15);
+
+        if (matches.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = matches.map(food => `
+            <div style="padding: 6px 10px; cursor: pointer; font-size: var(--text-body); color: #1A3636; border-bottom: 1px solid rgba(139,164,139,0.15);"
+                 onmouseover="this.style.background='rgba(139,164,139,0.15)'" onmouseout="this.style.background='#fff'"
+                 onclick="selectAutocompleteFood(${ingredientId}, ${food.id}, '${food.name.replace(/'/g, "\\'")}')">
+                <span style="font-weight: 600;">${food.name}</span>
+                <small style="color: #677D6A; margin-left: 6px;">(${food.category})</small>
+            </div>
+        `).join('');
+
+        dropdown.style.display = 'block';
+    }, 150);
+}
+
+function selectAutocompleteFood(ingredientId, foodId, foodName) {
+    const row = document.getElementById(`ingredient-${ingredientId}`);
+    const textInput = row.querySelector('.food-search-input');
+    const hiddenInput = row.querySelector('.food-id-hidden');
+    const dropdown = document.getElementById(`autocomplete-${ingredientId}`);
+
+    textInput.value = foodName;
+    hiddenInput.value = foodId;
+    dropdown.style.display = 'none';
+
+    updateFoodInfo(ingredientId);
+}
+
+// Close autocomplete dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.classList.contains('food-search-input')) {
+        document.querySelectorAll('.food-autocomplete-dropdown').forEach(d => d.style.display = 'none');
+    }
+});
 </script>
 {% endblock %}

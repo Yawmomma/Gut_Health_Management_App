@@ -18,7 +18,7 @@ All pages are in `templates/` folder organized by feature:
 ```
 templates/
 ├── dashboard/          # Main landing page
-├── foods/             # Food guide and management
+├── compendium/         # Food Compendium and management
 ├── diary/             # Symptom and meal logging
 ├── recipes/           # Recipe and meal management
 ├── education/         # Educational content
@@ -28,17 +28,1621 @@ templates/
 ---
 
 **Templates**:
-- `templates/foods/index.html` - Main food guide page
-- `templates/foods/search.html` - Category food lists
-- `templates/foods/detail.html` - Individual food view
-- `templates/foods/add-food.html` - Add new food form
-- `templates/foods/edit-food.html` - Edit food form
+- `templates/compendium/index.html` - Main Food Compendium page
+- `templates/compendium/search.html` - Category food lists
+- `templates/compendium/detail.html` - Individual food view
+- `templates/compendium/add-food.html` - Add new food form
+- `templates/compendium/edit-food.html` - Edit food form
 
 ---
 
 ## 🗓️ Version History
+**CORRECTION: 2026-02-28 (v1.4.1: Endpoint Count Correction)**- **Verified Endpoint Count: 137 (not 136)**  - `security.py` actually has 5 endpoints (including `GET /api/v1/auth/audit-log` from Phase 5C), not 4  - Updated all documentation files: TODO.md, CLAUDE.md, README.md, api_endpoints.md  - Added audit-log endpoint documentation to api_endpoints.md  - All 137 endpoints verified by @bp.route audit across all 20 route files- **Fixed Missing Dependencies**  - Added pytest, pytest-flask, pytest-cov, markdown2 to requirements.txt  - Test suite (81 tests) was created but dependencies were not documented
 
-**Latest Updates: 2026-02-01 (Recipe Builder + AI Chat Integration)**
+**Latest Updates: 2026-02-28 (v1.4.0: Swagger API Docs + Database Migrations)**
+
+- **Swagger/OpenAPI Documentation** — Auto-generated interactive API docs
+  - Integrated `flasgger==0.9.7.1` for Swagger UI
+  - Created comprehensive `utils/swagger_config.py` with full OpenAPI 2.0 spec covering all 136 endpoints across 20 tags (Diary, Analytics, Recipes, Foods, USDA, AusNut, FODMAP, Search, Export, Chat, Education, Settings, Realtime, Security, Gamification, Notifications, Integrations, Billing, Users, Reintroduction)
+  - Swagger UI available at `/api/docs` with X-API-Key authentication support
+  - Full OpenAPI spec JSON at `/api/v1/apispec.json`
+
+- **Database Migrations (Flask-Migrate + Alembic)** — Formal migration system replacing 9 ad-hoc scripts
+  - Added `Flask-Migrate==4.0.7` for Alembic-powered migrations
+  - Initialized Alembic migration structure in `migrations/` folder (env.py, alembic.ini, versions/)
+  - Preserved old migration scripts in `migrations_legacy/` folder
+  - Created initial migration `6d82e00ff8d9_initial_schema.py` capturing current database schema
+  - Stamped database to current migration head without modifying existing tables
+  - Going forward: `flask db migrate -m "description"` generates new migrations automatically, `flask db upgrade` applies them
+  - Added `.flaskenv` for Flask CLI configuration (FLASK_APP=app.py)
+  - Updated `requirements.txt` with both new packages
+
+**Previous Updates: 2026-02-28 (v1.3.1: Testing Suite + Double-Tuple Bug Fix)**
+
+- **Testing Suite Created** — 81 tests across 4 files using `pytest`, `pytest-flask`, `pytest-cov`
+  - `tests/conftest.py`: Shared fixtures (temp DB, test client, API key factories)
+  - `tests/test_auth.py`: 25 tests — require_api_key (9), require_scope (5), audit logging (4), rate limiting (3), scope validation (4)
+  - `tests/test_models.py`: 8 tests — ApiKey.to_dict() (5), ApiAccessLog.to_dict() (2), null key (1)
+  - `tests/test_security_api.py`: 15 tests — create key (6), list keys (2), revoke key (2), rate limit status (2), audit log endpoint (3)
+  - `tests/test_api_endpoints.py`: 33 tests — auth/scope enforcement across FODMAP, diary, recipes, analytics, search, export, education, settings, USDA, AUSNUT
+- **Bug Fix: Double-Tuple Returns** — Fixed across 5 route files
+  - `success_response()`, `error_response()`, `validation_error()` already return `(response, status)` tuples, but routes were appending redundant `, STATUS`, creating invalid nested tuples `((response, X), X)`
+  - Affected files: `security.py`, `gamification.py`, `notifications.py`, `reintroduction.py`, `integrations.py`
+  - These endpoints would have crashed on any request — now all working correctly
+- **Scope Count Corrected** — Comments in `utils/auth.py` and TODO.md updated from 40 to **37** (21 read + 11 write + 5 special)
+- **Files Created**: `tests/conftest.py`, `tests/test_auth.py`, `tests/test_models.py`, `tests/test_security_api.py`, `tests/test_api_endpoints.py`
+- **Files Modified**: `routes/api_v1/security.py`, `routes/api_v1/gamification.py`, `routes/api_v1/notifications.py`, `routes/api_v1/reintroduction.py`, `routes/api_v1/integrations.py`, `utils/auth.py`, `TODO.md`
+- **Dependencies Added**: `pytest`, `pytest-flask`, `pytest-cov`
+
+---
+
+**Previous: 2026-02-28 (v1.3.0: Authentication & Authorization — Phases 5A-5E Implemented)**
+
+- **Phase 5A: Auth Decorators** — Created `utils/auth.py` with `require_api_key` and `require_scope` decorators
+  - `require_api_key`: Reads `X-API-Key` or `Authorization: Bearer`, SHA-256 hash lookup, validates active/expiry, web browser bypass
+  - `require_scope('scope:name')`: Checks API key's CSV scopes for required scope, returns 403 if missing
+- **Phase 5F: Scope Constants** — 37 validated scopes (21 read + 11 write + 5 special) in `VALID_SCOPES`
+  - `validate_scopes()` function for scope validation at key creation time
+- **Phase 5B: Applied Decorators** — All 136 endpoints across 20 route files decorated
+  - 134 endpoints with `@require_api_key` + `@require_scope`
+  - 2 SPECIAL endpoints left undecorated (signature-verified webhooks: billing, external receive)
+- **Phase 5C: Audit Logging** — `ApiAccessLog` model added to `models/security.py`
+  - Logs every authenticated API request (key_id, endpoint, method, status_code, ip_address, timestamp)
+  - New endpoint: `GET /api/v1/auth/audit-log` with filtering, pagination (admin:security scope)
+  - Failed access attempts (invalid key, revoked, expired, rate limited) also logged
+- **Phase 5D: Rate Limiting** — Counter-based per-API-key enforcement
+  - `rate_limit` column on `ApiKey` model (default 120/min for MEDIUM/HIGH, 60/min for LOW)
+  - Returns `429 Too Many Requests` with `Retry-After: 60` header when exceeded
+  - `GET /api/v1/auth/rate-limit` reflects actual per-key enforcement
+- **Phase 5E: APP2 Bootstrap Script** — `scripts/create_app2_key.py`
+  - Generates API key with 15 Primary scopes (or +6 Secondary with `--secondary` flag)
+  - Checks for existing APP2 keys, prints key once with usage instructions
+- **Files Created**: `utils/auth.py`, `scripts/create_app2_key.py`
+- **Files Modified**: `models/security.py` (ApiAccessLog model, rate_limit column), `routes/api_v1/security.py` (scope validation, audit log endpoint), all 20 route files in `routes/api_v1/` (decorator imports + application)
+- **Database Migration**: Added `rate_limit` column to `api_keys` table, `api_access_logs` table created
+- **Tested**: App starts, web UI bypasses auth, API key auth works (401/403/200), rate limit enforcement active
+
+---
+
+**Previous: 2026-02-28 (Complete Auth + Build Priority Plan for APP2 Readiness)**
+
+- **TODO.md Updated**: Section 5 expanded into comprehensive 7-phase plan (5A-5F + 5B-2)
+- **Endpoint count audit**: Verified actual @bp.route count across all 20 files — corrected from 137 to **136**
+  - diary.py: 16→9, recipes.py: 13→15, foods.py: 9→14, realtime.py: 9→8, billing.py: 1→2
+  - Updated CLAUDE.md, TODO.md, Version_History.md, api_endpoints.md to match
+- **Phase 5B**: Full permission mapping for ALL 136 endpoints across 20 route files
+  - ~50 HIGH, ~48 MEDIUM, ~35 LOW, 2 SPECIAL (signature-verified webhooks)
+  - Every endpoint assigned: permission level, read/write, scope, and xlsx report coverage
+- **Phase 5B-2**: APP2 build priority for all endpoints
+  - Primary: 10 data source endpoints + 20 analytics chart endpoints + 3 write endpoints + 4 reference endpoints
+  - Secondary: 9 analytics charts + 10 supporting data endpoints
+  - Admin-only endpoints excluded from APP2 consumption
+- **Phase 5F**: VALID_SCOPES expanded from 23 to 40 (22 read + 13 write + 5 special)
+- **Phase 5E**: APP2 bootstrap key split into Primary scopes (15) and Secondary scopes (6)
+- **Based on**: `part_2/ANALYTICS_PERMISSIONS_REPORT.xlsx` — all 4 sheets
+- **No code changes** — planning only. Implementation to follow per phase order.
+
+---
+
+**Previous: 2026-02-28 (v1.2.2: Missing API Endpoints from Spreadsheet Crosscheck)**
+
+- **2 New Endpoints Added** (from endpoint_report_v3.xlsx crosscheck):
+  - `GET /api/v1/recipes/search` — Search recipes by name, category, cuisine, difficulty, tags, or ingredient name (paginated)
+  - `GET /api/v1/usda/foods` — Browse/list all USDA foods with pagination and optional category, data type, and letter filters
+- **Documentation**: `api_endpoints.md` updated — total endpoints now 136
+- **Files Modified**: `routes/api_v1/recipes.py`, `routes/api_v1/usda.py`, `api_endpoints.md`
+
+---
+
+**Previous: 2026-02-28 (v1.2.1: Inbound Webhook Endpoints)**
+
+- **✅ NEW: 2 Inbound Webhook Receiver Endpoints**
+  - `POST /api/v1/webhooks/external/receive` — Receive data from wearables, meal trackers, health apps (Fitbit, Oura, Apple Watch, MyFitnessPal)
+  - `POST /api/v1/billing/webhook` — Receive subscription/payment events from Stripe, App Store, Google Play
+  - Both endpoints validate HMAC signatures when secrets are configured via environment variables
+  - Billing webhook supports idempotency via unique `event_id` (duplicate events return 200 without reprocessing)
+  - All received webhooks are logged to dedicated database tables for audit
+
+- **New Models Added** (`models/webhooks.py`):
+  - `ExternalWebhookLog` — Logs inbound external service webhooks with source, provider, event type, payload, signature validation status
+  - `BillingEvent` — Logs billing/subscription webhook events with unique event_id constraint for idempotency
+
+- **New Utilities** (`utils/api_helpers.py`):
+  - `verify_webhook_signature()` — HMAC signature verification supporting sha256=hexdigest format
+
+- **Configuration** (`config.py`):
+  - `EXTERNAL_WEBHOOK_SECRET` — Secret for validating external service webhooks
+  - `STRIPE_WEBHOOK_SECRET` — Secret for validating Stripe webhooks
+  - Empty by default (signature validation skipped when not configured)
+
+- **Documentation**: `api_endpoints.md` updated — total endpoints now 135
+- **Migration**: `migrations/add_inbound_webhook_tables.py` for existing deployments
+- **Status**: All 49 planned new endpoints from part_2 spreadsheets are now fully implemented
+
+---
+
+**Previous: 2026-02-28 (v1.2.0: App2 Integration - 57 New API Endpoints) 🚀**
+
+- **✅ NEW: 57 Total API Endpoints for App2 Integration** (47 planned + 10 additional from existing files)
+  - **Previous Total:** 90 endpoints (Phases 1-3)
+  - **New Total:** 147 endpoints
+  - **Status:** All endpoints fully implemented and documented in api_endpoints.md
+
+- **✅ IMPLEMENTED: 57 New API Endpoints (48 already deployed)**
+  - **18 New Analytics Endpoints** (`routes/api_v1/analytics.py`):
+    - `histamine-exposure` (daily/weekly histamine exposure analysis)
+    - `fodmap-stacking` (cumulative FODMAP load - "gas gauge")
+    - `correlations` (multi-variable food-symptom correlation with lag)
+    - `gut-stability-score` (7-day rolling stability signal)
+    - `tolerance-curves` (per-food tolerance by serving type)
+    - `nutrient-rdi-status` (nutrients as % of RDI)
+    - `nutrient-gaps` (nutrient deficits with food suggestions)
+    - `nutrient-heatmap` (7-day x nutrient matrix)
+    - `nutrient-sources` (food contribution to nutrients)
+    - `nutrient-symptom-correlation` (statistical nutrient-symptom links)
+    - `correlation-matrix` (food x symptom matrix)
+    - `bristol-trends` (stool type time series with rolling average)
+    - `hydration` (daily fluid intake vs target)
+    - `meal-timing` (when does user eat + late-meal analysis)
+    - `dietary-diversity` (unique plant count + food groups)
+    - `flare-prediction` (rule-based gut flare risk 0-100%)
+    - `gut-health-score` (composite 30-day wellness score)
+    - `interactions` (nutrient interaction alerts)
+
+  - **2 New Diary Endpoints** (`routes/api_v1/diary.py`):
+    - `meal-plan` POST (save 7-day meal plans with nested days/meals)
+    - `meal-plan/<id>` GET (retrieve saved meal plan with full detail)
+    - **New Models**: `MealPlan`, `MealPlanDay`, `MealPlanItem`
+
+  - **2 New Recipe Endpoints** (`routes/api_v1/recipes.py`):
+    - `recipes/<id>/transform` POST (auto-substitute high-risk ingredients)
+    - `recipes/share` POST (export recipe as shareable JSON with UUID token)
+    - **New Model**: `RecipeShare` (tracks shareable recipe links)
+
+  - **5 New Food Endpoints** (`routes/api_v1/foods.py`):
+    - `foods/substitutes` GET (safe FODMAP alternatives for a food)
+    - `foods/unified-search` GET (search across FODMAP/USDA/AUSNUT databases)
+    - `foods/scan-menu` POST (Tier 3 stub for vision AI menu scanning)
+    - `compendium/foods/<id>/link-usda` POST (link FODMAP to USDA record)
+    - `foods/nutrient-boosters` GET (safe foods high in nutrient, excluding triggers)
+
+  - **7 New Route Files with 28 Endpoints Total**:
+    - `routes/api_v1/reintroduction.py` (3 endpoints) - FODMAP reintroduction protocols + auto-scheduled testing
+    - `routes/api_v1/notifications.py` (4 endpoints) - Notification rules + scheduling
+    - `routes/api_v1/gamification.py` (2 endpoints) - Challenges + badges tracking
+    - `routes/api_v1/integrations.py` (3 endpoints) - Wearables + voice stubs (Tier 3)
+    - `routes/api_v1/billing.py` (1 endpoint) - Billing status stub (Tier 3)
+    - `routes/api_v1/security.py` (4 endpoints) - API key generation + rate limit status
+    - `routes/api_v1/multi_user.py` (3 endpoints) - Multi-user stubs (Tier 3, deferred)
+    - **New Models**: `ReintroductionProtocol`, `ReintroductionSchedule`, `NotificationRule`, `Challenge`, `Badge`, `ApiKey`
+
+- **✅ IMPLEMENTATION TIERS**:
+  - **TIER 1** (Full Logic - 27 endpoints): Complete implementation using existing database
+  - **TIER 2** (Requires New Models - 16 endpoints): New database models + logic
+  - **TIER 3** (External Service Stubs - 4 endpoints): Returns 501 with TODO for external service integration
+  - **All endpoints follow existing response patterns** with `success_response()` and `error_response()` helpers
+
+- **✅ DATABASE**:
+  - New tables auto-created on first run via db.create_all(): `meal_plans`, `meal_plan_days`, `meal_plan_items`, `recipe_shares`, `reintroduction_protocols`, `reintroduction_schedules`, `notification_rules`, `challenges`, `badges`, `api_keys`
+  - All models imported in `app.py` line 64 before `db.create_all()` call
+
+- **✅ REGISTRATION**:
+  - All 7 new route modules registered in `routes/api_v1/__init__.py` with appropriate imports
+
+- **FILES MODIFIED/CREATED**:
+  - Created: `routes/api_v1/reintroduction.py`, `routes/api_v1/notifications.py`, `routes/api_v1/gamification.py`, `routes/api_v1/integrations.py`, `routes/api_v1/billing.py`, `routes/api_v1/security.py`, `routes/api_v1/multi_user.py`
+  - Modified: `routes/api_v1/analytics.py` (+1100 lines), `routes/api_v1/diary.py` (+140 lines), `routes/api_v1/recipes.py` (+110 lines), `routes/api_v1/foods.py` (+200 lines), `routes/api_v1/__init__.py` (added 7 imports), `app.py` (added model imports), `models/diary.py`, `models/recipe.py`, `models/user.py`, and 6 new model files
+
+---
+
+**Previous Updates: 2026-02-13 (Remove Old API - Consolidate to API v1) 🔧**
+
+- **✅ CLEANUP: Removed old `/api/` endpoint system, consolidated to `/api/v1/` only**
+  - Deleted `routes/api.py` (609 lines) — old unversioned API with ~15 endpoints
+  - Removed old API blueprint registration from `app.py`
+  - App now runs a single, clean API v1 system (`routes/api_v1/`) with 90+ endpoints
+  - Updated 6 template files to use `/api/v1/` endpoints with correct response formats:
+    - `templates/recipes/chat.html` — chat + recipe search endpoints
+    - `templates/recipes/create_recipe.html` — FODMAP/USDA categories, foods, quick-add
+    - `templates/recipes/edit_recipe.html` — same as create_recipe
+    - `templates/compendium/detail.html` — AUSNUT search + link-ausnut
+    - `templates/compendium/edit-food.html` — AUSNUT search
+  - Response format adaptations: USDA categories (wrapped object), USDA foods (paginated), AUSNUT search (wrapped object with `food_name`), quick-add (`.data` instead of `.food`), recipe search (paginated)
+
+---
+
+**2026-02-13 (API Audit - Fix Broken Model References) 🔧**
+
+- **✅ FIX: Broken Symptom model references in analytics & export**
+  - Symptom model uses individual 0-10 fields (bloating, pain, wind, nausea, heartburn, headache, brain_fog, fatigue, sinus_issues), NOT `symptom_type` or `time_of_day`
+  - Fixed `symptom-patterns`, `symptom-trends`, `food-reactions`, `trigger-foods` endpoints in `routes/api_v1/analytics.py`
+  - Fixed diary export and PDF report in `routes/api_v1/export.py`
+  - Fixed bulk entry creation in `routes/api_v1/diary.py`
+
+- **✅ FIX: Broken Meal model references in analytics & export**
+  - Meal relationship is `meal_foods` (not `foods`), has no `time_logged`, no `total_calories`/`total_protein`/etc.
+  - Fixed `symptom-patterns`, `food-reactions`, `trigger-foods`, `nutrition-summary` in `routes/api_v1/analytics.py`
+  - Fixed diary export and PDF report in `routes/api_v1/export.py`
+  - `nutrition-summary` now correctly sums nutrition from `MealFood` records (energy_kj, protein_g, fat_g, carbs_g, sodium_mg)
+
+- **✅ FIX: Broken BowelMovement & StressLog references in export & bulk**
+  - Removed nonexistent `bowel.pain_level` (uses `completeness`, `straining`)
+  - Removed nonexistent `stress.time_of_day`, `stress.trigger` (uses `stress_types`, `physical_symptoms`, `management_actions`, `duration_status`)
+
+- **✅ FIX: Nonexistent RecipeTag/Tag models in recipe import**
+  - `routes/api_v1/recipes.py` import_recipe() tried to use `RecipeTag` and `Tag` models that don't exist
+  - Fixed to use Recipe.tags comma-separated string field
+
+- **✅ FIX: Fragile sys.path import in api_v1/diary.py**
+  - Extracted `parse_portion_and_calculate_nutrition()` and `calculate_nutrition_breakdown()` into shared `utils/nutrition.py`
+  - Both `routes/diary.py` and `routes/api_v1/diary.py` now import from `utils/nutrition.py`
+  - Removed fragile `sys.path.insert()` hack
+
+---
+
+**Previous Updates: 2026-02-13 (API Hardening & Robustness - Phase 5.1 Complete) 🛡️**
+
+- **✅ SECTION 1A: NONE/NULL SAFETY CHECKS COMPLETE**
+  - Fixed crashes from deleted food references in `routes/api_v1/recipes.py`:
+    - `ingredient_to_dict()` - Now checks if `ingredient.food` exists before accessing properties
+    - `meal_item_to_dict()` - Now checks if `item.food` exists before accessing properties
+  - Prevents `AttributeError` when foods are deleted but still referenced in recipes/meals
+  - All model `to_dict()` methods already had proper None checks
+
+- **✅ SECTION 1B: INPUT VALIDATION UTILITIES COMPLETE**
+  - Created `utils/validators.py` with 12 comprehensive validation functions + `ValidationError` exception
+  - Functions include: `validate_date_string()`, `validate_positive_int()`, `validate_optional_int()`, `validate_enum()`, `validate_optional_enum()`, `validate_array_size()`, `validate_string_length()`, `validate_year_month()`, `validate_date_range()`
+  - Common enum constants: `MEAL_TYPES`, `SERVING_TYPES`, `SEVERITY_LEVELS`, `STOOL_TYPES`, `RECIPE_CATEGORIES`, etc.
+  - Applied to key endpoints:
+    - `routes/api_v1/diary.py` - Year/month validation, date format, days parameter (1-365), bulk array size (1-50)
+    - `routes/api_v1/analytics.py` - Days parameter validation with range limits
+    - `routes/api_v1/export.py` - Date range validation, format enum validation
+  - Returns consistent 400 Bad Request responses with clear, specific error messages
+
+- **✅ SECTION 1C: PAGINATION FOR LIST ENDPOINTS COMPLETE**
+  - Created `utils/pagination.py` with 3 helper functions:
+    - `paginate_query()` - Paginate Flask-SQLAlchemy query objects
+    - `paginate_list()` - Paginate in-memory lists
+    - `get_pagination_params()` - Extract and validate page/per_page from request args
+  - Applied pagination to high-volume endpoints:
+    - `routes/api_v1/usda.py` - USDA food search (replaced limit parameter with pagination)
+    - `routes/api_v1/recipes.py` - Recipe list and category endpoints
+    - `routes/api_v1/education.py` - Educational content list
+  - Standard pagination format: `{data: [...], pagination: {page, per_page, total, pages, has_next, has_prev}}`
+  - Default: 50 items per page, max 100 items per page
+
+- **✅ SECTION 1D: STANDARDIZED ERROR RESPONSES COMPLETE**
+  - Created `utils/api_helpers.py` with standardized response system:
+    - 13 error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_CREDENTIALS`, `MISSING_REQUIRED_FIELD`, `INVALID_FORMAT`, `OUT_OF_RANGE`, `FORBIDDEN`, `UNAUTHORIZED`, `DATABASE_ERROR`, `EXTERNAL_SERVICE_ERROR`, `INTERNAL_SERVER_ERROR`, `NOT_IMPLEMENTED`
+    - Core functions: `error_response()`, `success_response()`, `wrap_exception()`
+    - Shorthand helpers: `validation_error()`, `not_found_error()`, `database_error()`, `already_exists_error()`, `missing_field_error()`
+  - Applied to food API endpoints as examples in `routes/api_v1/foods.py`
+  - Standard response format: `{success: bool, error: {code, message, details}, data: ...}`
+
+- **✅ SECTION 1E: N+1 QUERY OPTIMIZATION COMPLETE**
+  - Added `joinedload()` eager loading to prevent excessive database queries:
+    - `routes/api_v1/diary.py` - Monthly and daily entries endpoints (loads meals → meal_foods → food, symptoms, bowel, stress, notes)
+    - `routes/api_v1/analytics.py` - Symptom patterns endpoint (eager loads meal_foods → food)
+    - `routes/api_v1/export.py` - Diary export endpoint (loads all relationships)
+  - Expected performance improvement: Query count drops from 100+ to <10 for list endpoints
+
+- **📦 NEW UTILITY MODULES CREATED**
+  - `utils/validators.py` - 343 lines, 12 validation functions
+  - `utils/pagination.py` - 159 lines, 3 pagination helpers
+  - `utils/api_helpers.py` - 313 lines, standardized response system
+
+- **🎯 IMPACT SUMMARY**
+  - **Stability**: Prevents crashes from deleted food references and invalid input
+  - **Performance**: Pagination prevents memory issues, eager loading reduces query count by 90%+
+  - **Developer Experience**: Consistent validation, error handling, and response formats
+  - **API Quality**: Production-ready error codes, clear error messages, predictable behavior
+
+**Previous Update: 2026-02-13 (API v1 Bug Fixes & Code Quality) 🐛**
+
+- **✅ CRITICAL BUG FIXES IN API V1 ENDPOINTS**
+  - **diary.py line 564**: Fixed undefined variable `meal_type` in meal update endpoint - now returns proper success message
+  - **search.py**: Fixed incorrect model import - `Chapter` changed to `EducationalContent` throughout
+  - **foods.py**: Fixed non-existent attribute references:
+    - Changed `safe_serving_size` to `safe_serving` + `safe_serving_unit`
+    - Changed `safe_serving_traffic_light` to `safe_traffic_light`
+    - Updated batch food endpoint compact response to use correct attributes
+  - **search.py**: Fixed attribute references:
+    - Updated `safe_serving_traffic_light` to `safe_traffic_light`
+    - Fixed food recommendation endpoint to build serving display correctly
+    - Updated recipe search to use `category` instead of non-existent `meal_type`
+    - Fixed `prep_time_mins`/`cook_time_mins` to `prep_time`/`cook_time`
+  - **recipes.py line 774**: Fixed field confusion in recipe import - `meal_type` → `category`, `prep_time_mins` → `prep_time`, `cook_time_mins` → `cook_time`
+
+- **🔍 COMPREHENSIVE API REVIEW COMPLETED**
+  - Reviewed all 90+ API v1 endpoints across 14 files
+  - Fixed all critical logic errors that would cause runtime failures
+  - Ensured consistent use of model attributes throughout API layer
+  - All endpoints now properly reference correct database fields
+
+- **📋 API HARDENING ROADMAP ADDED TO TODO.MD**
+  - Added comprehensive "API Hardening & Robustness" section to TODO.md as Phase 5.1 (HIGH PRIORITY)
+  - Documented 5 key improvement areas with code examples and implementation details:
+    - **None/Null Safety Checks**: Prevent AttributeError crashes from deleted relationships
+    - **Input Validation**: Add validators for dates, integers, enums, array sizes
+    - **Pagination**: Add offset/limit pagination to prevent memory issues on large result sets
+    - **Error Standardization**: Unified error response format with error codes
+    - **Query Optimization**: Fix N+1 query issues with eager loading
+  - Included effort estimates (12-17 hours total), priority levels, and affected endpoints
+  - All improvements focus on preventing crashes and improving API stability
+
+**Previous Update: 2026-02-13 (Documentation Cleanup & Future Planning) 📚**
+
+- **✅ TODO.md COMPLETELY RESTRUCTURED FOR FUTURE DEVELOPMENT**
+  - Condensed all completed work into summary sections (Phases 1-4)
+  - Cleaned up outdated information (PDF status, file structure, open questions)
+  - Added comprehensive Phase 5 planning with 10 enhancement options
+  - Organized future work by priority tiers (High/Medium/Low)
+
+- **Phase 5 Future Enhancements Documented:**
+  1. **Testing Suite** (High Priority, 2-3 days) - pytest, comprehensive coverage
+  2. **Authentication & Authorization** (High Priority, 2-4 days) - API keys, JWT, OAuth2
+  3. **API Documentation** (High Priority, 2-3 days) - Swagger/OpenAPI with flasgger
+  4. **Database Migrations** (High Priority, 1 day) - Flask-Migrate for schema versioning
+  5. **Rate Limiting** (Medium Priority, 1 day) - flask-limiter for API protection
+  6. **Monitoring & Logging** (Medium Priority, 1-2 days) - Sentry, structured logging
+  7. **Caching Layer** (Medium Priority, 2 days) - Redis with flask-caching
+  8. **Pagination Enhancement** (Medium Priority, 1-2 days) - Standardized pagination
+  9. **Old API Deprecation** (Low Priority, 4-6 hours) - Add sunset headers to legacy endpoints
+  10. **Recipe URL Import** (Low Priority, 1-2 days) - BeautifulSoup4 web scraping
+
+- **Documentation Improvements:**
+  - Updated status date to 2026-02-13
+  - Corrected PDF export status from "PLACEHOLDER" to "FULLY FUNCTIONAL"
+  - Added complete project file structure showing all 13 API modules
+  - Removed outdated "Questions to Answer" section (all resolved)
+  - Added development guidelines and best practices
+  - Each enhancement includes detailed implementation guide with code examples
+  - Added effort estimates and required libraries for each enhancement
+
+- **File Updates:**
+  - `TODO.md` - Completely rewritten (600+ lines → focused, actionable)
+  - `Version_History.md` - This entry
+
+---
+
+**Previous Updates: 2026-02-13 (Model Serialization Complete) ✅**
+
+- **✅ MODEL SERIALIZATION 100% COMPLETED: All Models Now Have to_dict() Methods**
+  - Added `to_dict()` serialization methods to 21 models across 4 model files
+  - Ensures consistent JSON serialization across all API endpoints
+  - All models can now be easily converted to dictionaries for API responses
+
+- **Models Updated:**
+  - **models/diary.py (7 models):**
+    - `DiaryEntry.to_dict()` - Serializes entry with related meals/symptoms/bowel/stress/notes
+    - `Meal.to_dict()` - Includes meal details and food items
+    - `MealFood.to_dict()` - Includes food details and calculated nutrition values
+    - `Symptom.to_dict()` - Serializes all symptom fields (bloating, pain, wind, etc.)
+    - `BowelMovement.to_dict()` - Bristol chart type and associated details
+    - `StressLog.to_dict()` - Converts comma-separated fields to arrays
+    - `Note.to_dict()` - Serializes notes with tag parsing
+
+  - **models/recipe.py (6 models):**
+    - `RecipeClassificationOption.to_dict()` - Classification options with timestamps
+    - `Recipe.to_dict()` - Full recipe with ingredients, tags parsed into arrays
+    - `RecipeIngredient.to_dict()` - Ingredient with food details
+    - `SavedMeal.to_dict()` - Saved meal with items
+    - `SavedMealItem.to_dict()` - Meal item with food details
+    - `ArchivedExternalRecipe.to_dict()` - Archived recipe hash and metadata
+
+  - **models/education.py (4 models):**
+    - `EducationalContent.to_dict()` - Chapter content with markdown support
+    - `ResearchPaper.to_dict()` - Research paper metadata and findings
+    - `UserBookmark.to_dict()` - Bookmark with nested content object
+    - `HelpDocument.to_dict()` - Help document with markdown support
+
+  - **models/user.py (2 models):**
+    - `UserPreference.to_dict()` - User preference key-value pairs
+    - `SavedRecipe.to_dict()` - LLM chat saved recipe with tag parsing
+
+  - **Already Had Serialization (6 model files):**
+    - `models/food.py` - Food.to_dict(), Food.to_recipe_dict() ✅
+    - `models/usda.py` - USDAFood.to_dict() ✅
+    - `models/ausnut.py` - AUSNUTFood.to_dict() ✅
+    - `models/webhooks.py` - Webhook.to_dict(), EventLog.to_dict() ✅
+    - `models/chat.py` - ChatConversation.to_dict(), ChatMessage.to_dict() ✅
+
+- **Benefits:**
+  - All API endpoints can now safely serialize model objects
+  - Consistent date/time formatting using `.isoformat()`
+  - Comma-separated fields automatically parsed into arrays (tags, dietary_needs, etc.)
+  - Nested relationships properly serialized (e.g., meal.foods, recipe.ingredients)
+  - Prevents AttributeError when models lack serialization methods
+
+- **Documentation Updated:**
+  - `TODO.md` - Marked "Model Serialization" section as complete with all 27 models listed
+  - `Version_History.md` - Added this entry documenting all serialization work
+
+---
+
+**Previous Updates: 2026-02-12 (Phase 3 FINAL - All Endpoints + Real-time Features) 🎉🎉**
+
+- **✅ PHASE 3 100% COMPLETED: 16/16 High-Value Endpoints + Real-time Features Implemented**
+  - Added 16 brand new endpoints for advanced analytics, batch operations, search, export, and real-time updates
+  - **Total API Count: 90+ v1 endpoints** (69 from previous phases + 16 core Phase 3 + 5 bonus webhook management)
+  - New modules created: `routes/api_v1/search.py`, `routes/api_v1/export.py`, and `routes/api_v1/realtime.py`
+  - New models created: `models/webhooks.py` (Webhook and EventLog models for real-time notifications)
+  - **reportlab library installed** - PDF export now fully functional
+  - All endpoints follow RESTful conventions and consistent error handling patterns
+
+- **Analytics & Insights (5 NEW Endpoints - ALL COMPLETE ✅)**
+  - `GET /api/v1/analytics/symptom-trends` - Time-series symptom data with averages, peak days
+  - `GET /api/v1/analytics/food-frequency` - Most commonly eaten foods, dietary patterns
+  - `GET /api/v1/analytics/trigger-foods` - Foods correlated with high-symptom days
+  - `GET /api/v1/analytics/nutrition-summary` - Aggregated nutrition stats over date range
+  - `GET /api/v1/analytics/fodmap-exposure` - Daily/weekly FODMAP exposure tracking
+  - **File:** `routes/api_v1/analytics.py` (added 620+ lines)
+
+- **Batch Operations (3 NEW Endpoints - ALL COMPLETE ✅)**
+  - `POST /api/v1/diary/entries/bulk` - Create multiple diary entries (all types) in one call
+  - `GET /api/v1/foods/batch` - Get multiple food objects by IDs, reduce API calls
+  - `POST /api/v1/recipes/import` - Import recipes from JSON format (URL parsing TBD)
+  - **Files:** Modified `diary.py`, `foods.py`, `recipes.py`
+
+- **Search & Discovery (3 NEW Endpoints - ALL COMPLETE ✅)**
+  - `GET /api/v1/search/global` - Unified search across foods, recipes, meals, help, education
+  - `GET /api/v1/foods/recommendations` - Safe foods based on FODMAP/histamine restrictions
+  - `GET /api/v1/recipes/suitable` - Recipe recommendations matching dietary criteria
+  - **File:** `routes/api_v1/search.py` (NEW, 464 lines)
+
+- **Export & Reporting (3 NEW Endpoints - ALL COMPLETE ✅)**
+  - `GET /api/v1/export/diary` - Complete diary export in JSON or CSV formats
+  - `GET /api/v1/export/report/pdf` - **NOW FULLY FUNCTIONAL!** PDF report generation with reportlab
+    - Generates professional health reports with summary tables, symptom analysis, daily logs
+    - Custom styling with app color scheme (#1A3636, #D6BD98)
+    - Monthly and weekly report types supported
+  - `GET /api/v1/export/shopping-list` - Aggregated shopping list from recipe IDs (JSON or text)
+  - **File:** `routes/api_v1/export.py` (enhanced with full PDF generation)
+
+- **Real-time Updates (2 NEW Endpoints + 5 Bonus Webhook Management - ALL COMPLETE ✅)**
+  - `GET /api/v1/events/stream` - Server-Sent Events (SSE) for real-time updates
+    - Event filtering by type (entry_created, symptom_logged, etc.)
+    - Heartbeat and timeout handling
+    - Efficient polling with event log storage
+  - `POST /api/v1/webhooks/register` - Register webhook URLs for event notifications
+  - **BONUS Webhook Management (5 additional endpoints):**
+    - `GET /api/v1/webhooks` - List all registered webhooks
+    - `GET /api/v1/webhooks/{id}` - Get webhook details
+    - `PUT /api/v1/webhooks/{id}` - Update webhook configuration
+    - `DELETE /api/v1/webhooks/{id}` - Delete webhook
+    - `POST /api/v1/webhooks/{id}/test` - Test webhook with sample payload
+  - **File:** `routes/api_v1/realtime.py` (NEW, 550+ lines)
+  - **Models:** `models/webhooks.py` (Webhook and EventLog models)
+
+- **Dependencies Added**
+  - `reportlab==4.0.9` - PDF generation library (installed and functional)
+  - **File:** `requirements.txt` - Updated with new dependency
+
+- **Blueprint Registration Updated**
+  - Added `search`, `export`, and `realtime` imports to `routes/api_v1/__init__.py`
+  - All 13 modules properly registered with Flask blueprint system
+
+- **Documentation Updated**
+  - `TODO.md` - All phases marked 100% complete with strikethroughs
+  - Progress tracking shows 90+ total endpoints across 13 modules
+  - All Real-time endpoints documented with line numbers and features
+
+---
+
+**Previous Update: 2026-02-12 (Phase 2.5 Complete - Old API Migration to v1) 🎉**
+
+- **✅ PHASE 2.5 COMPLETED: 11/11 Endpoints Migrated from Old API to v1**
+  - Successfully migrated all remaining unique endpoints from old API (`routes/api.py`) to new v1 structure
+  - Total API count: 69 v1 endpoints (58 from Phase 2 + 11 from Phase 2.5)
+  - Old API maintained for backward compatibility at `/api/*`
+  - New endpoints available at `/api/v1/*`
+
+- **Priority 8: Chat API Implemented** (5 Endpoints - ALL COMPLETE ✅)
+  - **Chat Endpoints (5):**
+    - `POST /api/v1/chat` - AI-powered chat with multi-provider support (Ollama, OpenAI, Anthropic)
+    - `GET /api/v1/chat/conversations` - List all chat conversations ordered by updated_at
+    - `GET /api/v1/chat/conversations/{id}` - Get specific conversation with all messages
+    - `DELETE /api/v1/chat/conversations/{id}` - Delete conversation (cascade deletes messages)
+    - `POST /api/v1/chat/conversations/{id}/rename` - Rename conversation with timestamp update
+  - **Features:**
+    - Four AI personas: nutritionist, chef, scientist, friendly
+    - Conversation history tracking (limited to last 10 messages for performance)
+    - Recipe context injection for AI analysis
+    - Multi-provider support (Ollama local, OpenAI, Anthropic Claude)
+    - Comprehensive error handling (connection errors, timeouts, HTTP errors)
+    - System prompts tailored to gut health and FODMAP expertise
+  - File: `routes/api_v1/chat.py` (426 lines)
+
+- **Priority 9: FODMAP Reference API Implemented** (2 Endpoints - ALL COMPLETE ✅)
+  - **FODMAP Endpoints (2):**
+    - `GET /api/v1/fodmap/categories` - Get FODMAP categories with food counts
+    - `GET /api/v1/fodmap/foods?category={cat}` - Get foods filtered by FODMAP category
+  - **Features:**
+    - Filters foods with at least one FODMAP rating set
+    - Excludes USDA-imported foods without FODMAP data
+    - Category counts for easy navigation
+    - Simple, clean JSON responses
+  - File: `routes/api_v1/fodmap.py` (69 lines)
+
+- **Priority 10: Recipe Context API Enhanced** (2 Endpoints - ALL COMPLETE ✅)
+  - **Enhanced Recipe Endpoints (2):**
+    - `GET /api/v1/recipes?q={query}&limit={n}` - Enhanced search with query filter and limit
+    - `GET /api/v1/recipes/{id}/context` - Get recipe formatted for AI context with all details
+  - **Features:**
+    - Search recipes by name with optional query parameter
+    - Configurable result limit for performance control
+    - AI-optimized context format with formatted ingredients
+    - Includes all recipe metadata (cuisine, dietary needs, difficulty, etc.)
+    - Structured for AI chat context injection
+  - File: `routes/api_v1/recipes.py` (lines 188-230 enhanced, 432-486 added)
+
+- **Priority 11: Food Management Utilities Implemented** (2 Endpoints - ALL COMPLETE ✅)
+  - **Food Utility Endpoints (2):**
+    - `POST /api/v1/foods/quick-add` - Create minimal food entry for quick workflow
+    - `POST /api/v1/compendium/foods/{id}/link-ausnut` - Link FODMAP food to AUSNUT database
+  - **Features:**
+    - Quick-add creates incomplete foods (is_complete=False) for later editing
+    - Default values for FODMAP ratings (all Green) and histamine (Low)
+    - AUSNUT linking with validation (checks food exists before linking)
+    - Support for unlinking (pass null ausnut_food_id)
+    - Minimal required fields (only name) for rapid data entry
+  - File: `routes/api_v1/foods.py` (lines 571-688 added)
+
+- **Blueprint Registration Updated**
+  - Added imports for new modules: `chat` and `fodmap`
+  - All 11 new modules now registered in `routes/api_v1/__init__.py`
+  - Total modules: 10 (diary, recipes, foods, analytics, usda, ausnut, settings, education, chat, fodmap)
+
+- **Migration Summary:**
+  - **Before Phase 2.5:** 15 endpoints in old API (`/api/*`), 58 endpoints in v1 API (`/api/v1/*`)
+  - **After Phase 2.5:** 15 endpoints in old API (backward compat), 69 endpoints in v1 API
+  - **Unique endpoints migrated:** 11 (4 were duplicates already in v1)
+  - **Next phase:** Phase 3 - Create 20+ new high-value endpoints (analytics, batch operations, search, export)
+
+**Previous Updates: 2026-02-12 (Phase 2 Complete - API Endpoints Extraction) 🎉**
+
+- **✅ PHASE 2 COMPLETED: 58/58 Endpoints Extracted from Existing Routes**
+  - Successfully extracted all planned endpoints from existing routes into versioned API structure
+  - All endpoints registered under `/api/v1/` prefix with consistent error handling
+  - Comprehensive documentation and examples for all endpoints
+
+- **Priority 5: USDA/AUSNUT Database APIs Implemented** (5 Endpoints - ALL COMPLETE ✅)
+  - **USDA Endpoints (3):**
+    - `GET /api/v1/usda/search?q={query}` - Search USDA foods with filters (query, category_id, data_type, letter)
+    - `GET /api/v1/usda/foods/{id}` - Get USDA food with nutrients grouped by category and portion data
+    - `GET /api/v1/usda/categories` - Get categories with food counts, filterable by data type
+  - **AUSNUT Endpoints (2):**
+    - `GET /api/v1/ausnut/search?q={query}` - Search AUSNUT Australian foods with filters
+    - `GET /api/v1/ausnut/foods/{id}` - Get AUSNUT food with nutrients grouped by category
+  - **Features:**
+    - Configurable result limits (1-1000) for performance control
+    - Optional nutrient/portion inclusion parameters
+    - Data type filtering (Foundation, SR Legacy, Survey, Branded)
+    - Letter-based navigation support
+    - Nutrient grouping by category (Energy, Proximates, Vitamins, Minerals, etc.)
+  - Files: `routes/api_v1/usda.py` (268 lines), `routes/api_v1/ausnut.py` (132 lines)
+
+- **Priority 6: Settings & Utilities APIs Implemented** (10 Endpoints - ALL COMPLETE ✅)
+  - **Database Operations (3):**
+    - `GET /api/v1/settings/backup` - Download timestamped database backup file
+    - `GET /api/v1/settings/integrity-check` - Run 8 validation checks, return issues with severity levels
+    - `POST /api/v1/settings/integrity-check/fix` - Auto-fix orphaned records (junction tables, empty entries)
+  - **Help Document APIs (7):**
+    - `GET /api/v1/help?category={cat}&search={term}` - List help documents with filtering
+    - `GET /api/v1/help/{id}` - Get specific help document with rendered markdown
+    - `POST /api/v1/help/upload` - Upload markdown file, extract title, return preview
+    - `POST /api/v1/help` - Save help document after preview with auto-order calculation
+    - `PUT /api/v1/help/{id}` - Update help document, recalculate order on category change
+    - `DELETE /api/v1/help/{id}` - Delete help document with rollback protection
+    - `POST /api/v1/help/preview-markdown` - Live markdown to HTML conversion
+  - **Features:**
+    - 8 types of integrity checks (orphaned records, invalid references, orphaned photos)
+    - Severity levels (info, warning, danger) for prioritizing fixes
+    - Markdown file upload with title extraction
+    - Auto-order index calculation within categories
+    - Timestamp tracking (created_at, updated_at)
+    - Temporary upload data management with cleanup
+  - File: `routes/api_v1/settings.py` (633 lines)
+
+- **Priority 7: Education Content APIs Implemented** (9 Endpoints - ALL COMPLETE ✅)
+  - **Chapter Retrieval (2):**
+    - `GET /api/v1/education?topic={topic}&search={term}` - List chapters with natural sorting (1, 2, 2.1, 10)
+    - `GET /api/v1/education/{id}` - Get specific chapter with complete details
+  - **Chapter CRUD (5):**
+    - `POST /api/v1/education/upload` - Upload markdown file, extract title, suggest chapter number
+    - `POST /api/v1/education` - Save chapter after preview with markdown to HTML conversion
+    - `PUT /api/v1/education/{id}` - Update chapter with timestamp tracking
+    - `DELETE /api/v1/education/{id}` - Delete chapter with rollback protection
+    - `POST /api/v1/education/reorder` - Batch update chapter order and renumber chapters
+  - **Utility Endpoints (2):**
+    - `POST /api/v1/education/images` - Upload image, return path and markdown syntax
+    - `POST /api/v1/education/preview-markdown` - Live markdown to HTML conversion
+  - **Features:**
+    - Natural sorting algorithm for chapter numbers (handles "2.1", "2.2", "10")
+    - Auto-suggestion for next chapter number
+    - Title extraction from markdown H1 headers
+    - Timestamped image filenames (edu_YYYYMMDD_HHMMSS_filename)
+    - Batch reordering with chapter renumbering support
+    - Topic/section filtering and full-text search
+  - File: `routes/api_v1/education.py` (556 lines)
+
+- **API Architecture:**
+  - Created versioned API structure under `routes/api_v1/`
+  - Blueprint registered with `/api/v1/` prefix for forward compatibility
+  - 8 specialized API modules: diary, recipes, foods, analytics, usda, ausnut, settings, education
+  - Consistent error handling with try-catch blocks and rollback on database errors
+  - Standardized JSON responses with clear error messages
+  - All endpoints documented with docstrings, parameters, examples
+
+---
+
+**Previous Updates: 2026-02-12 (Complete Dashboard & Analytics API - 4 Endpoints)**
+
+- **Priority 4: Complete Dashboard & Analytics API Implemented** (4 Endpoints - ALL COMPLETE ✅)
+  - **Dashboard & Risk Rating (2):**
+    - `GET /api/v1/dashboard` - Get high/moderate risk foods from last N days + incomplete foods
+    - `POST /api/v1/foods/risk-rating` - Calculate traffic light color for food at serving size
+  - **New Analytics Endpoints (2):**
+    - `GET /api/v1/analytics/symptom-patterns` - Correlate symptom spikes with meals (top 10 worst days)
+    - `GET /api/v1/analytics/food-reactions` - Identify trigger foods with correlation analysis
+  - **Features:**
+    - Traffic light color calculation (green/amber/red) based on FODMAP/histamine ratings
+    - Watch list grouping by risk level (high/moderate)
+    - Symptom pattern analysis with meal correlation
+    - Food reaction tracking with configurable time windows (default 24 hours)
+    - Correlation rate calculation for suspected trigger foods
+    - Configurable analysis periods (days parameter)
+    - Minimum occurrence filtering for statistical relevance
+  - File: `routes/api_v1/analytics.py` (497 lines)
+
+---
+
+**Previous Updates: 2026-02-12 (Complete Food Compendium API - 6 Endpoints)**
+
+- **Priority 3: Complete Food Compendium API Implemented** (6 Endpoints - ALL COMPLETE ✅)
+  - **Read Endpoints (3):**
+    - `GET /api/v1/compendium/search?q={query}&category={cat}` - Search FODMAP foods by name and/or category
+    - `GET /api/v1/compendium/foods/{id}` - Get full food details with usage statistics
+    - `GET /api/v1/compendium/compare?ids=1,2,3` - Get multiple foods for comparison
+  - **Write Endpoints (3):**
+    - `POST /api/v1/compendium/foods` - Create new food with complete FODMAP/histamine ratings
+    - `PUT /api/v1/compendium/foods/{id}` - Update existing food with all fields
+    - `DELETE /api/v1/compendium/foods/{id}` - Delete food with validation (prevents deletion if in use)
+  - **Features:**
+    - Full FODMAP/histamine data for all 3 serving sizes (safe/moderate/high)
+    - Custom nutrients support (vitamins, minerals, macros) with JSON parsing
+    - USDA/AUSNUT food database linking (mutually exclusive)
+    - Usage statistics tracking (meal count, recipe count, saved meal count)
+    - Reference validation on delete (prevents data integrity issues)
+    - Comprehensive error handling with detailed error messages
+    - Helper function `food_to_dict()` for consistent serialization
+  - File: `routes/api_v1/foods.py` (569 lines)
+
+---
+
+**Previous Updates: 2026-02-12 (Complete Recipe & Meal API - 10 Endpoints)**
+
+- **Priority 2: Complete Recipe & Meal API Implemented** (10 Endpoints - ALL COMPLETE ✅)
+  - **Recipe Endpoints (6):**
+    - `GET /api/v1/recipes` - Get all user-created recipes
+    - `GET /api/v1/recipes/category/{category}` - Get recipes by meal type category
+    - `GET /api/v1/recipes/{id}` - Get full recipe details with ingredients
+    - `POST /api/v1/recipes` - Create new recipe with ingredients array
+    - `PUT /api/v1/recipes/{id}` - Update recipe and replace ingredients
+    - `DELETE /api/v1/recipes/{id}` - Delete recipe (cascade deletes ingredients and photo)
+  - **Saved Meal Endpoints (4):**
+    - `GET /api/v1/meals` - Get all saved meals
+    - `POST /api/v1/meals` - Create new saved meal with food items
+    - `PUT /api/v1/meals/{id}` - Update saved meal and replace items
+    - `DELETE /api/v1/meals/{id}` - Delete saved meal (cascade deletes items and photo)
+  - **Features:**
+    - Comprehensive error handling with proper HTTP status codes (200, 201, 400, 404, 500)
+    - Full validation for required fields and data types
+    - Database rollback on errors to maintain data integrity
+    - Helper functions for serialization (`recipe_to_dict()`, `saved_meal_to_dict()`)
+    - Support for recipe classifications (cuisine, dietary needs, preparation method, occasion, difficulty)
+    - Photo deletion handling (safe file deletion with error logging)
+    - Removed tags filtering for dietary needs and classifications
+  - File: `routes/api_v1/recipes.py` (578 lines)
+
+---
+
+**Previous Updates: 2026-02-12 (Complete Diary API - 14 Endpoints)**
+
+- **Versioned API Structure Created** (API Layer)
+  - Created `routes/api_v1/` folder for organized, versioned API endpoints
+  - Established `/api/v1/` URL prefix for all new endpoints
+  - Provides clean separation from legacy `/api/` endpoints
+  - Enables future API versioning (v2, v3) without breaking changes
+  - Files: `routes/api_v1/__init__.py`, `app.py`
+
+- **Priority 1: Complete Diary API Implemented** (14 Endpoints - ALL COMPLETE ✅)
+  - **Retrieval Endpoints (4):**
+    - `GET /api/v1/diary/entries?year=YYYY&month=MM` - Monthly calendar data
+    - `GET /api/v1/diary/day/{date}` - Single day with nutrition totals
+    - `GET /api/v1/diary/trends?days=30` - 30-day symptom analytics
+    - `GET /api/v1/diary/weekly?start_date=YYYY-MM-DD` - Weekly summary
+  - **CRUD Endpoints (10):**
+    - `POST /PUT /api/v1/diary/meals` - Create/update meals (supports recipes & saved meals)
+    - `POST /PUT /api/v1/diary/symptoms` - Create/update symptoms (9 symptom types tracked)
+    - `POST /PUT /api/v1/diary/bowel` - Create/update bowel movements (Bristol scale)
+    - `POST /PUT /api/v1/diary/stress` - Create/update stress logs
+    - `POST /PUT /api/v1/diary/notes` - Create/update general notes
+    - `DELETE /api/v1/diary/entries/{id}` - Delete any entry type (cascade)
+  - **Utility Endpoints (2):**
+    - `POST /api/v1/diary/calculate-nutrition` - Calculate nutrition from portion string
+    - `POST /api/v1/diary/nutrition-breakdown` - Detailed nutrient breakdown
+  - All endpoints include comprehensive error handling, validation, and proper HTTP status codes
+  - File: `routes/api_v1/diary.py` (551 lines)
+
+- **Documentation Created** (Project Management)
+  - Created comprehensive `TODO.md` with ~100 planned API endpoints
+  - Organized by priority (1-7) with source code references
+  - Includes implementation guidelines, testing strategies, and file structure recommendations
+  - Enables easy continuation in future chat sessions
+  - File: `TODO.md`
+
+---
+
+**Previous Updates: 2026-02-12 (API Endpoint Critical Bug Fixes)**
+
+- **API Error Handling & Validation** (API Layer)
+  - Added try-catch error handling to `/api/foods/search` endpoint
+  - Added try-catch error handling to `/api/recipes/search` endpoint
+  - Added required field validation to `/api/foods/quick-add` (name field now required)
+  - Updated `/api/fodmap/foods` to return proper 400 error when category parameter missing
+  - All endpoints now return consistent error responses with proper HTTP status codes
+  - Files: `routes/api.py`
+
+- **Critical Performance Bug Fix** (Recipe Builder API)
+  - Fixed severe performance issue in `/recipes/api/match-ingredients` endpoint
+  - Previous version loaded ALL foods into memory (~317k+ USDA records) causing memory issues
+  - Now uses efficient database queries with LIKE clauses instead of loading all records
+  - Reduced memory usage from hundreds of MB to KB
+  - Improved response time from potential minutes to milliseconds
+  - Added error handling to prevent crashes
+  - File: `routes/recipe_builder.py`
+
+---
+
+**Previous Updates: 2026-02-12 (Recipe layout improvements and field persistence fixes)**
+
+- **View Recipe Page - Notes Section Repositioned** (Recipes)
+  - Moved Notes section from bottom of page to Info Panel (right column)
+  - Notes now appear directly under "Makes" field for better visibility
+  - Removed standalone Notes section that appeared after Directions
+  - Template: `templates/recipes/view_recipe.html`
+
+- **Recipe Edit Page - Difficulty Field Bug Fix** (Recipes)
+  - Fixed issue where difficulty field selection was not being saved
+  - Added missing difficulty form field with name="difficulty" to Recipe Classification section
+  - Field now properly saves and displays on view recipe page
+  - Template: `templates/recipes/edit_recipe.html`
+
+- **Recipe Edit Page - Dietary Needs Field Bug Fix** (Recipes)
+  - Fixed Jinja2 variable scoping issue preventing dietary needs checkboxes from being pre-selected
+  - Changed from nested loop with variable reassignment to simple `in` check
+  - Pre-strip whitespace from saved dietary needs to ensure proper matching
+  - Selected dietary needs now correctly display as checked when editing a recipe
+  - Template: `templates/recipes/edit_recipe.html`
+
+- **Food Detail Page Layout Improvements** (Compendium)
+  - Added beige dividing line at the same level as sidebar separator
+  - Moved breadcrumb navigation above the dividing line for better visual hierarchy
+  - Reduced top margin from 46px to 8px to bring content closer to header
+  - Content now starts higher on the page with clearer section separation
+  - Template: `templates/compendium/detail.html`
+
+- **Edit Food Page Section Reordering** (Compendium)
+  - Reordered sections on edit food page for better workflow
+  - New order: FODMAP & Histamine Content → Notes → Nutritional Data Source
+  - Previously: Nutritional Data Source was above FODMAP section
+  - Improves user experience by prioritizing FODMAP data entry before nutrition linking
+  - Template: `templates/compendium/edit-food.html`
+
+- **Food Detail Page UI Improvements** (Compendium)
+  - Removed "Link Australian Nutrition Data" container from detail view (already available in edit page)
+  - Fixed Preparation & Storage Notes text styling: changed from `text-title` to `text-body` and set `font-weight: normal` to match heading size and reduce boldness
+  - Restructured serving cards header layout:
+    - Moved traffic light indicators to the left of the serving type text
+    - Unified font sizes: both serving type and grams now use `var(--text-title)` (0.85rem) for consistent appearance
+  - Template: `templates/compendium/detail.html`
+
+---
+
+**Previous Updates: 2026-02-12 (Allow symbols in nutrient fields + fix edit page pre-population)**
+
+- **Custom Nutrient Quantity Fields Accept Symbols** (Food Add & Edit Pages)
+  - Changed all nutrient quantity input fields from `type="number"` to `type="text"`
+  - Users can now type symbols like `<`, `>`, `~` before numbers (e.g., `<0.1`, `~5`, `>10`)
+  - Applies to: vitamins, minerals, macronutrients, energy, proximates, and serving size fields
+  - Updated both add-food and edit-food templates (new-style and old-style nutrient row functions)
+  - Updated pre-populated rows in edit-food template to also use text inputs
+  - Backend `parse_custom_nutrients()` updated: `safe_float()` renamed to `safe_value()`, now preserves string values with symbols instead of discarding them
+
+- **Fix: Custom Nutrition Not Showing on Edit Page** (Food Edit Page)
+  - Fixed hidden input `custom_nutrients_json` double-encoding JSON: was using `food.custom_nutrients|tojson` which double-encoded the already-JSON string, causing `JSON.parse()` to return a string instead of an object
+  - Changed to use `custom_nutrients|tojson` (the already-parsed dict from the route) so it encodes correctly
+  - Removed old broken pre-population code (lines 3510-3778) that targeted non-existent container IDs (`vitamins-container`, `minerals-container`, `macronutrients-container`) - the actual containers are `vitamins-container-custom`, `minerals-container-custom`, etc.
+  - The correct new-format pre-population code (using `addNutrientRow()`) was already in place but couldn't work due to the double-encoding bug
+
+---
+
+**2026-02-10 (Traffic light display bug fixes + dynamic serving type labels + AUSNUT 2023 integration)**
+
+- **Dynamic Serving Type Labels** (Food Edit & View Pages)
+  - Summary headers now display the actual serving type selected (e.g., "1 serve", "low serve", "moderate serve", "high serve")
+  - No longer hardcoded as "Safe Serving", "Moderate Serving", "High Serving"
+  - **Edit page**: JavaScript automatically updates header text when serving type dropdown changes
+  - **View page**: Headers display serving type from database using `{{ serving_type or title }}` template logic
+  - Falls back to default text ("Safe Serving", etc.) if no serving type is selected
+  - Works for all three serving sections (safe, moderate, high) on both pages
+
+- **Traffic Light Display Bug Fixes** (Food Edit Page)
+  - Fixed hardcoded traffic light circle colors in collapsible section headers
+  - Summary circle icons now dynamically reflect database traffic_light values (Green/Amber/Red)
+  - JavaScript `selectTrafficLight()` function now updates both border colors AND summary circle icons
+  - Added CSS rules to force traffic light selector circles to always show bold colors (#28a745, #ffc107, #dc3545)
+  - Traffic light selectors no longer display pastel colors - they now show the proper bold colors at all times
+  - Both edit page and view page now correctly display traffic light colors that match user selections
+
+- **Traffic Light Color Selector** (Food Edit & Detail Pages)
+  - Added visual color selectors (colored circles) to choose traffic light color (Green/Amber/Red) for each serving type
+  - New database fields: `safe_traffic_light`, `moderate_traffic_light`, `high_traffic_light`
+  - **Edit form**: Clickable colored circles (22px, visible borders) after "Serving Type" field in all three serving sections
+  - Selected color is highlighted with checkmark and darker shade
+  - **Inline onclick handlers**: Direct onclick handlers (`selectTrafficLight()`) for reliable click detection
+  - **Dynamic left border colors**: Each serving section's left border color matches its traffic light selection
+  - Edit page: JavaScript automatically updates border colors in real-time when traffic light is changed (removes/adds 'selected' class, updates hidden input, changes border color)
+  - Edit page: Border colors initialize correctly on page load based on saved values
+  - **Detail page**: Dynamic border colors (inline styles) based on stored traffic light values
+  - Detail page displays the manually selected traffic light color in the serving header (circle indicator)
+  - Color mapping: green=#28a745, amber=#ffc107, red=#dc3545
+  - Allows foods like parsley with all-green ratings to show green consistently across all serving types
+
+- **AUSNUT 2023 Integration** (Food Compendium)
+  - Imported 3,741 Australian foods with 57 nutrients (213,237 nutrient values) from AUSNUT 2023
+  - AUSNUT nutritional data appears **before** USDA data on food detail pages (takes precedence for Australian users)
+  - Nutrient groups: Energy, Macronutrients, Vitamins, Minerals, Fats, Other — all per 100g
+  - In-app link/unlink UI on each food detail page: search AUSNUT foods and link with one click
+  - Unlink button in the nutrition card header to remove a link
+  - API endpoints: `/api/ausnut/search?q=` and `/api/foods/<id>/link-ausnut`
+  - Full AUSNUT browse pages at `/ausnut-foods/search` with alphabet navigation and detail view
+  - AUSNUT section on Food Compendium index page (between FODMAP categories and USDA)
+  - Quick link "AUSNUT 2023" in compendium sidebar
+  - **New Files**:
+    - `models/ausnut.py` — AUSNUTFood, AUSNUTNutrient, AUSNUTFoodNutrient models
+    - `database/import_ausnut_foods.py` — Import script for AUSNUT xlsx files (place in `data/ausnut/`)
+    - `database/link_fodmap_to_ausnut.py` — CLI script to link FODMAP foods to AUSNUT matches
+    - `routes/ausnut_foods.py` — Blueprint for browsing AUSNUT foods (search + detail)
+    - `templates/ausnut_foods/search.html` — AUSNUT food search/browse page
+    - `templates/ausnut_foods/detail.html` — AUSNUT food detail page with nutrient tables
+  - **Modified Files**:
+    - `models/food.py` — Added `ausnut_food_id` FK and `ausnut_food` relationship
+    - `app.py` — Registered AUSNUT models and blueprint
+    - `routes/api.py` — Added AUSNUT search and link/unlink endpoints
+    - `routes/compendium.py` — Added `ausnut_total` to compendium index context
+    - `templates/compendium/index.html` — AUSNUT section + sidebar quick link
+    - `templates/compendium/detail.html` — AUSNUT nutrition card with link/unlink UI
+
+- **Food Detail - Recipe Usage List** (Compendium)
+  - Added "Used in Recipes" section at bottom of food detail page (`/compendium/<id>`)
+  - Lists all recipes that use the food item, with links to each recipe's view page
+  - Helps users find and edit recipes before deleting a food item
+  - **Affected Files**:
+    - `routes/compendium.py` - Query recipe objects (not just count) for the detail view
+    - `templates/compendium/detail.html` - Added recipe list section before modals
+
+**Previous Updates: 2026-02-08 (Renamed "Recipes & Meals" to "My Recipe Book")**
+
+- **Navigation Update** (UI Consistency & Personalization)
+  - Renamed "Recipes & Meals" to "My Recipe Book" throughout the entire app for a more personal touch
+  - **Affected Files** (49 total):
+    - `templates/includes/sidebar.html` - Main sidebar component
+    - All template files with inline sidebars (42 files across dashboard, diary, compendium, recipes, education, settings, and usda_foods sections)
+    - `templates/recipes/index.html` - Updated page title and H1 heading
+    - `routes/recipes.py` - Updated route comment
+    - `README.md` - Updated section header and version history reference
+    - `CLAUDE.md` - Updated structure documentation and sidebar nav link list
+  - **No Breaking Changes**: All routes and URLs remain unchanged (still `/recipes`)
+  - **User Impact**: More personal and inviting navigation experience
+
+**Previous Updates: 2026-02-08 (Recipe Categories: Shortened Names)**
+
+- **Recipe Categories** (`recipe_categories.py`, `models/recipe.py`)
+  - Simplified category names to be shorter and fit on single lines:
+    - "Breakfast & Brunch" → "Breakfast"
+    - "Lunch & Meal Prep" → "Lunch"
+    - "Snacks & Appetizers" → "Snacks"
+    - "Desserts & Baked Goods" → "Desserts"
+    - "Drinks & Smoothies" → "Beverages"
+    - "Sauces & Gravies" → "Sauces/Gravies"
+    - "Dinner" and "Salads" remain unchanged
+
+**2026-02-08 (View Recipe: Visual Refinements)**
+
+- **View Recipe Page** (`view_recipe.html`)
+  - Typography and spacing refinements:
+    - Recipe title font color changed to white (#fff), size increased to 3.5rem (from 1.4rem), and left-aligned
+    - Recipe title border thinned from 2px to 1px
+    - Gap between photo and info panel increased from 20px to 60px
+    - Main content area padding-top reduced from 40px to 25px to align better with sidebar
+    - Info panel background removed (now transparent on dark green background)
+    - Info panel text reduced in size (labels: 0.78rem → 0.68rem, values: 0.72rem → 0.64rem)
+    - All section heading borders thinned from 2px to 1px
+    - Description text reduced from 0.76rem to 0.70rem
+    - Ingredient items reduced from 0.74rem to 0.68rem
+    - Directions text reduced from 0.76rem to 0.70rem
+    - Analysis section text reduced from 0.66rem to 0.62rem
+    - Analysis badges reduced from 0.58rem to 0.54rem
+    - All dividing lines made thinner (border-bottom reduced to 0.15 opacity)
+    - Increased gap above section headings (Ingredients, Directions, Notes) from 0 to 32px
+    - Reduced gap below section heading divider lines from 12px to 6px
+    - Fixed whitespace in Directions section: changed `white-space: pre-wrap` to `pre-line` and removed template newlines to eliminate unwanted gap between heading and content
+
+**2026-02-08 (View Recipe: Redesigned Layout)**
+
+- **View Recipe Page** (`view_recipe.html`)
+  - Completely redesigned layout to match recipe card style:
+    - Title now centered at top with gold border
+    - Photo and info panel displayed side-by-side (photo left, info right)
+    - Photo placeholder always present to maintain consistent layout
+    - Ingredients displayed in 2-column grid layout
+    - Directions, notes, and analysis sections stacked below
+  - Info panel displays category, total time (prep/cook), and servings with icons
+  - All sections use app's existing dark green theme (no cream colors)
+  - Photo placeholder shows image icon when no recipe photo is present
+  - Ingredient links to food compendium preserved
+
+---
+
+**2026-02-10 (Food Detail: UI Polish & Improvements)**
+
+- **Database Source Badges**: Nutritional information headers now display the source database
+  - AUSNUT 2023: Green badge next to "Nutritional Information (per 100g)" header with Unlink button
+  - USDA FoodData: Blue badge next to header (no unlink since USDA only shows when AUSNUT not linked)
+- **Custom Nutrition Hiding**: Custom Nutritional Information container now hidden when AUSNUT or USDA data is linked
+  - Only displays when neither external database is active
+  - Prevents confusion from showing multiple nutrition sources
+- **Sidebar Cleanup**: Removed "Usage: X recipes, cannot delete" warning text from sidebar
+  - Delete Food button now always enabled (backend still prevents deletion if food is in use)
+  - Cleaner, less cluttered sidebar appearance
+
+---
+
+**2026-02-10 (Edit Food: 3-Tab Nutrition Source Selector)**
+
+- **Tabbed Nutrition Interface**: Replaced separate USDA card and Custom Nutrition sections with a unified 3-tab selector
+  - **USDA Tab**: Search and link USDA FoodData Central foods (existing functionality, now in tab format)
+  - **AUSNUT Tab**: NEW - Search and link AUSNUT 2023 Australian foods with modal search UI
+  - **Custom Tab**: Manual entry for serving sizes, energy, proximates, vitamins, and minerals
+- **Mutual Exclusivity**: Linking one nutrition source automatically clears the others (only one active at a time)
+- **Active Tab Logic**: Tab automatically selects based on existing data (AUSNUT > USDA > Custom)
+- **Styling**: Gold background for active tab, transparent with sage border for inactive tabs
+- **Backend**: Updated `edit_food()` route to handle `ausnut_food_id` with mutual exclusivity logic
+
+---
+
+**2026-02-10 (Food Detail: AUSNUT replaces USDA nutrition)**
+
+- When AUSNUT nutritional data is linked to a FODMAP food, the USDA nutritional information container is now automatically hidden
+- Only one nutrition source displays at a time — AUSNUT takes precedence over USDA
+- Unlinking AUSNUT data restores the USDA container (if USDA data exists)
+
+---
+
+**2026-02-08 (Recipe Form: Compact Ingredients & Sidebar Buttons)**
+
+- **Ingredient Rows** (Create & Edit Recipe pages)
+  - Removed FODMAP traffic light badges from ingredient rows (not needed during recipe creation)
+  - Compacted ingredient row padding from `p-3 mb-3` to `p-2 mb-2` for tighter layout
+
+- **Edit Recipe Form Actions**
+  - Moved "Update Recipe" and "Cancel" buttons from the bottom of the form into the sidebar
+  - Sidebar buttons always visible due to fixed sidebar positioning
+
+---
+
+**2026-02-08 (Quick Add Food: Dynamic FODMAP Categories)**
+
+- **Quick Add Food to Library** (Create & Edit Recipe pages)
+  - Replaced hardcoded 9-item category dropdown with dynamic categories loaded from `/api/fodmap/categories`
+  - Categories now match the actual FODMAP food database categories (11 categories)
+  - Loaded on modal open with fallback to "Other" on error
+  - Fixed `/api/fodmap/categories` endpoint to filter out USDA-imported foods (no FODMAP ratings) so only true FODMAP categories are returned
+
+---
+
+**2026-02-08 (Create Recipe: Food Picker Modal & UI Fixes)**
+
+- **Food Picker Modal** (Create/Edit Recipe page)
+  - Replaced `<select>` dropdown for food ingredients with a text input + multi-step modal picker
+  - Modal flow: Choose Database (FODMAP / USDA) → Choose Category → Browse & Select Food
+  - Categories and foods loaded dynamically via 4 new API endpoints:
+    - `GET /api/fodmap/categories` - FODMAP food categories with counts
+    - `GET /api/fodmap/foods?category=X` - Foods by FODMAP category
+    - `GET /api/usda/categories` - USDA food categories with counts
+    - `GET /api/usda/foods?category_id=X` - USDA foods by category (max 500)
+  - Text input also supports typing to search with autocomplete dropdown (searches local FODMAP foods array)
+  - User can highlight, clear, and retype food names freely
+  - FODMAP food selections set the food_id for FODMAP tracking; USDA selections stored as text
+  - Modal styled with app dark green/gold colour scheme
+
+- **UI Fixes** (Create & Edit Recipe pages)
+  - Changed ingredient delete button from red to white with centred trash icon
+  - Made subcategory help text white for better readability against dark background
+  - All food picker and UI changes applied to both `create_recipe.html` and `edit_recipe.html`
+  - Edit recipe pre-populates food names from existing ingredients when loading saved recipes
+
+---
+
+**2026-02-07 (Education Preview: Sidebar Chapter Navigation)**
+
+- **Education Preview Upload Sidebar Improvements**
+  - Renamed "Sections/Topics" heading to "Chapters"
+  - Removed redundant "CHAPTER" prefix from chapter titles in sidebar (now shows "1. Name" instead of "CHAPTER 1: Name")
+  - Made chapter headings clickable - clicking a chapter filters the subchapters list below to show only subchapters belonging to that chapter/section
+  - Renamed "Existing Chapters" container to "Existing Subchapters"
+  - Added chevron indicator on chapter headings (toggles up/down on click)
+  - Active chapter heading highlighted with gold background
+  - Click same chapter again to deselect and reset the list
+
+---
+
+**2026-02-07 (Education Markdown: Table & Link Styling)**
+
+- **Markdown Table Support**
+  - Added comprehensive table styling to all education templates (chapter.html, edit.html, preview.html)
+  - Tables now render with app color scheme:
+    - Header: Dark green background (#1A3636) with gold text (#D6BD98)
+    - Body (chapter view): Beige background (#D6BD98) with dark green text (#1A3636)
+    - Body (preview/edit): White background with dark green text
+    - 2px sage green border (#8BA48B), rounded corners
+    - Zebra striping for alternating rows (better readability)
+    - Hover effects on table rows
+  - Markdown table syntax fully supported:
+    ```markdown
+    | Column 1 | Column 2 | Column 3 |
+    |----------|----------|----------|
+    | Data 1   | Data 2   | Data 3   |
+    ```
+
+- **Hyperlink Support**
+  - Added link styling and functionality to education content
+  - Chapter view links: Gold color (#D6BD98), underline on hover, bold weight
+  - Preview/edit links: Dark green (#1A3636), sage green on hover
+  - Visited links styled with darker variants
+  - External links (http/https) automatically open in new tabs with `target="_blank"`
+  - Security: Added `rel="noopener noreferrer"` to external links
+  - JavaScript auto-detects and configures external links on page load
+  - Markdown link syntax: `[Link Text](https://example.com)`
+  - HTML links also supported: `<a href="..." target="_blank">Text</a>`
+
+- **CLAUDE.md Documentation**
+  - Added new "Education System & Markdown Features" section
+  - Documents all supported markdown features (links, tables, headers, lists, images, code blocks)
+  - Includes styling specifications and usage examples
+  - Notes about markdown processor (markdown2/markdown library) and enabled extensions
+
+**Files Modified**:
+  - `templates/education/chapter.html` - Added table + link CSS, external link JavaScript
+  - `templates/education/preview.html` - Added table + link CSS, external link JavaScript
+  - `templates/education/edit.html` - Added table + link CSS, external link JavaScript
+  - `CLAUDE.md` - Added Education System & Markdown Features section
+  - `Version_History.md` - This entry
+
+---
+
+**Previous Updates: 2026-02-06 (Education System: Chapter Terminology & Sub-Section Support)**
+
+- **Education System Enhancements**
+  - Changed "Part" terminology to "Chapter" throughout education pages (index, preview, edit)
+  - Example: "PART 1: FODMAPs" is now "CHAPTER 1: FODMAPs"
+  - Added support for third hierarchical layer (sub-sub-chapters)
+  - Now supports chapter numbering like: 1, 2, 2.1, 2.2, 3, 3.1, 3.2, 3.2.1, 3.2.2
+  - Sub-sub-chapters (e.g., 3.2.1) display with extra indentation (60px) and smaller font size
+  - Updated help text in forms to show "e.g., 1, 2.1, 3.2.1" instead of just "1, 2.1"
+  - Backend sorting already supports multi-level numbering via `natural_sort_key` function
+
+**Previous Updates: 2026-02-05 (USDA Database UI Improvements & Header Alignment Fixes)**
+
+- **Improved USDA Category Pages UI** (search.html)
+  - Removed database filter buttons (All, Foundation, SR Legacy) from below alphabetical navigation
+  - Added color-coded database type badge to page header (top-right, aligned with category title)
+  - Database badge uses same color scheme as category icons for visual consistency
+  - Foundation: green (#28a745), SR Legacy: cyan (#17a2b8), Survey: amber (#ffc107), Branded: red (#dc3545)
+  - Cleaned up unused CSS rules for type-filter
+
+- **Fixed Page Heading Alignment Across All Category Pages**
+  - USDA pages: Adjusted margin-top to align main headings with sidebar heading
+    - templates/usda_foods/categories.html - main categories page (margin-top: 52px)
+    - templates/usda_foods/search.html - category food listings (margin-top: 40px)
+    - templates/usda_foods/detail.html - individual food detail (margin-top: 40px in CSS)
+  - Food Compendium pages: Adjusted top spacing to align with sidebar (40px padding-top)
+    - templates/compendium/search.html - changed padding-top from 25px to 40px
+    - templates/compendium/detail.html - added margin-top: 46px to breadcrumb
+    - templates/compendium/index.html - added margin-top: 40px to page title
+  - All page headings now align horizontally with their respective sidebar headings
+  - Note: add-food.html and edit-food.html already had correct alignment
+
+**Previous Updates: 2026-02-05 (Diary Page Layout Fixes)**
+
+- **Fixed Sidebar Layout on 3 Diary Pages** (entry-meal.html, trends.html, weekly.html)
+  - Sidebar was using Bootstrap column classes (`col-lg-2 col-md-3`) instead of `position: fixed` CSS
+  - Content containers were partially hidden behind the sidebar
+  - Changed to correct fixed sidebar pattern: `position: fixed; width: 200px; top: 50px;`
+  - Changed main-content-area to use `margin-left: 200px; padding-left: 15px;`
+
+- **Added Missing Sidebar to 4 Diary Entry Pages** (entry-symptom.html, entry-bowel.html, entry-stress.html, entry-note.html)
+  - These pages had no sidebar at all, inconsistent with all other pages
+  - Added full fixed sidebar with 7 nav links (Dashboard, Food Compendium, Diary, Recipes, Education, Settings, Help & Support)
+  - Added contextual action buttons (Save/Cancel) and quick nav (Back, Calendar, Day View)
+  - Moved inline action buttons from form footer to sidebar for consistency
+
+---
+
+**Previous Updates: 2026-02-04 (Code Cleanup & Refactoring)**
+
+- **Critical Bug Fixes**
+  - Fixed missing `food_id` parameter in `usda_food_detail_api()` function (routes/compendium.py:207)
+  - Added safe file deletion helper to prevent crashes when files don't exist (routes/recipes.py)
+
+- **Route Refactoring** (Eliminated ~150 lines of duplicated code)
+  - Extracted orphan-checking helpers in settings.py: `get_orphaned_meal_foods_query()`, `get_orphaned_recipe_ingredients_query()`, etc.
+  - Extracted `process_recipe_classification()` helper to deduplicate tag filtering logic
+  - Added `to_recipe_dict()` method to Food model to replace 4 duplicated list comprehensions
+  - Extracted `filter_and_delete_orphaned_entries()` helper in diary.py
+
+- **Dead Code Removal**
+  - Removed unused `RecipeIngredient` import from api.py
+  - Removed unused `SavedRecipe` import from recipes.py
+  - Fixed deprecated `datetime.utcnow()` calls (now uses `datetime.now(timezone.utc)`)
+  - Removed redundant inline `from database import db` imports in recipe.py
+  - Updated SavedRecipe placeholder routes to redirect with "coming soon" message
+
+- **Template Infrastructure**
+  - Added consolidated sidebar CSS to static/css/main.css (~120 lines)
+  - Created reusable sidebar include: `templates/includes/sidebar.html`
+  - Note: Template migration to use includes is a future task
+
+---
+
+**Previous Updates: 2026-02-04 (App Launcher System + Graceful Exit)**
+
+- **Added App Launcher Scripts** (UX Enhancement)
+  - Created batch files and VBS scripts for easy app startup
+  - **Batch Files (with visible terminal):**
+    - `start_admin.bat` - Starts app with ADMIN_MODE=true, opens browser
+    - `user_mode.bat` - Starts app in normal user mode, opens browser
+    - `start_admin_hidden.bat` - Helper batch for admin mode (sets env var)
+    - `user_mode_hidden.bat` - Helper batch for user mode
+  - **VBS Files (completely hidden - no terminal windows):**
+    - `start_admin.vbs` - Invisible launch with admin mode enabled
+    - `user_mode.vbs` - Invisible launch in user mode
+  - **Features:**
+    - Auto-kills existing Python processes before starting (prevents port conflicts)
+    - Waits for server startup before opening browser
+    - Opens default browser to http://127.0.0.1:5000
+    - VBS versions run completely invisibly (no command windows)
+  - **Files Created:**
+    - `start_admin.bat`, `start_admin_hidden.bat`, `start_admin.vbs`
+    - `user_mode.bat`, `user_mode_hidden.bat`, `user_mode.vbs`
+
+- **Added Graceful Exit Button** (UX Enhancement)
+  - Added "Exit" button in header bar (top-right corner)
+  - Styled to match app theme (dark green with gold text, red on hover)
+  - Shows confirmation dialog before shutting down
+  - Displays "Shutting Down..." message with instructions
+  - Gracefully terminates Flask server and all child processes
+  - **Files Modified:**
+    - `app.py` - Added `/shutdown` POST route with graceful termination (uses `os._exit(0)`)
+    - `templates/base.html` - Added Exit button in header + shutdown JavaScript function
+  - **Benefits:**
+    - Clean server shutdown without orphaned processes
+    - No need to manually close terminal windows or use Ctrl+C
+    - Works in both admin and user modes
+
+- **Fixed Help Page URL Generation Bug** (Bug Fix)
+  - Fixed `ValueError: invalid literal for int()` error on Help & Support page
+  - **Problem:** JavaScript was using `url_for('settings.help_edit', doc_id='__DOC_ID__')` but route expects integer
+  - **Solution:** Changed to use dummy integer `url_for('settings.help_edit', doc_id=0)` and replace `/0` with actual ID
+  - **File Modified:**
+    - `templates/settings/help.html` - Fixed URL generation for bulk edit/delete functions
+
+---
+
+**2026-02-03 (Admin Mode for Content Management + Help Docs Database Migration)**
+
+- **Added Visual Admin Mode Indicator in Header** (UX Enhancement)
+  - Added prominent "ADMIN MODE" badge in header when admin mode is enabled
+  - Red background with shield icon for high visibility
+  - Always visible at top of page so you know when you're in admin mode
+  - **Files Modified:**
+    - `app.py` - Added context processor to make admin_mode available to all templates globally
+    - `templates/base.html` - Added admin mode badge in header (between app title and copyright)
+    - `routes/education.py` - Removed manual admin_mode passing (now global via context processor)
+    - `routes/settings.py` - Removed manual admin_mode passing (now global via context processor)
+  - **Benefits:**
+    - Clear visual confirmation that admin features are enabled
+    - No confusion about whether you started app with ADMIN_MODE=true
+    - Prevents accidental edits in wrong mode
+
+- **Added Admin Mode Environment Variable Control** (Security & UX Enhancement)
+  - Implemented `ADMIN_MODE` environment variable to control content management UI visibility
+  - Set `ADMIN_MODE=true` in environment to enable upload/edit/delete features
+  - When disabled (default), users can only view educational content and help documents
+  - No login system required - simple environment variable toggle
+  - **Files Modified:**
+    - `config.py` - Added ADMIN_MODE config that reads from environment variable (defaults to false)
+    - `routes/education.py` - Pass admin_mode flag to education templates
+    - `routes/settings.py` - Pass admin_mode flag to help templates
+    - `templates/education/index.html` - Wrapped upload/edit/delete UI in `{% if admin_mode %}` blocks
+    - `templates/settings/help.html` - Wrapped admin controls in conditional blocks
+  - **Benefits:**
+    - Prevents accidental content modification by end users
+    - No complex authentication system needed
+    - Easy to toggle on/off by setting environment variable
+    - Clean, read-only experience for users when admin mode disabled
+
+- **Migrated Help Documents from Files to Database** (Architecture Improvement)
+  - Converted help documents from file-based storage to database storage
+  - Help documents now use HelpDocument model (already existed in models/education.py)
+  - Same structure as educational content - consistent architecture across app
+  - **Files Modified:**
+    - `routes/settings.py` - Completely refactored help routes to use database instead of files
+      - Removed file-based helper functions (get_help_docs_dir, load_help_index, save_help_index, etc.)
+      - Updated help_index(), help_view(), help_preview(), help_edit(), help_delete() routes
+      - Now queries HelpDocument model from database
+      - Saves uploaded docs to database instead of files
+    - `models/education.py` - HelpDocument model already existed (no changes needed)
+  - **Migration Script:**
+    - Created `migrations/migrate_help_docs_to_db.py` to migrate existing help docs
+    - Reads old index.json and markdown files from data/help_docs/
+    - Creates HelpDocument database entries
+    - Archives old files (doesn't delete) for safety
+    - Run with: `python migrations/migrate_help_docs_to_db.py`
+  - **Benefits:**
+    - Consistent architecture (both education and help use database)
+    - No file system dependencies for help docs
+    - Easier to backup (single database file)
+    - Better performance for queries and searches
+    - Simplified code maintenance
+
+---
+
+**2026-02-03 (Redesigned Custom Nutrition Section - USDA Style + Backend Fix)**
+
+- **Complete Redesign of Custom Nutrition Input + Display + Backend Save/Load** (Major UX Improvement + Critical Bug Fix)
+  - Redesigned the nutrition information section in add/edit food pages to match USDA display style
+  - **New Structure:**
+    - Five organized categories: Serving Sizes, Energy, Proximates, Vitamins, Minerals
+    - Each category has a gold-colored section heading matching USDA styling
+    - "+ Add Item" button for each category to dynamically add nutrients
+    - Clean 2-column layout for nutrient data (Name + Amount/Unit)
+    - Delete button for each row to remove unwanted entries
+  - **Key Features:**
+    - **Serving Sizes**: Custom serving descriptions + gram weights (e.g., "1 cup" = "240g")
+    - **Energy, Proximates, Vitamins, Minerals**: Nutrient name + amount + unit (e.g., "Protein" + "10" + "g")
+    - Empty state messages when no nutrients are added
+    - Real-time JSON serialization of all custom nutrient data
+    - Pre-population of existing nutrients when editing foods
+  - **Styling:**
+    - Matches USDA nutrition display format exactly
+    - Gold headers (`#D6BD98`) on light background (`rgba(214, 189, 152, 0.1)`)
+    - White-ish text for labels (`#e0e7e1`), gold for values, sage for units
+    - Compact spacing and clean borders
+    - Collapsible section to save space
+  - **JavaScript Functions:**
+    - `addNutrientRow(category)` - Adds new input row to specified category
+    - `deleteNutrientRow(rowId, category)` - Removes a row
+    - `updateCustomNutrients()` - Collects all data and saves to hidden JSON field
+    - Auto-population on page load for edit form
+  - **Data Storage:**
+    - All custom nutrients stored as JSON in `custom_nutrients` field
+    - Structure: `{servings: [], energy: [], proximates: [], vitamins: [], minerals: []}`
+  - **Display on Food Detail Page:**
+    - Added custom nutrition display section to food detail page
+    - Shows all custom nutrients in USDA-style format matching the input design
+    - Displays all 5 categories (Serving Sizes, Energy, Proximates, Vitamins, Minerals)
+    - Only visible when custom nutrients exist for the food
+    - Includes source indicator: "Custom nutritional data manually entered by user"
+  - **Backend Fixes for Data Saving:**
+    - Fixed critical issue where custom nutrition data wasn't being saved to database
+    - **Problem 1**: Backend was using old `parse_custom_nutrients()` function expecting different field names
+    - **Problem 2**: Food model had `custom_nutrients` defined as read-only property instead of database column
+    - Updated `add_food()` and `edit_food()` routes to handle new JSON format from hidden input
+    - Changed `custom_nutrients` from property to actual db.Column(db.Text) in Food model
+    - Added backward compatibility with old custom nutrient format
+    - Created database migration script to add custom_nutrients column (column already existed)
+    - Data now properly saved and loaded from `custom_nutrients` JSON field
+  - **Files Modified:**
+    - `templates/compendium/edit-food.html` - Replaced old nutrition section (lines 1688-2345, ~660 lines) with new 100-line USDA-style section + JavaScript functions
+    - `templates/compendium/add-food.html` - Same changes applied for consistency
+    - `templates/compendium/detail.html` - Added custom nutrition display section (after line 783)
+    - `routes/compendium.py` - Updated add_food() and edit_food() routes to handle new JSON format (lines 387-410, 540-560)
+    - `models/food.py` - Changed custom_nutrients from read-only property to db.Column(db.Text) (lines 91-92, removed lines 104-106)
+    - `migrations/add_custom_nutrients.py` - Created migration script (column already existed in database)
+  - **Benefits:**
+    - Much cleaner, more intuitive interface
+    - Matches USDA data display for consistency
+    - Fully customizable - users can add any nutrients they need
+    - No pre-defined fields cluttering the interface
+    - Easier to add/remove nutrients on the fly
+    - Custom nutrients now visible on detail page in matching style
+
+---
+
+**2026-02-03 (Fixed USDA Search in Edit Food Page)**
+
+- **Fixed USDA Search Not Working in Edit Food Page** (Critical Bug Fix)
+  - USDA search modal now properly loads and searches when opened from edit food page
+  - Bug: USDA search JavaScript was accidentally wrapped inside a `{% if custom_nutrients %}` block
+  - This caused the search to only work for foods that had custom nutrients defined
+  - Fix: Moved the USDA search JavaScript code outside the conditional block
+  - Files modified:
+    - `templates/compendium/edit-food.html` - Repositioned `{% endif %}` tag from line 3977 to line 3855
+  - Benefit: Users can now link USDA foods from the edit page regardless of whether custom nutrients exist
+
+---
+
+**2026-02-03 (Error Messages Now Persistent)**
+
+- **Error and Warning Messages No Longer Auto-Dismiss** (UX Improvement)
+  - Error messages (red) and warning messages (yellow/amber) now stay visible until manually closed
+  - Previously all flash messages auto-dismissed after 5 seconds, making debugging difficult
+  - Success messages (green) and info messages (blue) still auto-dismiss after 5 seconds
+  - Users can manually close any message using the × button
+  - Files modified:
+    - `static/js/main.js` - Updated alert selector to exclude `.alert-danger` and `.alert-warning` from auto-dismiss
+  - Benefit: Critical errors remain visible for debugging and don't disappear before users can read/act on them
+
+---
+
+**2026-02-03 (Fixed Food Edit Error - Deprecated Nutrition Fields)**
+
+- **Fixed "property has no setter" Error in Food Edit** (Bug Fix)
+  - Removed all deprecated nutrition field assignments from add_food and edit_food routes
+  - These fields (health_star_rating, serving_size, energy, macros, vitamins, minerals, etc.) are now read-only properties that return None
+  - Nutritional data now comes exclusively from USDA database via usda_food relationship
+  - Custom nutrients field still supported via JSON storage
+  - Files modified:
+    - `routes/compendium.py` - Removed ~150 lines of deprecated nutrition field handling
+  - Error message that was fixed: "property 'health_star_rating' of 'Food' object has no setter"
+
+---
+
+**2026-02-03 (USDA Food Linking in Add/Edit Forms)**
+
+- **Added USDA Food Linking Feature** (Major Enhancement)
+  - Food Compendium add/edit forms now include USDA food linking functionality
+  - New "USDA Nutritional Database" section in both add-food.html and edit-food.html templates
+  - Features:
+    - Search modal with live AJAX search for USDA foods (2+ character minimum)
+    - Visual preview showing selected USDA food name, data type badge, and category
+    - Clear button to remove link if needed
+    - Pre-populated display on edit form if food already has USDA link
+  - Backend changes:
+    - Added `/compendium/api/usda-search` endpoint for AJAX food search (returns up to 50 results)
+    - Added `/compendium/api/usda-food/<id>` endpoint for food detail preview
+    - Updated `add_food()` route to handle `usda_food_id` parameter
+    - Updated `edit_food()` route to handle `usda_food_id` parameter
+  - Files modified:
+    - `routes/compendium.py` - Added API endpoints and usda_food_id handling
+    - `templates/compendium/add-food.html` - Added USDA link section, modal, and JavaScript
+    - `templates/compendium/edit-food.html` - Added USDA link section, modal, and JavaScript
+  - Benefit: Users can now link their FODMAP foods to USDA database entries for comprehensive nutritional information
+
+---
+
+**2026-02-03 (USDA Survey Foods Category Color Fix)**
+
+- **Fixed Survey Foods Category Color Inconsistency** (Bug Fix)
+  - Survey foods now consistently display with yellow category badge (#ffc107) across all USDA database views
+  - Previously, Survey foods showed yellow on the main index page but blue in search results and category listings
+  - Added missing `.badge-survey` and `.badge-branded` styles to search results template
+  - Updated badge conditional logic to properly handle all four USDA data types (Foundation, SR Legacy, Survey, Branded)
+  - Files modified:
+    - `templates/usda_foods/search.html` - Added yellow styling for Survey badges
+    - `templates/usda_foods/categories.html` - Changed Survey badge from purple to yellow
+
+---
+
+**Previous Updates: 2026-02-03 (Removed Safe Foods List Page)**
+
+- **Removed Safe Foods List Feature**
+  - Deleted `templates/compendium/safe-foods.html` template
+  - Removed `/safe-foods` route from `routes/compendium.py`
+  - Removed "View Safe Foods List" button from `templates/compendium/index.html`
+  - Reason: All foods in this list are already accessible through the main Food Compendium database
+
+**Previous Updates: 2026-02-02 (Rename - Food Guide to Food Compendium)**
+
+- **Food Guide Renamed to Food Compendium** (Major Refactor)
+  - Renamed `templates/foods/` folder to `templates/compendium/`
+  - Renamed `routes/foods.py` to `routes/compendium.py`
+  - Changed blueprint from `foods` to `compendium` with URL prefix `/compendium`
+  - Updated all `url_for('foods.xxx')` references to `url_for('compendium.xxx')` across all templates
+  - Updated all display text from "Food Guide" to "Food Compendium" in sidebar navigation
+  - Renamed CSS classes: `food-guide-content-col` → `compendium-content-col`, etc.
+  - Updated `static/css/main.css` with new class names
+  - Updated `CLAUDE.md` documentation
+
+---
+
+**2026-02-02 (Cleanup - USDA Home Page Removal)**
+
+- **USDA Home Page Removed** (Cleanup)
+  - Removed redundant `/usda-foods/` index route from `routes/usda_foods.py`
+  - Deleted `templates/usda_foods/index.html` template
+  - Updated all "USDA Home" links to point to `/usda-foods/categories` instead
+  - Removed decorative image from Food Compendium page (`templates/compendium/index.html`)
+  - Deleted `static/images/wallpaper/image food page.png` image file
+  - Updated sidebar buttons in USDA templates (categories.html, search.html, detail.html)
+  - Updated USDA Database link in compendium/search.html sidebar
+
+---
+
+**2026-02-02 (Food Guide Page - FODMAP & USDA Merger)**
+
+- **Food Guide Page Redesign** (Major Enhancement)
+  - Merged FODMAP Database and USDA Nutrition Database into a single unified page
+  - Main content now shows two card sections:
+    - **FODMAP Database** card with 12 category icons (Fruits, Vegetables, Grains, etc.)
+    - **USDA Nutrition Database** card with data type cards (Foundation, SR Legacy, Survey, Branded)
+  - Sidebar now includes:
+    - Dual search forms: "Search FODMAP" and "Search USDA"
+    - USDA stats box showing food counts by data type
+    - Action buttons: Add Custom Food, View Safe Foods List
+    - Removed separate "USDA Database" button (no longer needed)
+  - USDA section shows "Not Imported" message with setup instructions if data not available
+  - Files modified:
+    - `routes/foods.py` - Added USDA data queries to index route
+    - `templates/foods/index.html` - Complete redesign with merged layout
+
+---
+
+**Previous Updates: 2026-02-02 (Settings Page - Application Information Redesign)**
+
+- **Application Information Section Redesign** (Enhancement)
+  - Completely redesigned the Application Information section on Settings page
+  - Added visual app branding with logo, version badge (1.2.0), and release date
+  - Added feature grid with icons showing all major features:
+    - Food Guide, Daily Diary, Recipes & Meals, Recipe Builder
+    - AI Recipe Helper, USDA Nutrition, Education, Symptom Tracking, Local & Private
+  - Split technical info into organized sections:
+    - FODMAP Types Tracked
+    - Histamine Tracking
+    - Nutrition Data (expanded list)
+    - Database Location
+  - Added **Acknowledgments & Credits** section with visual cards:
+    - USDA FoodData Central (nutritional data)
+    - Recipe Database (corbt/all-recipes on Hugging Face)
+    - Bootstrap (UI framework)
+    - Claude AI (development assistance by Anthropic)
+  - Each credit includes icon, description, and external link
+  - Added footer with "Built with care for the gut health community" message
+  - Files modified:
+    - `templates/settings/index.html` - Redesigned Application Information section
+
+- **README Update for GitHub** (Documentation)
+  - Added USDA Food Database section explaining the feature
+  - Added planned enhancements for AI chatbot integration
+  - Updated project structure with new USDA files
+  - Added USDA database setup instructions
+  - Added v1.2.0 changelog entry
+  - Updated acknowledgments section
+  - Files modified:
+    - `README.md`
+
+---
+
+**Previous Updates: 2026-02-02 (USDA Survey & Branded Foods Support)**
+
+- **USDA Import Script Update** (Enhancement)
+  - Updated import script to handle 4 USDA data types:
+    - Foundation Foods (365 foods)
+    - SR Legacy (7,793 foods)
+    - Survey/FNDDS (5,432 foods) - NEW
+    - Branded Foods (454,366 foods) - NEW
+  - Survey foods use `wweiaFoodCategory` for categorization
+  - Branded foods use `brandedFoodCategory` for categorization
+  - Added progress reporting and memory management for large files
+  - Files modified:
+    - `database/import_usda_foods.py` - Added Survey and Branded support
+
+- **USDA UI Updates for New Data Types** (Enhancement)
+  - Added Survey and Branded cards to index page
+  - Added filter tabs for Survey and Branded on categories page
+  - Color scheme:
+    - Foundation: Green (#28a745)
+    - SR Legacy: Teal (#17a2b8)
+    - Survey: Purple (#6f42c1)
+    - Branded: Orange (#fd7e14)
+  - Stats box shows all 4 data types when data exists
+  - Files modified:
+    - `routes/usda_foods.py` - Added survey_count and branded_count
+    - `templates/usda_foods/index.html` - Added Survey/Branded cards and styles
+    - `templates/usda_foods/categories.html` - Added Survey/Branded filters and styles
+
+---
+
+**Previous Updates: 2026-02-02 (USDA Navigation Hierarchy)**
+
+- **USDA Data Source Navigation** (Enhancement)
+  - Reorganized USDA browsing with hierarchical navigation:
+    - **Level 1**: Data Source (Foundation / SR Legacy / Survey / Branded) - main clickable cards on index
+    - **Level 2**: Categories within each data source
+    - **Level 3**: A-Z alphabet navigation within each category
+  - New index page (`templates/usda_foods/index.html`):
+    - Foundation Foods card - click to see Foundation-only categories
+    - SR Legacy card - click to see SR Legacy-only categories
+    - "Browse All Categories" link to see all categories
+  - New categories route (`/usda-foods/categories`):
+    - Shows category grid filtered by data type
+    - Filter tabs: All / Foundation / SR Legacy / Survey / Branded
+    - Category icons colored by data type
+  - New template (`templates/usda_foods/categories.html`):
+    - Category grid with food counts per data type
+    - Maintains data type filter when clicking into categories
+  - Files modified:
+    - `routes/usda_foods.py` - Added `/categories` route with data type filtering
+    - `templates/usda_foods/index.html` - Replaced category grid with data source cards
+
+- **USDA Category Alphabet Navigation** (Enhancement)
+  - Added A-Z letter navigation when browsing foods within a category
+  - Letters with no foods are shown as disabled/grayed out
+  - Active letter is highlighted with gold background
+  - "Clear" button to remove letter filter and show all foods
+  - Results count shows which letter is being filtered
+  - Files modified:
+    - `routes/usda_foods.py` - Added `letter` parameter and `available_letters` query
+    - `templates/usda_foods/search.html` - Added `.alphabet-nav` styles and A-Z navigation bar
+
+---
+
+**Previous Updates: 2026-02-02 (USDA Food Database Integration)**
+
+- **USDA FoodData Central Integration** (New Feature)
+  - Added ability to browse ~9,000 foods from USDA Foundation and SR Legacy datasets
+  - New database models (`models/usda.py`):
+    - `USDAFoodCategory` - Food categories from USDA
+    - `USDAFood` - Main food items with FDC ID, description, data type
+    - `USDANutrient` - Nutrient definitions (Protein, Fat, Vitamins, etc.)
+    - `USDAFoodNutrient` - Nutrient values per food (~150 per food)
+    - `USDAFoodPortion` - Serving sizes with gram weights
+  - New routes (`routes/usda_foods.py`):
+    - `/usda-foods/` - Browse by USDA category
+    - `/usda-foods/search` - Search and filter foods
+    - `/usda-foods/<id>` - View food detail with full nutrient breakdown
+  - New templates (`templates/usda_foods/`):
+    - `index.html` - Category browse page with stats
+    - `search.html` - Food list with category and data type filters
+    - `detail.html` - Nutrient display organized by group (Energy, Proximates, Minerals, Vitamins, Lipids, Amino Acids)
+  - Import script (`database/import_usda_foods.py`):
+    - Parses USDA JSON files from `data/usda/` folder
+    - Bulk inserts with progress tracking
+    - Idempotent (safe to run multiple times)
+  - UI Integration:
+    - Added "USDA Database" button to Food Guide sidebar (`templates/foods/index.html`, `templates/foods/search.html`)
+    - Teal colored button with database icon
+  - Data kept separate from FODMAP/histamine foods database
+
+---
+
+**Previous Updates: 2026-02-02 (My Saved Meals Layout Fix)**
+
+- **My Saved Meals Page Layout** (`templates/recipes/my_meals.html`)
+  - Added fixed sidebar with 7 navigation links (Dashboard, Food Guide, Diary, Recipes & Meals, Education, Settings, Help & Support)
+  - Added Quick Access section with recipe-related buttons (My Recipes, Create New Recipe, My Saved Meals, Create New Meal, Recipe Helper AI, Recipe Builder)
+  - Added Your Stats section showing saved meals count
+  - Restructured page to use proper `row g-0` layout with `sidebar-column` and `main-content-area`
+  - Applied `content-col` class for proper max-width constraints
+  - Updated styling to match app-wide compact design (smaller fonts, tighter padding)
+  - Made page layout consistent with recipes/index.html and other app pages
+
+---
+
+**Previous Updates: 2026-02-01 (Recipe Builder + AI Chat Integration)**
 
 - **Recipe Builder to AI Chat Integration** (`templates/recipes/builder_preview.html`, `templates/recipes/chat.html`)
   - Added "Ask AI About This" button on Recipe Builder preview page

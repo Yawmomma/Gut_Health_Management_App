@@ -65,8 +65,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -78,7 +78,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -108,7 +108,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -317,26 +317,186 @@
                 <h5 class="mb-0"><i class="bi bi-info-square"></i> Application Information</h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless">
-                    <tbody>
-                        <tr>
-                            <th>Database Location:</th>
-                            <td><code>{% if db_info %}{{ db_info.path }}{% else %}instance/gut_health.db{% endif %}</code></td>
-                        </tr>
-                        <tr>
-                            <th>Features:</th>
-                            <td>Food Guide, Diary Tracking, Symptom Analytics, Custom Foods</td>
-                        </tr>
-                        <tr>
-                            <th>FODMAP Types Tracked:</th>
-                            <td>Fructans, GOS, Lactose, Fructose, Polyols, Mannitol, Sorbitol</td>
-                        </tr>
-                        <tr>
-                            <th>Nutrition Data Tracked:</th>
-                            <td>Energy (kJ), Protein, Fat, Carbohydrate, Cholesterol, Sodium, Potassium, Calcium, Phosphorus, Vitamins (A, B2, B12, D), Custom nutrients</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- Version & Overview -->
+                <div class="d-flex align-items-center mb-3 pb-3" style="border-bottom: 1px solid rgba(214, 189, 152, 0.3);">
+                    <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #8BA48B, #677D6A); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                        <i class="bi bi-heart-pulse" style="font-size: 1.5rem; color: #fff;"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0" style="color: var(--gold);">Gut Health Management App</h5>
+                        <span class="badge bg-success">Version 1.2.0</span>
+                        <span class="text-muted ms-2" style="font-size: var(--text-label);">February 2026</span>
+                    </div>
+                </div>
+
+                <!-- Features Grid -->
+                <h6 class="mb-2" style="color: var(--gold);"><i class="bi bi-star-fill"></i> Features</h6>
+                <div class="row mb-3">
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-egg-fried text-success me-2"></i>
+                            <span style="font-size: var(--text-label);">Food Compendium</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-journal-text text-primary me-2"></i>
+                            <span style="font-size: var(--text-label);">Daily Diary</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-book text-warning me-2"></i>
+                            <span style="font-size: var(--text-label);">My Recipe Book</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-search text-info me-2"></i>
+                            <span style="font-size: var(--text-label);">Recipe Builder</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-robot text-purple me-2" style="color: #9b59b6;"></i>
+                            <span style="font-size: var(--text-label);">AI Recipe Helper</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-database text-secondary me-2"></i>
+                            <span style="font-size: var(--text-label);">USDA Nutrition</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-mortarboard text-danger me-2"></i>
+                            <span style="font-size: var(--text-label);">Education</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-graph-up text-success me-2"></i>
+                            <span style="font-size: var(--text-label);">Symptom Tracking</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-shield-lock text-muted me-2"></i>
+                            <span style="font-size: var(--text-label);">Local & Private</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Info -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="mb-2" style="color: var(--gold);"><i class="bi bi-clipboard-data"></i> FODMAP Types Tracked</h6>
+                        <div style="font-size: var(--text-label); line-height: 1.6;">
+                            Fructans, GOS, Lactose, Fructose, Polyols, Mannitol, Sorbitol
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2" style="color: var(--gold);"><i class="bi bi-activity"></i> Histamine Tracking</h6>
+                        <div style="font-size: var(--text-label); line-height: 1.6;">
+                            Histamine Levels, DAO Blockers, Liberators
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="mb-2" style="color: var(--gold);"><i class="bi bi-pie-chart"></i> Nutrition Data</h6>
+                    <div style="font-size: var(--text-label); line-height: 1.6;">
+                        Energy (kJ/kcal), Protein, Fat, Carbohydrates, Fibre, Cholesterol, Sodium, Potassium, Calcium, Phosphorus, Iron, Zinc, Vitamins (A, B1, B2, B3, B6, B12, C, D, E, K), Folate, and more via USDA database
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="mb-2" style="color: var(--gold);"><i class="bi bi-folder"></i> Database Location</h6>
+                    <code style="font-size: var(--text-label); background: var(--bg-deep); padding: 4px 8px; border-radius: 4px;">{% if db_info %}{{ db_info.path }}{% else %}instance/gut_health.db{% endif %}</code>
+                </div>
+
+                <!-- Acknowledgments & Credits -->
+                <div style="background: rgba(26, 54, 54, 0.4); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <h6 class="mb-3" style="color: var(--gold);"><i class="bi bi-award"></i> Acknowledgments & Credits</h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div style="min-width: 32px; height: 32px; background: #2e7d32; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                    <i class="bi bi-building" style="color: #fff; font-size: 0.9rem;"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: var(--text-body); color: var(--white-ish);">USDA FoodData Central</strong>
+                                    <div style="font-size: var(--text-label); color: var(--sage); line-height: 1.4;">
+                                        Nutritional data provided by the U.S. Department of Agriculture
+                                    </div>
+                                    <a href="https://fdc.nal.usda.gov/" target="_blank" style="font-size: var(--text-micro); color: var(--gold);">
+                                        fdc.nal.usda.gov <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div style="min-width: 32px; height: 32px; background: #ff9800; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                    <i class="bi bi-collection" style="color: #fff; font-size: 0.9rem;"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: var(--text-body); color: var(--white-ish);">Recipe Database</strong>
+                                    <div style="font-size: var(--text-label); color: var(--sage); line-height: 1.4;">
+                                        2M+ recipes from corbt/all-recipes on Hugging Face
+                                    </div>
+                                    <a href="https://huggingface.co/datasets/corbt/all-recipes" target="_blank" style="font-size: var(--text-micro); color: var(--gold);">
+                                        huggingface.co <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div style="min-width: 32px; height: 32px; background: #7952b3; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                    <i class="bi bi-bootstrap" style="color: #fff; font-size: 0.9rem;"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: var(--text-body); color: var(--white-ish);">Bootstrap</strong>
+                                    <div style="font-size: var(--text-label); color: var(--sage); line-height: 1.4;">
+                                        UI framework (MIT License)
+                                    </div>
+                                    <a href="https://getbootstrap.com/" target="_blank" style="font-size: var(--text-micro); color: var(--gold);">
+                                        getbootstrap.com <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div style="min-width: 32px; height: 32px; background: #d97706; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                    <i class="bi bi-cpu" style="color: #fff; font-size: 0.9rem;"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: var(--text-body); color: var(--white-ish);">Claude AI</strong>
+                                    <div style="font-size: var(--text-label); color: var(--sage); line-height: 1.4;">
+                                        Code assistance and development support by Anthropic
+                                    </div>
+                                    <a href="https://www.anthropic.com/" target="_blank" style="font-size: var(--text-micro); color: var(--gold);">
+                                        anthropic.com <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-2 pt-2" style="border-top: 1px solid rgba(214, 189, 152, 0.2);">
+                        <span style="font-size: var(--text-micro); color: var(--sage);">
+                            <i class="bi bi-heart-fill" style="color: #dc3545;"></i>
+                            Built with care for the gut health community
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 

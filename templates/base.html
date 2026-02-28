@@ -133,9 +133,22 @@
         <a href="{{ url_for('main.dashboard') }}" style="color: #1A3636 !important; font-size: 1.0rem !important; font-weight: 700; letter-spacing: 0.5px; text-decoration: none; white-space: nowrap !important; flex-shrink: 0 !important;">
             <i class="bi bi-heart-pulse" style="font-size: 0.95rem; vertical-align: middle;"></i> Gut Health App Pro
         </a>
+
+        <!-- Admin Mode Badge -->
+        {% if admin_mode %}
+        <span style="background-color: #dc3545; color: white; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: var(--text-label) !important; font-weight: 600; letter-spacing: 0.5px; margin-left: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <i class="bi bi-shield-lock-fill"></i> ADMIN MODE
+        </span>
+        {% endif %}
+
         <span style="font-size: var(--text-micro) !important; color: #1A3636 !important; text-align: right; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; margin-left: 1rem !important;">
             &copy; 2026 Gut Health Management App | Your Personal Health Companion | By Sally - v1.0
         </span>
+
+        <!-- Exit Button -->
+        <button id="exit-app-btn" onclick="shutdownApp()" style="background-color: #1A3636; color: #D6BD98; border: none; padding: 0.3rem 0.7rem; border-radius: 4px; font-size: var(--text-label) !important; font-weight: 600; cursor: pointer; margin-left: 1rem; flex-shrink: 0; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#dc3545'; this.style.color='white';" onmouseout="this.style.backgroundColor='#1A3636'; this.style.color='#D6BD98';">
+            <i class="bi bi-power"></i> Exit
+        </button>
     </header>
 
     <!-- Flash Messages -->
@@ -166,6 +179,35 @@
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Shutdown function -->
+    <script>
+    function shutdownApp() {
+        if (confirm('Are you sure you want to exit the application?\n\nThis will stop the server and close the app.')) {
+            // Show shutting down message
+            document.body.innerHTML = `
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #1A3636, #40534C); color: #D6BD98; font-family: system-ui, sans-serif;">
+                    <i class="bi bi-power" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                    <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Shutting Down...</h1>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">You can close this browser tab now.</p>
+                </div>
+            `;
+
+            // Send shutdown request
+            fetch('/shutdown', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(() => {
+                // Expected - server shuts down before response completes
+            });
+
+            // Close tab after a moment (may not work in all browsers due to security)
+            setTimeout(() => {
+                window.close();
+            }, 1500);
+        }
+    }
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

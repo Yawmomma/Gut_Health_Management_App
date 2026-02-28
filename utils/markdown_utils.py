@@ -17,7 +17,7 @@ def parse_markdown(md_content):
     if MARKDOWN_PROCESSOR == 'markdown2':
         return markdown2.markdown(md_content, extras=['tables', 'fenced-code-blocks', 'header-ids', 'task-list'])
     elif MARKDOWN_PROCESSOR == 'markdown':
-        return markdown.markdown(md_content, extensions=['tables', 'fenced_code', 'toc', 'nl2br'])
+        return markdown.markdown(md_content, extensions=['tables', 'fenced_code', 'toc'])
     else:
         # Fallback: basic HTML escaping and newline conversion
         import html

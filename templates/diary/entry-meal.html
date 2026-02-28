@@ -14,19 +14,22 @@
         background: rgba(214, 189, 152, 0.15) !important;
     }
     .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
         background: linear-gradient(135deg, #8BA48B, #677D6A);
-        min-height: 100%;
+        overflow-y: auto;
+        z-index: 100;
     }
     .diary-sidebar {
-        position: sticky;
-        top: 50px;
         padding: 12px;
-        padding-top: 28px;
+        padding-top: 40px;
     }
     .main-content-area {
-        border-left: 3px solid #8BA48B;
-        padding-left: 30px;
-        min-height: 100%;
+        padding-left: 15px;
+        margin-left: 200px;
     }
     .section-title {
         font-size: var(--text-body);
@@ -216,13 +219,10 @@
 {% endblock %}
 
 {% block content %}
-<!-- Spacer to match dashboard vertical alignment -->
-<div style="height: 20px; margin-bottom: 5px;"></div>
-
 <!-- Main Layout with Sidebar -->
 <div class="row g-0">
     <!-- Left Sidebar: Navigation -->
-    <div class="col-lg-2 col-md-3 sidebar-column">
+    <div class="sidebar-column">
         <div class="diary-sidebar">
             <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> {% if existing_meal %}Edit{% else %}Log{% endif %} Meal</h6>
 
@@ -241,8 +241,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -254,7 +254,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -284,7 +284,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -360,7 +360,7 @@
     </div>
 
     <!-- Right Content Area -->
-    <div class="col-lg-10 col-md-9 main-content-area pt-2">
+    <div class="main-content-area pt-2">
         <div class="row">
             <div class="col-md-9">
                 <h1 class="mb-4"><i class="bi bi-egg-fried"></i> {% if existing_meal %}Edit{% else %}Log{% endif %} Meal Entry</h1>

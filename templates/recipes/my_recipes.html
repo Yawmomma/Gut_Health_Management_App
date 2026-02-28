@@ -99,6 +99,43 @@
         background-color: #1A3636 !important;
         color: #D6BD98 !important;
     }
+    .category-card {
+        min-height: 55px;
+        background-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .category-card .card-body {
+        padding: 0.4rem 0.5rem !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .category-card-title {
+        font-size: 0.72rem !important;
+        line-height: 1 !important;
+        color: #ffffff !important;
+    }
+    .category-action-btn {
+        color: #ffffff !important;
+        border-color: #ffffff !important;
+        background-color: transparent !important;
+    }
+    .category-action-btn.icon-half {
+        padding: 0.14rem 0.28rem !important;
+        font-size: 0.6em !important;
+        line-height: 1 !important;
+    }
+    .category-action-btn:hover {
+        background-color: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+        border-color: #ffffff !important;
+    }
+    .recipe-meta {
+        font-size: 0.15rem;
+    }
+    .recipe-description {
+        color: #D6BD98 !important;
+    }
 </style>
 
 <!-- Main Layout with Sidebar -->
@@ -123,8 +160,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,7 +173,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                    <span class="text-label" style="color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -166,7 +203,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -259,11 +296,18 @@
                 <!-- Thin separator -->
                 <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 12px 0;"></div>
 
-                <!-- Your Stats -->
-                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-graph-up"></i> Your Stats</h6>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="stats-label">Recipes:</span>
-                    <span class="stats-value">{{ recipes|length }}</span>
+                <!-- Tag Filter -->
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-funnel"></i> Filter by Tag</h6>
+                <form id="sidebarTagFilterForm">
+                    <select id="sidebarTagSelect" class="form-select form-select-sm text-body" style="border-color: rgba(255,255,255,0.3); background-color: rgba(255,255,255,0.15); color: #fff;">
+                        <option value="">All tags</option>
+                    </select>
+                </form>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-light text-body" id="sidebarTagClear" style="padding: 2px 8px; display: none;">
+                        Clear
+                    </button>
+                    <small class="text-body" style="color: rgba(255,255,255,0.75);">Filters recipes list</small>
                 </div>
             </div>
         </div>
@@ -276,24 +320,8 @@
                 <h1 class="mb-4 text-h2"><i class="bi bi-book text-primary"></i> My Recipes</h1>
 
                 {% if recipes %}
-                    <!-- Tags Filter -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label small fw-bold mb-0">Filter by Tag</label>
-                                <button class="btn btn-sm btn-link text-decoration-none p-0" id="clearTagFilter" style="display: none;">
-                                    Clear filter
-                                </button>
-                            </div>
-                            <div id="tagFilterContainer" class="tag-filter-container">
-                                <!-- Tags will be populated here by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Category Cards -->
-                    <h4 class="mb-3"><i class="bi bi-grid-3x3-gap"></i> Browse by Category</h4>
-                    <div class="row mb-4">
+                    <div class="row mb-3">
                         {# Build dictionary of recipe counts per category #}
                         {% set recipe_counts = {} %}
                         {% for recipe in recipes %}
@@ -308,55 +336,41 @@
 
                         {# Show all predefined categories #}
                         {% for category in meal_types %}
-                            {% set count = recipe_counts.get(category, 0) %}
-                            <div class="col-md-6 col-lg-4 mb-3">
-                                {% if count > 0 %}
-                                    <a href="{{ url_for('recipes.recipe_category', category=category) }}" class="text-decoration-none">
-                                        <div class="card h-100 shadow-sm hover-shadow">
-                                            <div class="card-body">
-                                                <h5 class="card-title text-primary mb-2">
-                                                    <i class="bi bi-folder"></i> {{ category }}
-                                                </h5>
-                                                <p class="card-text text-muted mb-0">
-                                                    <strong>{{ count }}</strong> recipe{{ 's' if count != 1 else '' }}
-                                                </p>
+                            <div class="col-6 col-md-3 mb-3">
+                                <a href="{{ url_for('recipes.recipe_category', category=category) }}" class="text-decoration-none">
+                                    <div class="card h-100 shadow-sm hover-shadow category-card">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                                <h6 class="card-title mb-0 category-card-title">
+                                                    {{ category }}
+                                                </h6>
                                             </div>
                                         </div>
-                                    </a>
-                                {% else %}
-                                    <div class="card h-100 shadow-sm" style="opacity: 0.6;">
-                                        <div class="card-body">
-                                            <h5 class="card-title text-muted mb-2">
-                                                <i class="bi bi-folder"></i> {{ category }}
-                                            </h5>
-                                            <p class="card-text text-muted mb-0">
-                                                <em>No recipes yet</em>
-                                            </p>
-                                        </div>
                                     </div>
-                                {% endif %}
+                                </a>
                             </div>
                         {% endfor %}
 
                         <!-- Uncategorized recipes -->
                         {% set uncategorized_count = recipes|selectattr('category', 'none')|list|length %}
                         {% if uncategorized_count > 0 %}
-                            <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="col-6 col-md-3 mb-3">
                                 <a href="{{ url_for('recipes.recipe_category', category='Uncategorized') }}" class="text-decoration-none">
-                                    <div class="card h-100 shadow-sm hover-shadow">
-                                        <div class="card-body">
-                                            <h5 class="card-title text-secondary mb-2">
-                                                <i class="bi bi-question-circle"></i> Uncategorized
-                                            </h5>
-                                            <p class="card-text text-muted mb-0">
-                                                <strong>{{ uncategorized_count }}</strong> recipe{{ 's' if uncategorized_count != 1 else '' }}
-                                            </p>
+                                    <div class="card h-100 shadow-sm hover-shadow category-card">
+                                        <div class="card-body text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                                <h6 class="card-title mb-0 category-card-title">
+                                                    Uncategorized
+                                                </h6>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
                             </div>
                         {% endif %}
                     </div>
+
+                    <div class="mt-1 mb-4" style="border-top: 2px solid #D6BD98;"></div>
 
                     <!-- View All Recipes Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
@@ -377,10 +391,10 @@
                                                     <img src="{{ url_for('static', filename=recipe.image_path) }}"
                                                          alt="{{ recipe.name }}"
                                                          class="rounded"
-                                                         style="width: 120px; height: 120px; object-fit: cover;">
+                                                         style="width: 90px; height: 90px; object-fit: cover;">
                                                 {% else %}
                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center"
-                                                         style="width: 120px; height: 120px;">
+                                                         style="width: 90px; height: 90px;">
                                                         <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
                                                     </div>
                                                 {% endif %}
@@ -397,35 +411,23 @@
                                                             {{ recipe.name }}
                                                         </a>
                                                     </h5>
-                                                    {% if recipe.category %}
-                                                        <span class="badge bg-primary me-1">{{ recipe.category }}</span>
-                                                    {% endif %}
                                                 </div>
                                                 <!-- Action Buttons -->
                                                 <div class="d-flex gap-1">
-                                                    <a href="{{ url_for('recipes.view_recipe', recipe_id=recipe.id) }}"
-                                                       class="btn btn-sm btn-outline-primary" title="View">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
                                                     <a href="{{ url_for('recipes.edit_recipe', recipe_id=recipe.id) }}"
-                                                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                       class="btn btn-sm category-action-btn icon-half" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteRecipeModal{{ recipe.id }}">
+                                                    <button type="button" class="btn btn-sm category-action-btn icon-half" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteRecipeModal{{ recipe.id }}">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
                                             </div>
 
                                             <!-- Description -->
-                                            {% if recipe.description %}
-                                                <p class="text-muted text-body mb-2">
-                                                    {{ recipe.description[:120] }}{% if recipe.description|length > 120 %}...{% endif %}
-                                                </p>
-                                            {% endif %}
 
                                             <!-- Recipe Info in compact format -->
-                                            <div class="d-flex flex-wrap gap-3 text-body text-muted mb-2">
+                                            <div class="d-flex flex-wrap gap-3 text-body text-muted mb-2 recipe-meta">
                                                 {% if recipe.servings %}
                                                     <span><i class="bi bi-people"></i> {{ recipe.servings }} serving{{ 's' if recipe.servings != 1 else '' }}</span>
                                                 {% endif %}
@@ -435,7 +437,9 @@
                                                 {% if recipe.cook_time %}
                                                     <span><i class="bi bi-fire"></i> Cook: {{ recipe.cook_time }}</span>
                                                 {% endif %}
-                                                <span><i class="bi bi-bag"></i> {{ recipe.ingredients|length }} ingredient{{ 's' if recipe.ingredients|length != 1 else '' }}</span>
+                                                {% if recipe.category %}
+                                                    <span><i class="bi bi-folder"></i> {{ recipe.category }}</span>
+                                                {% endif %}
                                             </div>
 
                                             <!-- Tags on separate line -->
@@ -476,11 +480,6 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Informational Container at Bottom -->
-                    <div class="alert alert-info mt-4">
-                        <h5><i class="bi bi-info-circle"></i> About Recipes</h5>
-                        <p class="mb-0">Create custom recipes using foods from your library. Each recipe tracks all ingredients with their FODMAP and histamine information, helping you plan safe meals.</p>
-                    </div>
                 {% else %}
                     <div class="card">
                         <div class="card-body text-center py-5">
@@ -502,8 +501,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
-    const tagFilterContainer = document.getElementById('tagFilterContainer');
-    const clearTagBtn = document.getElementById('clearTagFilter');
+    const sidebarTagSelect = document.getElementById('sidebarTagSelect');
+    const sidebarTagClear = document.getElementById('sidebarTagClear');
     const recipeCards = document.querySelectorAll('#allRecipesList .card');
     const toggleBtn = document.getElementById('toggleAllRecipes');
     const allRecipesList = document.getElementById('allRecipesList');
@@ -521,6 +520,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function ensureAllRecipesVisible() {
+        if (allRecipesList.style.display === 'none') {
+            allRecipesList.style.display = '';
+            toggleBtn.innerHTML = '<i class="bi bi-chevron-up"></i> Hide All';
+        }
+    }
+
+    function scrollToFirstVisibleRecipe() {
+        const firstVisible = Array.from(recipeCards).find(card => card.style.display !== 'none');
+        if (firstVisible) {
+            firstVisible.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     // Collect all unique tags from recipes
     const allTags = new Set();
     recipeCards.forEach(card => {
@@ -530,45 +543,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Populate tag filter container (alphabetically sorted)
+    // Populate tag dropdown (alphabetically sorted)
     const sortedTags = Array.from(allTags).sort();
-    sortedTags.forEach(tag => {
-        const tagItem = document.createElement('span');
-        tagItem.className = 'tag-filter-item';
-        tagItem.textContent = tag;
-        tagItem.dataset.tag = tag;
-
-        tagItem.addEventListener('click', function() {
-            // Remove active class from all tags
-            document.querySelectorAll('.tag-filter-item').forEach(item => {
-                item.classList.remove('active');
+    if (sidebarTagSelect) {
+        if (sortedTags.length === 0) {
+            sidebarTagSelect.innerHTML = '<option value="">No tags yet</option>';
+            sidebarTagSelect.disabled = true;
+        } else {
+            sortedTags.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag;
+                option.textContent = tag;
+                sidebarTagSelect.appendChild(option);
             });
+        }
+    }
 
-            // Toggle selection
-            if (selectedTag === tag) {
-                selectedTag = '';
-                clearTagBtn.style.display = 'none';
-            } else {
-                selectedTag = tag;
-                this.classList.add('active');
-                clearTagBtn.style.display = 'inline-block';
-            }
-
+    if (sidebarTagClear) {
+        sidebarTagClear.addEventListener('click', function() {
+            selectedTag = '';
+            sidebarTagClear.style.display = 'none';
+            sidebarTagSelect.value = '';
             filterRecipes();
         });
+    }
 
-        tagFilterContainer.appendChild(tagItem);
-    });
-
-    // Clear tag filter button
-    clearTagBtn.addEventListener('click', function() {
-        selectedTag = '';
-        document.querySelectorAll('.tag-filter-item').forEach(item => {
-            item.classList.remove('active');
+    if (sidebarTagSelect) {
+        sidebarTagSelect.addEventListener('change', function() {
+            selectedTag = this.value;
+            if (sidebarTagClear) {
+                sidebarTagClear.style.display = selectedTag ? 'inline-block' : 'none';
+            }
+            ensureAllRecipesVisible();
+            filterRecipes();
+            if (selectedTag) {
+                scrollToFirstVisibleRecipe();
+            }
         });
-        clearTagBtn.style.display = 'none';
-        filterRecipes();
-    });
+    }
 
     // Filter function
     function filterRecipes() {

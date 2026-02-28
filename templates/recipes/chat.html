@@ -416,8 +416,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -429,7 +429,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Food Guide</span>
+                    <span class="text-label" style="color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -459,7 +459,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -832,7 +832,7 @@ function startNewChat() {
 
 async function loadChatHistory() {
     try {
-        const response = await fetch('/api/chat/conversations');
+        const response = await fetch('/api/v1/chat/conversations');
         const conversations = await response.json();
 
         const historyDiv = document.getElementById('chat-history');
@@ -869,7 +869,7 @@ async function loadChatHistory() {
 
 async function loadConversation(conversationId) {
     try {
-        const response = await fetch(`/api/chat/conversations/${conversationId}`);
+        const response = await fetch(`/api/v1/chat/conversations/${conversationId}`);
         const data = await response.json();
 
         currentConversationId = conversationId;
@@ -956,7 +956,7 @@ async function sendMessage() {
         // Get selected recipe IDs for context
         const recipeIds = selectedRecipes.map(r => r.id);
 
-        const response = await fetch('/api/chat', {
+        const response = await fetch('/api/v1/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1041,7 +1041,7 @@ async function deleteConversation(conversationId) {
     }
 
     try {
-        const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+        const response = await fetch(`/api/v1/chat/conversations/${conversationId}`, {
             method: 'DELETE'
         });
 
@@ -1339,8 +1339,9 @@ let allRecipes = [];  // Cache of all recipes for faster search
 
 async function loadAllRecipes() {
     try {
-        const response = await fetch('/api/recipes/search?q=&limit=100');
-        allRecipes = await response.json();
+        const response = await fetch('/api/v1/recipes?q=&per_page=100');
+        const result = await response.json();
+        allRecipes = result.data || [];
     } catch (error) {
         console.error('Error loading recipes:', error);
     }

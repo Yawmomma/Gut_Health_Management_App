@@ -1,0 +1,854 @@
+{
+  "info": {
+    "name": "Gut Health Management API",
+    "description": "Complete Postman collection for all 136 API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Setup & Authentication",
+      "item": [
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "Your existing admin API key"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Integration\",\n  \"scopes\": [\"read:diary\", \"read:analytics\", \"read:recipes\"],\n  \"rate_limit\": 120,\n  \"expires_at\": \"2027-02-28T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/api-keys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": ["api", "v1", "auth", "api-keys"]
+            },
+            "description": "Create a new API key. Save the returned key in Postman variables."
+          }
+        },
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "api-keys"]
+            }
+          }
+        },
+        {
+          "name": "Check Rate Limit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/rate-limit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "rate-limit"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Diary (9 endpoints)",
+      "item": [
+        {
+          "name": "Get Diary Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/entries?date_from=2026-02-01&date_to=2026-02-28&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "entries"],
+              "query": [
+                {"key": "date_from", "value": "2026-02-01"},
+                {"key": "date_to", "value": "2026-02-28"},
+                {"key": "page", "value": "1"},
+                {"key": "per_page", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Day View",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/day/2026-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "day", "2026-02-28"]
+            }
+          }
+        },
+        {
+          "name": "Get Symptom Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/trends?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "trends"],
+              "query": [
+                {"key": "days", "value": "30"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Weekly Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/weekly?weeks=4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "weekly"],
+              "query": [
+                {"key": "weeks", "value": "4"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-28\",\n  \"meal_type\": \"breakfast\",\n  \"foods\": [\n    {\n      \"food_id\": 1,\n      \"serving_size\": \"1 cup\",\n      \"quantity\": 1\n    }\n  ],\n  \"notes\": \"Test meal entry\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/meals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "meals"]
+            }
+          }
+        },
+        {
+          "name": "Update Meal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-28\",\n  \"meal_type\": \"breakfast\",\n  \"foods\": [\n    {\n      \"food_id\": 1,\n      \"serving_size\": \"1.5 cups\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/meals/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "meals", "1"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Log Entries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entries\": [\n    {\n      \"type\": \"meal\",\n      \"date\": \"2026-02-28\",\n      \"meal_type\": \"breakfast\",\n      \"foods\": [{\"food_id\": 1, \"serving_size\": \"1 cup\", \"quantity\": 1}]\n    },\n    {\n      \"type\": \"symptom\",\n      \"date\": \"2026-02-28\",\n      \"symptom\": \"Bloating\",\n      \"severity\": 4,\n      \"notes\": \"After breakfast\"\n    },\n    {\n      \"type\": \"bowel\",\n      \"date\": \"2026-02-28\",\n      \"bristol_type\": 4\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/diary/entries/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "diary", "entries", "bulk"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Foods & Compendium (14 endpoints)",
+      "item": [
+        {
+          "name": "Search Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/compendium/search?q=apple&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "compendium", "search"],
+              "query": [
+                {"key": "q", "value": "apple"},
+                {"key": "page", "value": "1"},
+                {"key": "per_page", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Food Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/compendium/foods/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "compendium", "foods", "1"]
+            }
+          }
+        },
+        {
+          "name": "Compare Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/compendium/compare?ids=1,2,3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "compendium", "compare"],
+              "query": [
+                {"key": "ids", "value": "1,2,3"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Food Substitutes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/foods/substitutes?food_id=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "foods", "substitutes"],
+              "query": [
+                {"key": "food_id", "value": "1"},
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unified Food Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/foods/unified-search?q=rice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "foods", "unified-search"],
+              "query": [
+                {"key": "q", "value": "rice"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Nutrient Boosters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/foods/nutrient-boosters?nutrient=iron&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "foods", "nutrient-boosters"],
+              "query": [
+                {"key": "nutrient", "value": "iron"},
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics (27 endpoints)",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Symptom Patterns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/symptom-patterns?days=30&min_confidence=0.7",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "symptom-patterns"],
+              "query": [
+                {"key": "days", "value": "30"},
+                {"key": "min_confidence", "value": "0.7"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Food Reactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/food-reactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "food-reactions"]
+            }
+          }
+        },
+        {
+          "name": "Symptom Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/symptom-trends?days=30&granularity=daily",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "symptom-trends"],
+              "query": [
+                {"key": "days", "value": "30"},
+                {"key": "granularity", "value": "daily"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trigger Foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/trigger-foods?days=30&symptom_threshold=6",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "trigger-foods"],
+              "query": [
+                {"key": "days", "value": "30"},
+                {"key": "symptom_threshold", "value": "6"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "FODMAP Exposure",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/fodmap-exposure",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "fodmap-exposure"]
+            }
+          }
+        },
+        {
+          "name": "Nutrition Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/nutrition-summary?date_from=2026-02-21&date_to=2026-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "nutrition-summary"],
+              "query": [
+                {"key": "date_from", "value": "2026-02-21"},
+                {"key": "date_to", "value": "2026-02-28"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nutrient RDI Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/nutrient-rdi-status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "nutrient-rdi-status"]
+            }
+          }
+        },
+        {
+          "name": "Gut Health Score",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/gut-health-score",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "gut-health-score"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FODMAP Reference (2 endpoints)",
+      "item": [
+        {
+          "name": "Get FODMAP Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fodmap/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "fodmap", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get FODMAP Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fodmap/foods?category=fruits&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "fodmap", "foods"],
+              "query": [
+                {"key": "category", "value": "fruits"},
+                {"key": "page", "value": "1"},
+                {"key": "per_page", "value": "20"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recipes & Meals (15 endpoints)",
+      "item": [
+        {
+          "name": "List Recipes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "per_page", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Recipes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes/search?q=salmon&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes", "search"],
+              "query": [
+                {"key": "q", "value": "salmon"},
+                {"key": "page", "value": "1"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Recipe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Recipe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grilled Salmon with Rice\",\n  \"ingredients\": [\n    {\"name\": \"Salmon fillet\", \"quantity\": \"150g\"},\n    {\"name\": \"White rice\", \"quantity\": \"0.75 cups\"}\n  ],\n  \"instructions\": \"1. Heat grill to 400F\\n2. Grill salmon 4-5 min per side\\n3. Serve with rice\",\n  \"serving_size\": \"1 plate\",\n  \"prep_time_min\": 10,\n  \"cook_time_min\": 12,\n  \"tags\": [\"low-fodmap\", \"quick\", \"pescatarian\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes"]
+            }
+          }
+        },
+        {
+          "name": "Update Recipe",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grilled Salmon with Rice (Updated)\",\n  \"ingredients\": [\n    {\"name\": \"Salmon fillet\", \"quantity\": \"200g\"},\n    {\"name\": \"White rice\", \"quantity\": \"1 cup\"}\n  ],\n  \"instructions\": \"1. Heat grill to 400F\\n2. Grill salmon 5-6 min per side\\n3. Serve with rice\",\n  \"tags\": [\"low-fodmap\", \"quick\", \"pescatarian\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Recipe",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "USDA Database (4 endpoints)",
+      "item": [
+        {
+          "name": "Search USDA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/usda/search?q=chicken",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "usda", "search"],
+              "query": [
+                {"key": "q", "value": "chicken"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get USDA Food",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/usda/foods/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "usda", "foods", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get USDA Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/usda/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "usda", "categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search (3 endpoints)",
+      "item": [
+        {
+          "name": "Global Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/search/global?q=apple",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "search", "global"],
+              "query": [
+                {"key": "q", "value": "apple"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Food Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/foods/recommendations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "foods", "recommendations"]
+            }
+          }
+        },
+        {
+          "name": "Suitable Recipes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recipes/suitable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recipes", "suitable"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export (3 endpoints)",
+      "item": [
+        {
+          "name": "Export Diary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/export/diary?format=json&date_from=2026-02-01&date_to=2026-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "export", "diary"],
+              "query": [
+                {"key": "format", "value": "json"},
+                {"key": "date_from", "value": "2026-02-01"},
+                {"key": "date_to", "value": "2026-02-28"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export PDF Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/export/report/pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "export", "report", "pdf"]
+            }
+          }
+        },
+        {
+          "name": "Export Shopping List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/export/shopping-list",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "export", "shopping-list"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "your-api-key-here",
+      "type": "string"
+    }
+  ]
+}

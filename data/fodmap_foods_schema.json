@@ -1,0 +1,43 @@
+{
+  "description": "Schema reference for fodmap_foods_template.csv",
+  "version": "1.0",
+  "instructions": [
+    "Open fodmap_foods_template.csv in Excel or Google Sheets to add foods.",
+    "One row per food. Required: name, category, safe_serving, safe_serving_unit.",
+    "Moderate/high serving columns are optional — leave blank to skip those tiers.",
+    "Use the allowed values below exactly as shown (case-sensitive).",
+    "Wrap values containing commas in double quotes (e.g. \"Gluten, Dairy\").",
+    "Remove the 3 example rows before importing."
+  ],
+  "columns": {
+    "name":        { "type": "text", "required": true,  "description": "Food name (e.g. 'Banana, common, firm, peeled, raw')" },
+    "category":    { "type": "text", "required": true,  "allowed": ["Vegetables", "Fruits", "Grains", "Proteins", "Dairy", "Nuts & Seeds", "Fats/Oils", "Herbs & Spices", "Beverages", "Packaged Food", "Other"] },
+
+    "_serving_fields (repeated for safe_, moderate_, high_)": {
+      "serving":      { "type": "number", "required": "safe only", "description": "Amount (e.g. 95)" },
+      "serving_unit":  { "type": "text",   "required": "safe only", "allowed": ["g", "ml", "cup", "tbsp", "tsp", "piece", "slice"] },
+      "serving_type":  { "type": "text",   "required": false, "allowed": ["1 serve", "low serve", "moderate serve", "high serve", ""] },
+      "serving_note":  { "type": "text",   "required": false, "description": "e.g. '1 medium', '1/2 cup', 'per meal'" },
+      "traffic_light": { "type": "text",   "required": false, "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" }
+    },
+
+    "_fodmap_fields (repeated for safe_, moderate_, high_)": {
+      "fructans":  { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "gos":       { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "lactose":   { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "fructose":  { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "polyols":   { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "mannitol":  { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" },
+      "sorbitol":  { "type": "text", "allowed": ["Green", "Amber", "Red"], "default_safe": "Green", "default_moderate": "Amber", "default_high": "Red" }
+    },
+
+    "_histamine_fields (repeated for safe_, moderate_, high_)": {
+      "histamine_level":     { "type": "text", "allowed": ["Low", "Medium", "High"], "default_safe": "Low", "default_moderate": "Medium", "default_high": "High" },
+      "histamine_liberator": { "type": "text", "allowed": ["Yes", "No"], "default_safe": "No", "default_moderate": "No", "default_high": "Yes" },
+      "dao_blocker":         { "type": "text", "allowed": ["Yes", "No"], "default_safe": "No", "default_moderate": "No", "default_high": "Yes" }
+    },
+
+    "preparation_notes": { "type": "text", "required": false, "description": "Cooking tips, storage, histamine notes" },
+    "common_allergens":  { "type": "text", "required": false, "description": "Comma-separated (e.g. 'Gluten, Dairy')" }
+  }
+}

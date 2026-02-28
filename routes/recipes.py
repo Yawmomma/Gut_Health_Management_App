@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from database import db
-from models.user import SavedRecipe
 from models.recipe import Recipe, RecipeIngredient, SavedMeal, SavedMealItem, RecipeClassificationOption
 from models.food import Food
 from utils import allowed_file
@@ -57,9 +56,53 @@ def resolve_custom_option(option_type, selected_value, custom_value, base_list):
         return custom_value
     return selected_value
 
+def safe_delete_file(filepath):
+    """Safely delete a file, logging errors but not failing the operation."""
+    try:
+        if filepath and os.path.exists(filepath):
+            os.remove(filepath)
+            return True
+    except OSError as e:
+        current_app.logger.warning(f'Could not delete file {filepath}: {e}')
+    return False
+
+def process_recipe_classification(form, removed_tags):
+    """Process recipe classification fields from form, filtering removed tags."""
+    def filter_tag(value):
+        """Return None if value is in removed_tags, else return value."""
+        return None if (value and value.strip() in removed_tags) else value
+
+    subcategory = filter_tag(form.get('subcategory'))
+
+    cuisine = resolve_custom_option(
+        'cuisine', form.get('cuisine'), form.get('custom_cuisine'), rc.CUISINES
+    )
+    cuisine = filter_tag(cuisine)
+
+    preparation_method = resolve_custom_option(
+        'preparation_method', form.get('preparation_methods'),
+        form.get('custom_preparation_method'), rc.PREPARATION_METHODS
+    )
+    preparation_method = filter_tag(preparation_method)
+
+    occasion = resolve_custom_option(
+        'occasion', form.get('occasions'), form.get('custom_occasion'), rc.OCCASIONS
+    )
+    occasion = filter_tag(occasion)
+
+    difficulty = filter_tag(form.get('difficulty'))
+
+    return {
+        'subcategory': subcategory,
+        'cuisine': cuisine,
+        'preparation_method': preparation_method,
+        'occasion': occasion,
+        'difficulty': difficulty
+    }
+
 @bp.route('/')
 def index():
-    """Recipes & Meals landing page"""
+    """My Recipe Book landing page"""
     recipe_count = Recipe.query.count()
     meal_count = SavedMeal.query.count()
     return render_template('recipes/index.html', recipe_count=recipe_count, meal_count=meal_count)
@@ -71,15 +114,15 @@ def chat():
 
 @bp.route('/saved')
 def saved():
-    """Saved recipes list"""
-    recipes = SavedRecipe.query.order_by(SavedRecipe.created_at.desc()).all()
-    return render_template('recipes/saved.html', recipes=recipes)
+    """Saved recipes list - Placeholder for Phase 6 (LLM integration)"""
+    flash('Saved recipes feature coming soon!', 'info')
+    return redirect(url_for('recipes.index'))
 
 @bp.route('/saved/<int:recipe_id>')
 def detail(recipe_id):
-    """Recipe detail view"""
-    recipe = SavedRecipe.query.get_or_404(recipe_id)
-    return render_template('recipes/detail.html', recipe=recipe)
+    """Recipe detail view - Placeholder for Phase 6 (LLM integration)"""
+    flash('Saved recipes feature coming soon!', 'info')
+    return redirect(url_for('recipes.index'))
 
 
 # User-created recipes with food library
@@ -125,41 +168,8 @@ def create_recipe():
                 if file.filename:
                     image_path = save_upload_file(file, prefix='recipe')
 
-            # Filter out removed tags from form fields
-            subcategory = request.form.get('subcategory')
-            if subcategory and subcategory.strip() in removed_tags:
-                subcategory = None
-
-            cuisine = resolve_custom_option(
-                'cuisine',
-                request.form.get('cuisine'),
-                request.form.get('custom_cuisine'),
-                rc.CUISINES
-            )
-            if cuisine and cuisine.strip() in removed_tags:
-                cuisine = None
-
-            preparation_method = resolve_custom_option(
-                'preparation_method',
-                request.form.get('preparation_methods'),
-                request.form.get('custom_preparation_method'),
-                rc.PREPARATION_METHODS
-            )
-            if preparation_method and preparation_method.strip() in removed_tags:
-                preparation_method = None
-
-            occasion = resolve_custom_option(
-                'occasion',
-                request.form.get('occasions'),
-                request.form.get('custom_occasion'),
-                rc.OCCASIONS
-            )
-            if occasion and occasion.strip() in removed_tags:
-                occasion = None
-
-            difficulty = request.form.get('difficulty')
-            if difficulty and difficulty.strip() in removed_tags:
-                difficulty = None
+            # Process classification fields (filter removed tags)
+            classification = process_recipe_classification(request.form, removed_tags)
 
             # Create recipe
             recipe = Recipe(
@@ -171,12 +181,12 @@ def create_recipe():
                 instructions=request.form.get('instructions'),
                 notes=request.form.get('notes'),
                 category=request.form.get('category'),
-                subcategory=subcategory,
-                cuisine=cuisine,
+                subcategory=classification['subcategory'],
+                cuisine=classification['cuisine'],
                 dietary_needs=dietary_needs_str,
-                preparation_method=preparation_method,
-                occasion=occasion,
-                difficulty=difficulty,
+                preparation_method=classification['preparation_method'],
+                occasion=classification['occasion'],
+                difficulty=classification['difficulty'],
                 tags=request.form.get('tags'),
                 source_url=request.form.get('source_url'),
                 image_path=image_path
@@ -209,21 +219,7 @@ def create_recipe():
 
     # GET request - show form
     foods = Food.query.order_by(Food.category, Food.name).all()
-    # Convert foods to dictionaries for JSON serialization
-    foods_data = [{
-        'id': f.id,
-        'name': f.name,
-        'category': f.category,
-        'fructans': f.fructans,
-        'gos': f.gos,
-        'lactose': f.lactose,
-        'fructose': f.fructose,
-        'polyols': f.polyols,
-        'mannitol': f.mannitol,
-        'sorbitol': f.sorbitol,
-        'histamine_level': f.histamine_level,
-        'safe_serving': f.safe_serving
-    } for f in foods]
+    foods_data = [f.to_recipe_dict() for f in foods]
 
     cuisines = get_classification_options('cuisine', rc.CUISINES)
     preparation_methods = get_classification_options('preparation_method', rc.PREPARATION_METHODS)
@@ -274,46 +270,12 @@ def edit_recipe(recipe_id):
                     # Delete old photo if exists
                     if recipe.image_path:
                         old_path = os.path.join(current_app.root_path, 'static', recipe.image_path)
-                        if os.path.exists(old_path):
-                            os.remove(old_path)
+                        safe_delete_file(old_path)
                     # Save new photo
                     recipe.image_path = save_upload_file(file, prefix='recipe')
 
-            # Filter out removed tags from form fields
-            subcategory = request.form.get('subcategory')
-            if subcategory and subcategory.strip() in removed_tags:
-                subcategory = None
-
-            cuisine = resolve_custom_option(
-                'cuisine',
-                request.form.get('cuisine'),
-                request.form.get('custom_cuisine'),
-                rc.CUISINES
-            )
-            if cuisine and cuisine.strip() in removed_tags:
-                cuisine = None
-
-            preparation_method = resolve_custom_option(
-                'preparation_method',
-                request.form.get('preparation_methods'),
-                request.form.get('custom_preparation_method'),
-                rc.PREPARATION_METHODS
-            )
-            if preparation_method and preparation_method.strip() in removed_tags:
-                preparation_method = None
-
-            occasion = resolve_custom_option(
-                'occasion',
-                request.form.get('occasions'),
-                request.form.get('custom_occasion'),
-                rc.OCCASIONS
-            )
-            if occasion and occasion.strip() in removed_tags:
-                occasion = None
-
-            difficulty = request.form.get('difficulty')
-            if difficulty and difficulty.strip() in removed_tags:
-                difficulty = None
+            # Process classification fields (filter removed tags)
+            classification = process_recipe_classification(request.form, removed_tags)
 
             # Update recipe
             recipe.name = request.form.get('name')
@@ -324,12 +286,12 @@ def edit_recipe(recipe_id):
             recipe.instructions = request.form.get('instructions')
             recipe.notes = request.form.get('notes')
             recipe.category = request.form.get('category')
-            recipe.subcategory = subcategory
-            recipe.cuisine = cuisine
+            recipe.subcategory = classification['subcategory']
+            recipe.cuisine = classification['cuisine']
             recipe.dietary_needs = dietary_needs_str
-            recipe.preparation_method = preparation_method
-            recipe.occasion = occasion
-            recipe.difficulty = difficulty
+            recipe.preparation_method = classification['preparation_method']
+            recipe.occasion = classification['occasion']
+            recipe.difficulty = classification['difficulty']
             recipe.tags = request.form.get('tags')
             recipe.source_url = request.form.get('source_url')
 
@@ -360,21 +322,7 @@ def edit_recipe(recipe_id):
             flash(f'Error updating recipe: {str(e)}', 'error')
 
     foods = Food.query.order_by(Food.category, Food.name).all()
-    # Convert foods to dictionaries for JSON serialization
-    foods_data = [{
-        'id': f.id,
-        'name': f.name,
-        'category': f.category,
-        'fructans': f.fructans,
-        'gos': f.gos,
-        'lactose': f.lactose,
-        'fructose': f.fructose,
-        'polyols': f.polyols,
-        'mannitol': f.mannitol,
-        'sorbitol': f.sorbitol,
-        'histamine_level': f.histamine_level,
-        'safe_serving': f.safe_serving
-    } for f in foods]
+    foods_data = [f.to_recipe_dict() for f in foods]
 
     # Convert recipe ingredients to dictionaries for JSON serialization
     ingredients_data = [{
@@ -482,21 +430,7 @@ def create_meal():
 
     # GET request - show form
     foods = Food.query.order_by(Food.category, Food.name).all()
-    # Convert foods to dictionaries for JSON serialization
-    foods_data = [{
-        'id': f.id,
-        'name': f.name,
-        'category': f.category,
-        'fructans': f.fructans,
-        'gos': f.gos,
-        'lactose': f.lactose,
-        'fructose': f.fructose,
-        'polyols': f.polyols,
-        'mannitol': f.mannitol,
-        'sorbitol': f.sorbitol,
-        'histamine_level': f.histamine_level,
-        'safe_serving': f.safe_serving
-    } for f in foods]
+    foods_data = [f.to_recipe_dict() for f in foods]
     return render_template('recipes/create_meal.html', foods=foods_data)
 
 
@@ -519,8 +453,7 @@ def edit_meal(meal_id):
                     # Delete old photo if exists
                     if meal.image_path:
                         old_path = os.path.join('static', meal.image_path.lstrip('/'))
-                        if os.path.exists(old_path):
-                            os.remove(old_path)
+                        safe_delete_file(old_path)
                     # Save new photo
                     meal.image_path = save_upload_file(file, prefix='meal')
 
@@ -589,8 +522,7 @@ def delete_meal(meal_id):
         # Delete photo if exists
         if meal.image_path:
             photo_path = os.path.join('static', meal.image_path.lstrip('/'))
-            if os.path.exists(photo_path):
-                os.remove(photo_path)
+            safe_delete_file(photo_path)
 
         db.session.delete(meal)
         db.session.commit()

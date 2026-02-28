@@ -173,8 +173,8 @@
                 </div>
             </a>
 
-            <!-- Food Guide -->
-            <a href="{{ url_for('foods.index') }}" class="text-decoration-none">
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
                 <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -186,7 +186,7 @@
                             <path d="M21 2c0 4-3 6-3 10"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Guide</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
                 </div>
             </a>
 
@@ -216,7 +216,7 @@
                             <line x1="6" y1="17" x2="18" y2="17"/>
                         </svg>
                     </div>
-                    <span class="text-label" style="font-weight: 500; color: #fff;">Recipes & Meals</span>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
                 </div>
             </a>
 
@@ -247,6 +247,20 @@
                 </div>
             </a>
 
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
 
@@ -271,7 +285,28 @@
             <!-- Separator -->
             <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
 
-            <!-- Upload Section -->
+            <!-- Quick Categories -->
+            <div style="padding-right: 12px; margin-bottom: 12px;">
+                <h6 class="text-label mb-2" style="color: #fff; font-weight: 600;"><i class="bi bi-grid-3x3"></i> Quick Categories</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for cat in categories %}
+                    <a href="{{ url_for('settings.help_index', category=cat) }}" class="btn btn-outline-light btn-sm text-label {% if current_category == cat %}active{% endif %}">
+                        <i class="bi bi-folder"></i> {{ cat }}
+                    </a>
+                    {% endfor %}
+                    {% if current_category %}
+                    <a href="{{ url_for('settings.help_index') }}" class="btn btn-sm btn-outline-light text-label">
+                        <i class="bi bi-x-circle"></i> Clear Filter
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Separator -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 12px 20px 0;"></div>
+
+            <!-- Upload Section (Admin Only) -->
+            {% if admin_mode %}
             <div style="padding-right: 12px;">
                 <div class="upload-zone mb-2" id="upload-zone">
                     <i class="bi bi-cloud-upload" style="font-size: 2rem; color: var(--gold);"></i>
@@ -284,6 +319,7 @@
                     <i class="bi bi-pencil-square"></i> <span id="edit-delete-text">Edit/Delete Mode</span>
                 </button>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -293,31 +329,13 @@
             <div class="col-md-9">
                 <h1 class="text-h2 mb-4"><i class="bi bi-question-circle"></i> Help & Support</h1>
 
-                <!-- Quick Categories Card -->
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-grid-3x3"></i> Quick Categories</h5>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for cat in categories %}
-                            <a href="{{ url_for('settings.help_index', category=cat) }}" class="btn btn-outline-primary btn-sm {% if current_category == cat %}active{% endif %}">
-                                <i class="bi bi-folder"></i> {{ cat }}
-                            </a>
-                            {% endfor %}
-                            {% if current_category %}
-                            <a href="{{ url_for('settings.help_index') }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Clear Filter
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Edit/Delete Mode Badge -->
+                <!-- Edit/Delete Mode Badge (Admin Only) -->
+                {% if admin_mode %}
                 <div class="mb-2 text-end">
                     <span id="edit-delete-mode-badge" class="badge bg-info" style="display: none;">Edit/Delete Mode Active</span>
                 </div>
 
-                <!-- Edit/Delete Action Buttons -->
+                <!-- Edit/Delete Action Buttons (Admin Only) -->
                 <div id="edit-delete-actions" class="mb-3 d-none">
                     <div class="d-flex gap-2 align-items-center">
                         <span id="selected-count" class="text-muted">0 selected</span>
@@ -332,6 +350,7 @@
                         </button>
                     </div>
                 </div>
+                {% endif %}
 
                 {% if documents %}
                     <!-- Documents List -->
@@ -365,10 +384,12 @@
                                         <span>{{ doc.title }}</span>
                                     </button>
 
-                                    <!-- Last Updated -->
+                                    <!-- Last Updated (Admin Only) -->
+                                    {% if admin_mode %}
                                     <span class="help-doc-date ms-2">
                                         {{ doc.display_date }}
                                     </span>
+                                    {% endif %}
                                 </div>
                                 <div id="doc-{{ doc.id }}" class="collapse help-doc-content">
                                     <div class="help-doc-body">
@@ -390,6 +411,7 @@
 </div>
 
 <script>
+{% if admin_mode %}
 let editDeleteMode = false;
 let selectedDocs = new Set();
 
@@ -529,7 +551,8 @@ function updateSelectedCount() {
 bulkEditBtn.addEventListener('click', () => {
     if (selectedDocs.size === 1) {
         const docId = Array.from(selectedDocs)[0];
-        window.location.href = `{{ url_for('settings.help_edit', doc_id='__DOC_ID__') }}`.replace('__DOC_ID__', docId);
+        // Use a dummy integer (0) in url_for, then replace it with the actual ID
+        window.location.href = `{{ url_for('settings.help_edit', doc_id=0) }}`.replace('/0', '/' + docId);
     }
 });
 
@@ -548,7 +571,8 @@ bulkDeleteBtn.addEventListener('click', () => {
 
     if (confirm(confirmMsg)) {
         const deletePromises = Array.from(selectedDocs).map(id => {
-            return fetch(`{{ url_for('settings.help_delete', doc_id='__DOC_ID__') }}`.replace('__DOC_ID__', id), {
+            // Use a dummy integer (0) in url_for, then replace it with the actual ID
+            return fetch(`{{ url_for('settings.help_delete', doc_id=0) }}`.replace('/0', '/' + id), {
                 method: 'POST'
             }).then(response => response.json());
         });
@@ -567,6 +591,7 @@ bulkDeleteBtn.addEventListener('click', () => {
 document.getElementById('cancel-edit-delete').addEventListener('click', () => {
     disableEditDeleteMode();
 });
+{% endif %}
 </script>
 
 {% endblock %}

@@ -1,8 +1,13 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_socketio import SocketIO, emit
+from flask_migrate import Migrate
+from flasgger import Swagger
 from config import Config
 from database import db
+from utils.swagger_config import swagger_template, swagger_config
 import os
+import sys
+import signal
 import threading
 import time
 from watchdog.observers import Observer
@@ -21,6 +26,18 @@ socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 
 # Initialize database
 db.init_app(app)
+
+# Initialize Flask-Migrate for database migrations
+migrate_ext = Migrate(app, db)
+
+# Initialize Swagger/OpenAPI documentation
+swagger = Swagger(app, template=swagger_template, config=swagger_config)
+
+# Context processor to make admin_mode available to all templates
+@app.context_processor
+def inject_admin_mode():
+    """Make admin_mode available to all templates"""
+    return dict(admin_mode=app.config.get('ADMIN_MODE', False))
 
 # Custom Jinja filter to format numbers (remove trailing .0)
 @app.template_filter('format_num')
@@ -53,21 +70,25 @@ def ordinal(value):
         return value
 
 # Import models (after db is initialized)
-from models import food, diary, user, education, recipe, chat
+from models import food, diary, user, education, recipe, chat, usda, ausnut, webhooks
+from models import reintroduction, gamification, security
 
 # Import routes
-from routes import main, foods, diary as diary_routes, recipes, education as education_routes, api, settings
-from routes import recipe_builder
+from routes import main, compendium, diary as diary_routes, recipes, education as education_routes, settings
+from routes import recipe_builder, usda_foods, ausnut_foods
+from routes import api_v1
 
 # Register blueprints
 app.register_blueprint(main.bp)
-app.register_blueprint(foods.bp)
+app.register_blueprint(compendium.bp)
 app.register_blueprint(diary_routes.bp)
 app.register_blueprint(recipes.bp)
 app.register_blueprint(recipe_builder.bp)
 app.register_blueprint(education_routes.bp)
-app.register_blueprint(api.bp)
+app.register_blueprint(api_v1.bp)  # API v1 - Versioned API structure
 app.register_blueprint(settings.bp)
+app.register_blueprint(usda_foods.bp)
+app.register_blueprint(ausnut_foods.bp)
 
 # Create database tables if they don't exist
 with app.app_context():
@@ -78,6 +99,20 @@ with app.app_context():
 def index():
     """Redirect to dashboard"""
     return redirect(url_for('main.dashboard'))
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    """Gracefully shutdown the Flask server"""
+    def shutdown_server():
+        time.sleep(0.5)  # Give time for response to be sent
+        print("\n" + "="*60)
+        print("SHUTTING DOWN SERVER...")
+        print("="*60)
+        os._exit(0)  # Force exit all threads
+
+    # Start shutdown in background thread so response can be sent
+    threading.Thread(target=shutdown_server, daemon=True).start()
+    return jsonify({'status': 'shutting_down', 'message': 'Server is shutting down...'})
 
 # File change handler for live reload
 class FileChangeHandler(FileSystemEventHandler):
@@ -118,6 +153,7 @@ if __name__ == '__main__':
     print("GUT HEALTH MANAGEMENT APP")
     print("=" * 60)
     print("Access the application at: http://localhost:5000")
+    print(f"Admin Mode: {'ENABLED' if app.config.get('ADMIN_MODE', False) else 'DISABLED'}")
     print("Press Ctrl+C to stop the server")
     print("=" * 60)
 

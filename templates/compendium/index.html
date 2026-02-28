@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block title %}Food Compendium - Gut Health App{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .compendium-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .compendium-title {
+        margin-top: 12px;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+    /* USDA Card Styles */
+    .data-type-card {
+        display: block;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    .data-type-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--gold);
+    }
+    .data-type-card.foundation {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.15), rgba(40, 167, 69, 0.05));
+    }
+    .data-type-card.legacy {
+        background: linear-gradient(135deg, rgba(13, 202, 240, 0.15), rgba(13, 202, 240, 0.05));
+    }
+    .data-type-card.survey {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
+    }
+    .data-type-card.branded {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.05));
+    }
+    .data-type-card .icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 6px;
+    }
+    .data-type-card.foundation .icon {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+    }
+    .data-type-card.legacy .icon {
+        background-color: rgba(13, 202, 240, 0.2);
+        color: #0dcaf0;
+    }
+    .data-type-card.survey .icon {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    .data-type-card.branded .icon {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    .data-type-card .icon i {
+        font-size: 1.1rem;
+    }
+    .data-type-card .title {
+        font-size: var(--text-body);
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .data-type-card.foundation .title { color: #28a745; }
+    .data-type-card.legacy .title { color: #0dcaf0; }
+    .data-type-card.survey .title { color: #ffc107; }
+    .data-type-card.branded .title { color: #dc3545; }
+    .data-type-card .description {
+        font-size: var(--text-micro);
+        color: var(--sage);
+        margin-bottom: 4px;
+    }
+    .data-type-card .count {
+        font-size: var(--text-label);
+        font-weight: 600;
+        color: var(--white-ish);
+    }
+    .link-border-hover {
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 0 4px;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .link-border-hover:hover {
+        border-color: rgba(255, 255, 255, 0.45);
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+    .stats-box {
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2px 0;
+    }
+    .stats-label {
+        color: var(--gold);
+        font-size: var(--text-micro);
+    }
+    .stats-value {
+        color: var(--white-ish);
+        font-size: var(--text-label);
+        font-weight: 600;
+    }
+    .all-categories-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--bg-elevated);
+        border-radius: 8px;
+        text-decoration: none;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .all-categories-link:hover {
+        border-color: var(--gold);
+        transform: translateY(-1px);
+    }
+    .all-categories-link .title {
+        font-size: var(--text-body);
+        font-weight: 600;
+        color: var(--gold);
+    }
+    .all-categories-link .subtitle {
+        font-size: var(--text-micro);
+        color: var(--sage);
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0" style="margin-top: -1.5rem;">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="compendium-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> Food Compendium</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="margin: 16px 0; border-top: 1px solid rgba(255, 255, 255, 0.3);"></div>
+
+            <!-- Quick Links Section -->
+            <div class="sidebar-bottom-gap" style="display: flex; flex-direction: column; gap: 4px; margin-top: 26px;">
+                <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4); text-align: left; font-size: 0.72rem; padding-left: 2px;">
+                    <i class="bi bi-link-45deg"></i> Quick Links
+                </h6>
+                <a href="{{ url_for('compendium.search', view_all='1') }}" class="sidebar-nav-item d-flex align-items-center py-1 px-1 text-decoration-none link-border-hover">
+                    <i class="bi bi-list-ul me-2" style="font-size: 1rem; color: #fff;"></i>
+                    <span class="text-label" style="color: #fff;">View All Foods</span>
+                </a>
+                <a href="{{ url_for('ausnut_foods.search') }}" class="sidebar-nav-item d-flex align-items-center py-1 px-1 text-decoration-none link-border-hover">
+                    <i class="bi bi-flag me-2" style="font-size: 1rem; color: #fff;"></i>
+                    <span class="text-label" style="color: #fff;">AUSNUT 2023</span>
+                </a>
+                <a href="{{ url_for('usda_foods.categories') }}" class="sidebar-nav-item d-flex align-items-center py-1 px-1 text-decoration-none link-border-hover">
+                    <i class="bi bi-database me-2" style="font-size: 1rem; color: #fff;"></i>
+                    <span class="text-label" style="color: #fff;">USDA Categories</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area pt-3">
+        <div class="row">
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-3" style="margin-top: 40px;">
+                    <h1 class="text-h2 compendium-title"><i class="bi bi-egg-fried"></i> Food Compendium</h1>
+                </div>
+
+                <!-- FODMAP Database: Browse by Category -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="padding: 6px 10px;">
+                        <h5 class="mb-0 text-title">
+                            <a href="{{ url_for('compendium.search', view_all='1') }}" class="text-decoration-none text-reset link-border-hover">
+                                <i class="bi bi-heart-pulse"></i> FODMAP Database
+                            </a>
+                        </h5>
+                        <form action="{{ url_for('compendium.search') }}" method="get" class="d-flex align-items-center mx-2" style="flex: 1; max-width: 200px;">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="q" class="form-control" placeholder="Search foods..." style="font-size: var(--text-micro); padding: 2px 8px; height: 24px;">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit" style="padding: 2px 6px; height: 24px;">
+                                    <i class="bi bi-search" style="font-size: 0.65rem;"></i>
+                                </button>
+                            </div>
+                        </form>
+                        <span class="badge" style="background-color: #8BA48B; font-size: var(--text-micro);">FODMAP & Histamine</span>
+                    </div>
+                    <div class="card-body" style="padding: 10px;">
+                        <div class="d-flex flex-wrap justify-content-start" style="gap: 0;">
+                            <a href="{{ url_for('compendium.search', category='Fruits') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-apple" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Fruits</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Vegetables') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-flower2" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Vegetables</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Grains') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-palette" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Grains</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Proteins') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-egg" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Proteins</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Dairy') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-cup-straw" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Dairy</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Nuts & Seeds') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-egg-fried" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Nuts/Seeds</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Fats/Oils') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-capsule" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Fats/Oils</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Beverages') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-cup-hot" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Beverages</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Herbs & Spices') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-flower3" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Herbs/Spices</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Packaged Food') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-box-seam" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Packaged</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', category='Other') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-three-dots" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">Other</span>
+            </a>
+                            <a href="{{ url_for('compendium.search', view_all='1') }}" class="text-decoration-none" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; width: 20%; max-width: 20%; box-sizing: border-box;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #D6BD98; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">
+                    <i class="bi bi-list" style="font-size: 1.2rem; color: #1A3636;"></i>
+                </div>
+                <span class="text-label" style="color: #1A3636; font-weight: 600; text-align: center;">View All</span>
+            </a>
+        </div>
+                    </div>
+                </div>
+
+                <!-- AUSNUT 2023 Australian Database Section -->
+                {% if ausnut_total > 0 %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="padding: 6px 10px;">
+                        <h5 class="mb-0 text-title"><i class="bi bi-flag"></i> AUSNUT 2023 (Australia)</h5>
+                        <form action="{{ url_for('ausnut_foods.search') }}" method="get" class="d-flex align-items-center mx-2" style="flex: 1; max-width: 200px;">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="q" class="form-control" placeholder="Search AUSNUT..." style="font-size: var(--text-micro); padding: 2px 8px; height: 24px;">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit" style="padding: 2px 6px; height: 24px;">
+                                    <i class="bi bi-search" style="font-size: 0.65rem;"></i>
+                                </button>
+                            </div>
+                        </form>
+                        <span class="badge" style="background-color: #28a745; font-size: var(--text-micro);">{{ ausnut_total }} Foods</span>
+                    </div>
+                    <div class="card-body" style="padding: 10px;">
+                        <a href="{{ url_for('ausnut_foods.search') }}" class="all-categories-link">
+                            <div>
+                                <div class="title"><i class="bi bi-search"></i> Browse All AUSNUT Foods</div>
+                                <div class="subtitle">Australian food nutrient profiles from FSANZ (per 100g)</div>
+                            </div>
+                            <i class="bi bi-chevron-right" style="color: var(--gold); font-size: 1rem;"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="padding: 6px 10px;">
+                        <h5 class="mb-0 text-title"><i class="bi bi-flag"></i> AUSNUT 2023 (Australia)</h5>
+                        <div class="mx-2" style="flex: 1; max-width: 200px;"></div>
+                        <span class="badge bg-secondary" style="font-size: var(--text-micro);">Not Imported</span>
+                    </div>
+                    <div class="card-body text-center" style="padding: 16px;">
+                        <i class="bi bi-database-x" style="font-size: 2rem; color: var(--sage);"></i>
+                        <p class="text-body text-muted mb-2 mt-2">AUSNUT 2023 database not imported yet.</p>
+                        <p class="text-label text-muted mb-0">
+                            Place the xlsx file in <code>data/ausnut/</code> and run the import script.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- USDA Nutrition Database Section -->
+                {% if usda_categories %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="padding: 6px 10px;">
+                        <h5 class="mb-0 text-title"><i class="bi bi-database"></i> USDA Nutrition Database</h5>
+                        <form action="{{ url_for('usda_foods.search') }}" method="get" class="d-flex align-items-center mx-2" style="flex: 1; max-width: 200px;">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="q" class="form-control" placeholder="Search USDA..." style="font-size: var(--text-micro); padding: 2px 8px; height: 24px;">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit" style="padding: 2px 6px; height: 24px;">
+                                    <i class="bi bi-search" style="font-size: 0.65rem;"></i>
+                                </button>
+                            </div>
+                        </form>
+                        <span class="badge" style="background-color: #17a2b8; font-size: var(--text-micro);">{{ usda_total }} Foods</span>
+                    </div>
+                    <div class="card-body" style="padding: 10px;">
+                        <div class="row g-2 mb-2">
+                            <!-- Foundation Foods -->
+                            <div class="col-6">
+                                <a href="{{ url_for('usda_foods.categories', type='Foundation') }}" class="data-type-card foundation">
+                                    <div class="icon">
+                                        <i class="bi bi-patch-check-fill"></i>
+                                    </div>
+                                    <div class="title">Foundation</div>
+                                    <div class="description">Minimally processed foods</div>
+                                    <div class="count">{{ foundation_count }} foods <i class="bi bi-chevron-right"></i></div>
+                                </a>
+                            </div>
+                            <!-- SR Legacy -->
+                            <div class="col-6">
+                                <a href="{{ url_for('usda_foods.categories', type='SR Legacy') }}" class="data-type-card legacy">
+                                    <div class="icon">
+                                        <i class="bi bi-archive-fill"></i>
+                                    </div>
+                                    <div class="title">SR Legacy</div>
+                                    <div class="description">Standard Reference data</div>
+                                    <div class="count">{{ sr_legacy_count }} foods <i class="bi bi-chevron-right"></i></div>
+                                </a>
+                            </div>
+                            {% if survey_count %}
+                            <!-- Survey/FNDDS -->
+                            <div class="col-6">
+                                <a href="{{ url_for('usda_foods.categories', type='Survey') }}" class="data-type-card survey">
+                                    <div class="icon">
+                                        <i class="bi bi-clipboard-data-fill"></i>
+                                    </div>
+                                    <div class="title">Survey</div>
+                                    <div class="description">FNDDS survey foods</div>
+                                    <div class="count">{{ survey_count }} foods <i class="bi bi-chevron-right"></i></div>
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% if branded_count %}
+                            <!-- Branded Foods -->
+                            <div class="col-6">
+                                <a href="{{ url_for('usda_foods.categories', type='Branded') }}" class="data-type-card branded">
+                                    <div class="icon">
+                                        <i class="bi bi-bag-fill"></i>
+                                    </div>
+                                    <div class="title">Branded</div>
+                                    <div class="description">Commercial products</div>
+                                    <div class="count">{{ branded_count }} foods <i class="bi bi-chevron-right"></i></div>
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Browse All Categories Link -->
+                        <a href="{{ url_for('usda_foods.categories') }}" class="all-categories-link">
+                            <div>
+                                <div class="title"><i class="bi bi-grid-3x3-gap"></i> Browse All USDA Categories</div>
+                                <div class="subtitle">View all food categories with detailed nutrition data</div>
+                            </div>
+                            <i class="bi bi-chevron-right" style="color: var(--gold); font-size: 1rem;"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <!-- USDA Not Imported Message -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="padding: 6px 10px;">
+                        <h5 class="mb-0 text-title"><i class="bi bi-database"></i> USDA Nutrition Database</h5>
+                        <div class="mx-2" style="flex: 1; max-width: 200px;"></div>
+                        <span class="badge bg-secondary" style="font-size: var(--text-micro);">Not Imported</span>
+                    </div>
+                    <div class="card-body text-center" style="padding: 16px;">
+                        <i class="bi bi-database-x" style="font-size: 2rem; color: var(--sage);"></i>
+                        <p class="text-body text-muted mb-2 mt-2">USDA food database not imported yet.</p>
+                        <p class="text-label text-muted mb-0">
+                            Download from <a href="https://fdc.nal.usda.gov/download-datasets" target="_blank">USDA FoodData Central</a> and run the import script.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div><!-- /.col-md-9 -->
+        </div><!-- /.row -->
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+name,category,safe_serving,safe_serving_unit,safe_serving_type,safe_serving_note,safe_traffic_light,safe_fructans,safe_gos,safe_lactose,safe_fructose,safe_polyols,safe_mannitol,safe_sorbitol,safe_histamine_level,safe_histamine_liberator,safe_dao_blocker,moderate_serving,moderate_serving_unit,moderate_serving_type,moderate_serving_note,moderate_traffic_light,moderate_fructans,moderate_gos,moderate_lactose,moderate_fructose,moderate_polyols,moderate_mannitol,moderate_sorbitol,moderate_histamine_level,moderate_histamine_liberator,moderate_dao_blocker,high_serving,high_serving_unit,high_serving_type,high_serving_note,high_traffic_light,high_fructans,high_gos,high_lactose,high_fructose,high_polyols,high_mannitol,high_sorbitol,high_histamine_level,high_histamine_liberator,high_dao_blocker,preparation_notes,common_allergens
+"Almond Milk, chocolate, So Good",Beverages,250,ml,1 serve,1 cup,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,250,ml,1 serve,1 cup,Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,250,ml,1 serve,1 cup,Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,This product has no lactose or galactose carbohydrates.,
+"Milk, soy",Beverages,250,ml,1 serve,1 cup,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,375,ml,moderate serve,1.5 cups,Amber,Amber,Amber,Green,Amber,Green,Green,Green,Medium,No,No,500,ml,high serve,2 cups,Red,Red,Red,Green,Red,Green,Green,Green,High,No,No,"**Glycaemic Index (GI) value = 37
+# Isoflavone aglycones",
+"Oat Milk, chocolate (So Good)",Beverages,1/2 cup,g,,,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"After ½ cup (140g), oat milk is no longer low FODMAP due to its fructan and galactooligosaccharide (GOS) content. 
+
+Both fructans and GOS are oligosaccharides (the ‘O’ in FODMAP) and can be poorly absorbed in the small intestine and lead to gastrointestinal symptoms in sensitive individuals.
+
+The tolerance to FODMAPs varies among individuals, and some people might be able to handle different amounts.
+
+Oat milk is a plant-based, dairy-free milk alternative made from oats. It has gained popularity as a vegan or lactose-free substitute for cow’s milk.
+
+Oat milk is made by soaking and blending oats with water, then straining the mixture to extract the liquid, leaving behind the oat pulp. 
+
+It has a naturally sweet flavor with a creamy texture, making it a popular choice for coffee, cereals, baking, and general use in recipes.",
+Cheddar Cheese (aged),Dairy,10,g,,,Green,Green,Green,Green,Green,Green,Green,Green,Very High,No,1,20,g,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,50,g,high serve,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"Aged cheeses extremely high in histamine. Fresh cheeses (cream cheese, ricotta) better.",Dairy
+Cows Milk,Dairy,125,g,1 serve,,Green,Green,Green,Red,Green,Green,Green,Green,High,No,No,250,g,moderate serve,1/2 cup,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,250,g,high serve,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"High lactose. Use lactose-free milk or alternatives (almond, oat).
+Avoid if lactose intolerant
+High serving Not recommended","Dairy, Lactose"
+Lactose-Free Milk,Dairy,1 cup,g,,,Green,Green,Green,Green,Green,Green,Green,Green,Moderate,No,No,2 cups,g,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,3+ cups,g,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,Lactose removed. Still contains dairy proteins. Use fresh.,Dairy (not lactose)
+"Olive Oil, extra virgin, cold pressed, Red Island",Fats/Oils,18,g,1 serve,1 tablespoon (20ml),Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,37,g,1 serve,1 tablespoon,Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,90,g,high serve,5-6 tablespoons,Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,"Olive oil is a low FODMAP food because it is a pure fat and contains no carbohydrates. Fats do not contain FODMAPs; however, they can still affect gut motility and trigger IBS symptoms in some people when consumed in large quantities. 
+
+Serving Size: Monash University recommends a serving size of 1 tablespoon (18g) per meal. It is recommended to stick to this portion size to avoid potential gut symptoms caused by the high fat content, not FODMAPs. ",
+"Olive Oil, garlic infused",Fats/Oils,1 tsp,,,,Green,,,,,,,,,,,,,,,Amber,,,,,,,,,,,,,,,Red,,,,,,,,,,,,
+Quinoa (cooked),Grains,1 cup (155g),g,,,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,1.5 cups,g,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,2+ cups,g,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,Excellent gluten-free grain alternative. Rinse well before cooking.,
+"Sorghum, uncooked",Grains,100,g,1 serve,2/3 cup,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,150,g,moderate serve,1 cup,Amber,Amber,Amber,Green,Amber,Green,Green,Green,Low,No,No,300,g,high serve,2 cups,Red,Red,Red,Green,Red,Green,Green,Green,Low,No,No,"Sorghum is often referred to as a ""super grain"" because of its dense nutrient profile.
+Up to 100g (approx. 2/3 cup) of sorghum flour or grains is considered low FODMAP.
+It's not a known histamine liberator. It does not trigger the body to release its own stored histamine.
+There is no scientific evidence that sorghum acts as a DAO blocker (substances that inhibit the Diamine Oxidase enzyme responsible for breaking down histamine).
+
+Sorghum is a low-histamine grain. It does not naturally contain high levels of histamine or other biogenic amines.",
+Sourdough Bread (spelt),Grains,2 slices,g,,,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,3 slices,g,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,4+ slices,g,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,Fermentation breaks down fructans. Must be authentic sourdough (24hr+ ferment).,Gluten
+"Weet-Bix, gluten free",Grains,30,g,1 serve,2 bricks,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,45,g,moderate serve,3 bricks,Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,60,g,high serve,4 bricks,Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,"Gluten Free Weet-Bix™ is made from red sorghum grains - not wheat grains.
+Sorghum is an ancient grain which is naturally gluten free.
+It's considered low FODMAP up to a serving of 100g (10 bricks).
+
+Golden syrup is used in small amounts (estimated at ~3.3%).
+It is low FODMAP at a serving size of 7g (approx. 1 tsp).
+Even in 4 bricks of Gluten Free Weet-Bix, the total golden syrup content is approximately 2g, which remains well within the low FODMAP limit.",
+"Chicory root powder, roasted",Herbs & Spices,3,g,low serve,1 teaspoon,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,4,g,moderate serve,1 & 1/2 teaspoons,Amber,Amber,Green,Green,Amber,Green,Green,Green,Medium,No,No,5,g,1 serve,2 teaspoons,Red,Red,Red,Green,Red,Green,Green,Green,High,Yes,Yes,,
+"Garlic, paste",Herbs & Spices,5g,g,1 serve,1 teaspoon,Green,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,5g,g,1 serve,1 teaspoon,Amber,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,5g,g,1 serve,1 teaspoon,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"There is no safe low FODMAP serving size for garlic paste or fresh garlic because the fructans are water-soluble and will infuse into any dish. 
+
+Instead of garlic paste, the recommended method for adding garlic flavour is to use garlic-infused oil. Fructans are not soluble in oil, which means the flavour can be extracted without the high-FODMAP carbohydrates that trigger symptoms. 
+
+Other Low FODMAP Alternatives
+Asafoetida powder (Hing): This spice has a strong onion/garlic flavor and is low FODMAP. Use a small amount (around 1/8 teaspoon) for a similar taste profile.
+Garlic scapes/shoots: The green stalks of the garlic plant are low FODMAP in servings of up to 33g and can be used in stir-fries or as a garnish.
+Chives and green onion tops: These provide a mild onion/garlic flavor and are low FODMAP. ",
+Ginger paste,Herbs & Spices,5g,g,1 serve,1 teaspoon,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,10g,g,moderate serve,2 teaspoons,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,Yes,Yes,20g,g,high serve,4 teaspoons,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"Ginger paste is low FODMAP in small servings if it contains only ginger and low FODMAP ingredients, but many commercial brands include high FODMAP ingredients like garlic or onion. 
+
+Generally, fresh ginger root is considered low FODMAP at a serving of 5g.
+
+Ingredients to Watch For: Many commercial ginger pastes use high-FODMAP additives for flavor or preservation. Always check the label for ingredients like:
+Garlic or onion
+High-fructose corn syrup, honey, or agave
+Inulin or other problematic fillers",
+"Mustard, Dijon",Herbs & Spices,23g,g,1 serve,1 tablespoon,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,46g,g,moderate serve,2 tablespoons,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,92g,g,high serve,4 tablespoons,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"Dijon mustard is generally low FODMAP in standard servings (around 1 tablespoon or 20-23g), making it suitable for the low FODMAP diet, but always check labels for hidden garlic, onion, or honey, which are high FODMAP. Use it in vinaigrettes with garlic-infused oil, spreads for sandwiches, or as a base for marinades and dressings for flavourful, IBS-friendly meals, pairing it with low FODMAP ingredients like maple syrup and tamari. ",
+Passata Sauce,Herbs & Spices,400g,,,,Green,,,,,,,,,,,,,,,Amber,,,,,,,,,,,,,,,Red,,,,,,,,,,,,
+"Salt, sea, white",Herbs & Spices,,,,,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"1/4 teaspoon = 303% daily recommended intake.
+Values based on a 2,000 calorie diet.",
+"Tomato Paste, triple concentrate, Providore 130g",Herbs & Spices,22,g,1 serve,1 tablespoon,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,66,g,moderate serve,3 tablespoons,Amber,Amber,Green,Green,Green,Green,Green,Green,Medium,No,No,85,g,high serve,4 tablespoons,Red,Red,Green,Green,Green,Green,Green,Green,High,No,No,"Ingredients:  Concentrated tomato (99%), salt.
+No colours, flavours or preservatives. Made in Italy.",
+Vanilla bean flavouring,Herbs & Spices,100g,,,,Green,,,,,,,,,,,,,,,Amber,,,,,,,,,,,,,,,Red,,,,,,,,,,,,
+"Bread Crumbs, gluten free",Other,,g,,2 tablespoons,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,,
+"Sugar, caster",Other,100g,,,,Green,,,,,,,,,,,,,,,Amber,,,,,,,,,,,,,,,Red,,,,,,,,,,,,
+"Pie, Angus Beef Cheese & Bacon, Four'n Twenty",Packaged Food,,,,,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,,
+"Anchovies, fillets, in olive oil",Proteins,45g,g,1 serve,2-3 fillets,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,45g,g,1 serve,2-3 fillets,Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,45g,g,1 serve,2-3 fillets,Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,"Anchovies in olive oil are naturally low FODMAP because fish and oils are protein and fat sources, respectively, and contain no carbohydrates (FODMAPs). 
+
+Watch for Additives: The key is to ensure no high-FODMAP ingredients have been added to the product. Plain anchovies in olive oil should be fine, but always check the label to make sure the brand does not contain ingredients like garlic, onion, or high-FODMAP marinades.
+",
+"Beef, shoulder pot roast, boneless, raw",Proteins,1027,g,1 serve,"1kg roast meat, or 1 large steak",Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,1027,g,1 serve,"1kg roast meat, or 1 large steak",Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,1027,g,1 serve,"1kg roast meat, or 1 large steak",Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,"separable lean only, all grades, ",
+"Salmon, pink, wild Scottish, tin",Proteins, 80g,g,1 serve,100g tin,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,80g,g,1 serve,100g tin,Amber,Green,Green,Green,Green,Green,Green,Green,Low,No,No,80g,g,1 serve,100g tin,Red,Green,Green,Green,Green,Green,Green,Green,Low,No,No,"Salmon in olive oil are considered low FODMAP. Fish and pure oils are naturally free of FODMAPs, as they are primarily protein and fat, respectively, and contain no carbohydrates. 
+
+Watch for Added Ingredients: The main concern with any processed or pre-packaged food is hidden high-FODMAP ingredients. Always check the label to ensure no onion, garlic, or other high-FODMAP flavourings have been added. ",
+"Cheese, feta, fresh",Vegetables,,,,2 tbsp,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,,
+Garlic,Vegetables,,g,,,Green,Red,Green,Green,Green,Green,Green,Green,Moderate,No,No,,g,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,g,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,"Extremely high in fructans. Use garlic-infused oil instead (FODMAPs not oil soluble, flavor transfers).",
+"Olives, black, pitted, sliced",Vegetables,,,,,Green,,,,,,,,,,,,,,,Amber,,,,,,,,,,,,,,,Red,,,,,,,,,,,,
+"Pumpkin, Japanese",Vegetables,,,1 serve,1 cup,Green,Green,Green,Green,Green,Green,Green,Green,Low,No,No,,,,,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Amber,Medium,No,No,,,,,Red,Red,Red,Red,Red,Red,Red,Red,High,Yes,Yes,,

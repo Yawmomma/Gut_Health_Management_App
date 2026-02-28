@@ -262,24 +262,24 @@ def match_ingredients():
     if not ingredients:
         return jsonify({'matches': []})
 
-    # Get all foods
-    foods = Food.query.all()
-    food_names_lower = {f.id: f.name.lower() for f in foods}
+    try:
+        matches = []
+        ingredient_names = extract_ingredient_names(ingredients)
 
-    matches = []
-    ingredient_names = extract_ingredient_names(ingredients)
+        for ing_name in ingredient_names:
+            # Use database query instead of loading all foods into memory
+            # This is much more efficient, especially with 317k+ USDA foods
+            food = Food.query.filter(
+                Food.name.ilike(f'%{ing_name}%')
+            ).first()
 
-    for ing_name in ingredient_names:
-        best_match = None
-        for food in foods:
-            if ing_name in food.name.lower():
-                best_match = {
+            if food:
+                matches.append({
                     'ingredient': ing_name,
                     'food_id': food.id,
                     'food_name': food.name
-                }
-                break
-        if best_match:
-            matches.append(best_match)
+                })
 
-    return jsonify({'matches': matches})
+        return jsonify({'matches': matches})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

@@ -4,15 +4,62 @@ import shutil
 import json
 import uuid
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 from database import db
 from models.diary import DiaryEntry, Meal, MealFood, Symptom, BowelMovement, StressLog, Note
 from models.food import Food
 from models.recipe import Recipe, RecipeIngredient, SavedMeal, SavedMealItem
+from models.education import HelpDocument
 from utils import parse_markdown, extract_title_from_markdown, save_upload_data, load_upload_data, delete_upload_data
 
 bp = Blueprint('settings', __name__, url_prefix='/settings')
+
+# Helper functions for orphan checking
+def get_orphaned_meal_foods_query():
+    """Query for MealFood records with no parent Meal."""
+    return db.session.query(MealFood).filter(
+        ~db.session.query(Meal).filter(Meal.id == MealFood.meal_id).exists()
+    )
+
+def get_orphaned_recipe_ingredients_query():
+    """Query for RecipeIngredient records with no parent Recipe."""
+    return db.session.query(RecipeIngredient).filter(
+        ~db.session.query(Recipe).filter(Recipe.id == RecipeIngredient.recipe_id).exists()
+    )
+
+def get_orphaned_saved_meal_items_query():
+    """Query for SavedMealItem records with no parent SavedMeal."""
+    return db.session.query(SavedMealItem).filter(
+        ~db.session.query(SavedMeal).filter(SavedMeal.id == SavedMealItem.saved_meal_id).exists()
+    )
+
+def get_invalid_meal_foods_query():
+    """Query for MealFood records pointing to deleted Food."""
+    return db.session.query(MealFood).filter(
+        ~db.session.query(Food).filter(Food.id == MealFood.food_id).exists()
+    )
+
+def get_invalid_recipe_ingredients_query():
+    """Query for RecipeIngredient records pointing to deleted Food."""
+    return db.session.query(RecipeIngredient).filter(
+        ~db.session.query(Food).filter(Food.id == RecipeIngredient.food_id).exists()
+    )
+
+def get_invalid_saved_meal_items_query():
+    """Query for SavedMealItem records pointing to deleted Food."""
+    return db.session.query(SavedMealItem).filter(
+        ~db.session.query(Food).filter(Food.id == SavedMealItem.food_id).exists()
+    )
+
+def get_empty_diary_entries():
+    """Get DiaryEntry records with no related content."""
+    empty = []
+    for entry in DiaryEntry.query.all():
+        if not (entry.meals or entry.symptoms or entry.bowel_movements or
+                entry.stress_logs or entry.notes):
+            empty.append(entry)
+    return empty
 
 @bp.route('/')
 def index():
@@ -50,42 +97,24 @@ def integrity_check():
             fixed_count = 0
 
             # Fix orphaned MealFood records
-            orphaned_meal_foods = db.session.query(MealFood).filter(
-                ~db.session.query(Meal).filter(Meal.id == MealFood.meal_id).exists()
-            ).all()
-            for mf in orphaned_meal_foods:
+            for mf in get_orphaned_meal_foods_query().all():
                 db.session.delete(mf)
                 fixed_count += 1
 
             # Fix orphaned RecipeIngredient records
-            orphaned_recipe_ingredients = db.session.query(RecipeIngredient).filter(
-                ~db.session.query(Recipe).filter(Recipe.id == RecipeIngredient.recipe_id).exists()
-            ).all()
-            for ri in orphaned_recipe_ingredients:
+            for ri in get_orphaned_recipe_ingredients_query().all():
                 db.session.delete(ri)
                 fixed_count += 1
 
             # Fix orphaned SavedMealItem records
-            orphaned_saved_meal_items = db.session.query(SavedMealItem).filter(
-                ~db.session.query(SavedMeal).filter(SavedMeal.id == SavedMealItem.saved_meal_id).exists()
-            ).all()
-            for smi in orphaned_saved_meal_items:
+            for smi in get_orphaned_saved_meal_items_query().all():
                 db.session.delete(smi)
                 fixed_count += 1
 
-            # Fix orphaned DiaryEntry records (entries with no related content)
-            all_entries = DiaryEntry.query.all()
-            for entry in all_entries:
-                has_content = (
-                    entry.meals or
-                    entry.symptoms or
-                    entry.bowel_movements or
-                    entry.stress_logs or
-                    entry.notes
-                )
-                if not has_content:
-                    db.session.delete(entry)
-                    fixed_count += 1
+            # Fix orphaned DiaryEntry records
+            for entry in get_empty_diary_entries():
+                db.session.delete(entry)
+                fixed_count += 1
 
             db.session.commit()
             flash(f'Fixed {fixed_count} orphaned record(s) successfully!', 'success')
@@ -98,9 +127,7 @@ def integrity_check():
     # Run integrity checks
     try:
         # Check 1: Orphaned MealFood records
-        orphaned_meal_foods = db.session.query(MealFood).filter(
-            ~db.session.query(Meal).filter(Meal.id == MealFood.meal_id).exists()
-        ).count()
+        orphaned_meal_foods = get_orphaned_meal_foods_query().count()
         if orphaned_meal_foods > 0:
             issues.append({
                 'type': 'Orphaned Meal-Food Links',
@@ -110,9 +137,7 @@ def integrity_check():
             })
 
         # Check 2: Orphaned RecipeIngredient records
-        orphaned_recipe_ingredients = db.session.query(RecipeIngredient).filter(
-            ~db.session.query(Recipe).filter(Recipe.id == RecipeIngredient.recipe_id).exists()
-        ).count()
+        orphaned_recipe_ingredients = get_orphaned_recipe_ingredients_query().count()
         if orphaned_recipe_ingredients > 0:
             issues.append({
                 'type': 'Orphaned Recipe Ingredients',
@@ -122,9 +147,7 @@ def integrity_check():
             })
 
         # Check 3: Orphaned SavedMealItem records
-        orphaned_saved_meal_items = db.session.query(SavedMealItem).filter(
-            ~db.session.query(SavedMeal).filter(SavedMeal.id == SavedMealItem.saved_meal_id).exists()
-        ).count()
+        orphaned_saved_meal_items = get_orphaned_saved_meal_items_query().count()
         if orphaned_saved_meal_items > 0:
             issues.append({
                 'type': 'Orphaned Saved Meal Items',
@@ -134,19 +157,7 @@ def integrity_check():
             })
 
         # Check 4: DiaryEntry with no related content
-        orphaned_entries_count = 0
-        all_entries = DiaryEntry.query.all()
-        for entry in all_entries:
-            has_content = (
-                entry.meals or
-                entry.symptoms or
-                entry.bowel_movements or
-                entry.stress_logs or
-                entry.notes
-            )
-            if not has_content:
-                orphaned_entries_count += 1
-
+        orphaned_entries_count = len(get_empty_diary_entries())
         if orphaned_entries_count > 0:
             issues.append({
                 'type': 'Empty Diary Entries',
@@ -156,9 +167,7 @@ def integrity_check():
             })
 
         # Check 5: MealFood pointing to deleted Food
-        invalid_meal_foods = db.session.query(MealFood).filter(
-            ~db.session.query(Food).filter(Food.id == MealFood.food_id).exists()
-        ).count()
+        invalid_meal_foods = get_invalid_meal_foods_query().count()
         if invalid_meal_foods > 0:
             issues.append({
                 'type': 'Invalid Meal-Food References',
@@ -168,9 +177,7 @@ def integrity_check():
             })
 
         # Check 6: RecipeIngredient pointing to deleted Food
-        invalid_recipe_ingredients = db.session.query(RecipeIngredient).filter(
-            ~db.session.query(Food).filter(Food.id == RecipeIngredient.food_id).exists()
-        ).count()
+        invalid_recipe_ingredients = get_invalid_recipe_ingredients_query().count()
         if invalid_recipe_ingredients > 0:
             issues.append({
                 'type': 'Invalid Recipe Ingredient References',
@@ -180,9 +187,7 @@ def integrity_check():
             })
 
         # Check 7: SavedMealItem pointing to deleted Food
-        invalid_saved_meal_items = db.session.query(SavedMealItem).filter(
-            ~db.session.query(Food).filter(Food.id == SavedMealItem.food_id).exists()
-        ).count()
+        invalid_saved_meal_items = get_invalid_saved_meal_items_query().count()
         if invalid_saved_meal_items > 0:
             issues.append({
                 'type': 'Invalid Saved Meal Item References',
@@ -256,168 +261,8 @@ def backup_database():
         flash(f'Error creating backup: {str(e)}', 'error')
         return redirect(url_for('settings.index'))
 
-# Helper functions for help documents
+# Helper constants for help documents
 HELP_UPLOAD_SUBDIR = 'help_uploads'
-
-def get_help_docs_dir():
-    """Get or create help documents directory"""
-    base_dir = current_app.root_path
-    help_dir = os.path.join(base_dir, 'data', 'help_docs')
-    os.makedirs(help_dir, exist_ok=True)
-    return help_dir
-
-def get_help_index_path():
-    """Get help documents index file path"""
-    return os.path.join(get_help_docs_dir(), 'index.json')
-
-def load_help_index():
-    """Load help documents index"""
-    index_path = get_help_index_path()
-    if not os.path.exists(index_path):
-        return []
-    try:
-        with open(index_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
-
-def save_help_index(documents):
-    """Persist help documents index"""
-    index_path = get_help_index_path()
-    with open(index_path, 'w', encoding='utf-8') as f:
-        json.dump(documents, f, ensure_ascii=False, indent=2)
-
-def slugify(text):
-    """Simple slug for filenames"""
-    text = text or ''
-    slug = re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
-    return slug or 'help-document'
-
-def resolve_unique_filename(title, original_filename):
-    """Generate a unique markdown filename"""
-    base_name = secure_filename(original_filename or '')
-    if not base_name:
-        base_name = f"{slugify(title)}.md"
-    if not base_name.lower().endswith('.md'):
-        base_name = f"{base_name}.md"
-
-    help_dir = get_help_docs_dir()
-    candidate = base_name
-    stem, ext = os.path.splitext(base_name)
-    counter = 1
-    while os.path.exists(os.path.join(help_dir, candidate)):
-        candidate = f"{stem}-{counter}{ext}"
-        counter += 1
-    return candidate
-
-def split_front_matter(md_content):
-    """Strip YAML front matter if present"""
-    if not md_content or not md_content.startswith('---'):
-        return {}, md_content
-
-    lines = md_content.splitlines()
-    if len(lines) < 3:
-        return {}, md_content
-
-    end_index = None
-    for i in range(1, len(lines)):
-        if lines[i].strip() == '---':
-            end_index = i
-            break
-
-    if end_index is None:
-        return {}, md_content
-
-    meta_lines = lines[1:end_index]
-    body_lines = lines[end_index + 1:]
-    metadata = {}
-    for line in meta_lines:
-        if ':' in line:
-            key, value = line.split(':', 1)
-            metadata[key.strip()] = value.strip()
-    return metadata, '\n'.join(body_lines).lstrip()
-
-def load_help_document(doc_id):
-    """Load a help document entry and markdown content"""
-    documents = load_help_index()
-    entry = next((doc for doc in documents if doc.get('id') == doc_id), None)
-    if not entry:
-        return None
-
-    doc_path = os.path.join(get_help_docs_dir(), entry.get('filename', ''))
-    if not os.path.exists(doc_path):
-        return None
-
-    with open(doc_path, 'r', encoding='utf-8') as f:
-        markdown_source = f.read()
-
-    meta, body = split_front_matter(markdown_source)
-    html_content = parse_markdown(body)
-    return {
-        **entry,
-        'title': entry.get('title') or meta.get('title', entry.get('title')),
-        'category': entry.get('category') or meta.get('category', entry.get('category')),
-        'markdown_source': body,
-        'content': html_content
-    }
-
-def format_doc_date(doc):
-    """Format date for display"""
-    for key in ('updated_at', 'created_at'):
-        value = doc.get(key)
-        if value:
-            try:
-                return datetime.fromisoformat(value).strftime('%b %d, %Y')
-            except ValueError:
-                pass
-    filename = doc.get('filename')
-    if filename:
-        doc_path = os.path.join(get_help_docs_dir(), filename)
-        if os.path.exists(doc_path):
-            dt = datetime.fromtimestamp(os.path.getmtime(doc_path))
-            return dt.strftime('%b %d, %Y')
-    return ''
-
-def load_help_documents(search=None, category=None):
-    """Load help documents, optionally filtered"""
-    documents = load_help_index()
-    results = []
-    search_term = (search or '').strip().lower()
-
-    for entry in documents:
-        if category and entry.get('category', '').lower() != category.lower():
-            continue
-
-        doc_path = os.path.join(get_help_docs_dir(), entry.get('filename', ''))
-        if not os.path.exists(doc_path):
-            continue
-
-        with open(doc_path, 'r', encoding='utf-8') as f:
-            markdown_source = f.read()
-
-        meta, body = split_front_matter(markdown_source)
-
-        if search_term:
-            haystack = ' '.join([
-                entry.get('title', ''),
-                entry.get('category', ''),
-                body
-            ]).lower()
-            if search_term not in haystack:
-                continue
-
-        html_content = parse_markdown(body)
-        results.append({
-            **entry,
-            'title': entry.get('title') or meta.get('title', entry.get('title')),
-            'category': entry.get('category') or meta.get('category', entry.get('category')),
-            'content': html_content,
-            'display_date': format_doc_date(entry)
-        })
-
-    results.sort(key=lambda d: (d.get('category', ''), d.get('order_index', 0), d.get('title', '')))
-    return results
 
 # Help document routes
 @bp.route('/help')
@@ -426,21 +271,39 @@ def help_index():
     category = request.args.get('category')
     search = request.args.get('search')
 
-    documents = load_help_documents(search=search, category=category)
+    # Query database for help documents
+    query = HelpDocument.query
 
-    categories = sorted({
-        doc.get('category') for doc in load_help_index() if doc.get('category')
-    })
+    if search:
+        search_filter = f'%{search}%'
+        query = query.filter(
+            (HelpDocument.title.ilike(search_filter)) |
+            (HelpDocument.category.ilike(search_filter)) |
+            (HelpDocument.content.ilike(search_filter))
+        )
+    elif category:
+        query = query.filter(HelpDocument.category == category)
 
-    return render_template('settings/help.html', documents=documents, categories=categories, current_category=category)
+    documents = query.order_by(HelpDocument.category, HelpDocument.order_index, HelpDocument.title).all()
 
-@bp.route('/help/<string:doc_id>')
+    # Get unique categories
+    categories = sorted({doc.category for doc in HelpDocument.query.all() if doc.category})
+
+    # Format documents for template
+    docs_list = [{
+        'id': doc.id,
+        'title': doc.title,
+        'category': doc.category,
+        'content': doc.content,
+        'display_date': doc.updated_at.strftime('%b %d, %Y') if doc.updated_at else ''
+    } for doc in documents]
+
+    return render_template('settings/help.html', documents=docs_list, categories=categories, current_category=category)
+
+@bp.route('/help/<int:doc_id>')
 def help_view(doc_id):
     """View individual help document"""
-    document = load_help_document(doc_id)
-    if not document:
-        flash('Help document not found.', 'error')
-        return redirect(url_for('settings.help_index'))
+    document = HelpDocument.query.get_or_404(doc_id)
     return render_template('settings/help_view.html', document=document)
 
 @bp.route('/help/upload', methods=['POST'])
@@ -495,9 +358,8 @@ def help_preview():
         html_preview = parse_markdown(preview_data['markdown_source'])
         preview_data['html_preview'] = html_preview
 
-        existing_docs = load_help_index()
-        existing_docs.sort(key=lambda d: (d.get('category', ''), d.get('order_index', 0), d.get('title', '')))
-        categories = sorted({doc.get('category') for doc in existing_docs if doc.get('category')})
+        existing_docs = HelpDocument.query.order_by(HelpDocument.category, HelpDocument.order_index, HelpDocument.title).all()
+        categories = sorted({doc.category for doc in HelpDocument.query.all() if doc.category})
 
         return render_template('settings/help_preview.html', data=preview_data, existing_docs=existing_docs, categories=categories, upload_id=upload_id)
 
@@ -519,28 +381,26 @@ def help_preview():
             category = request.form.get('category')
             markdown_source = request.form.get('markdown_source')
 
-            documents = load_help_index()
-            category_orders = [doc.get('order_index', 0) for doc in documents if doc.get('category') == category]
-            max_order = max(category_orders, default=0)
+            # Calculate next order index for this category
+            category_docs = HelpDocument.query.filter_by(category=category).all()
+            max_order = max([doc.order_index for doc in category_docs], default=0)
 
-            filename = resolve_unique_filename(title, preview_data.get('filename'))
-            doc_id = str(uuid.uuid4())
-            now_iso = datetime.utcnow().isoformat()
+            # Convert markdown to HTML
+            html_content = parse_markdown(markdown_source)
 
-            doc_path = os.path.join(get_help_docs_dir(), filename)
-            with open(doc_path, 'w', encoding='utf-8', newline='\n') as f:
-                f.write(markdown_source or '')
+            # Create new help document in database
+            document = HelpDocument(
+                category=category,
+                title=title,
+                content=html_content,
+                markdown_source=markdown_source,
+                filename=preview_data.get('filename'),
+                is_markdown=True,
+                order_index=max_order + 1
+            )
 
-            documents.append({
-                'id': doc_id,
-                'category': category,
-                'title': title,
-                'filename': filename,
-                'order_index': max_order + 1,
-                'created_at': now_iso,
-                'updated_at': now_iso
-            })
-            save_help_index(documents)
+            db.session.add(document)
+            db.session.commit()
 
             delete_upload_data(upload_id, HELP_UPLOAD_SUBDIR)
 
@@ -548,16 +408,14 @@ def help_preview():
             return redirect(url_for('settings.help_index'))
 
         except Exception as e:
+            db.session.rollback()
             flash(f'Error saving document: {str(e)}', 'error')
             return redirect(url_for('settings.help_preview', upload_id=upload_id))
 
-@bp.route('/help/edit/<string:doc_id>', methods=['GET', 'POST'])
+@bp.route('/help/edit/<int:doc_id>', methods=['GET', 'POST'])
 def help_edit(doc_id):
     """Edit help document"""
-    document = load_help_document(doc_id)
-    if not document:
-        flash('Help document not found.', 'error')
-        return redirect(url_for('settings.help_index'))
+    document = HelpDocument.query.get_or_404(doc_id)
 
     if request.method == 'POST':
         try:
@@ -565,59 +423,45 @@ def help_edit(doc_id):
             custom_title = request.form.get('title')
             category = request.form.get('category')
 
-            document['markdown_source'] = md_content
-            document['content'] = parse_markdown(md_content)
-            document['title'] = custom_title if custom_title else extract_title_from_markdown(md_content)
-            document['category'] = category
+            # Update document
+            document.markdown_source = md_content
+            document.content = parse_markdown(md_content)
+            document.title = custom_title if custom_title else extract_title_from_markdown(md_content)
 
-            documents = load_help_index()
-            for entry in documents:
-                if entry.get('id') == doc_id:
-                    previous_category = entry.get('category')
-                    entry['title'] = document['title']
-                    entry['category'] = category
-                    if previous_category != category:
-                        category_orders = [doc.get('order_index', 0) for doc in documents if doc.get('category') == category]
-                        entry['order_index'] = max(category_orders, default=0) + 1
-                    entry['updated_at'] = datetime.utcnow().isoformat()
-                    break
+            # If category changed, recalculate order index
+            if document.category != category:
+                document.category = category
+                category_docs = HelpDocument.query.filter_by(category=category).all()
+                max_order = max([doc.order_index for doc in category_docs], default=0)
+                document.order_index = max_order + 1
 
-            doc_path = os.path.join(get_help_docs_dir(), document.get('filename', ''))
-            with open(doc_path, 'w', encoding='utf-8', newline='\n') as f:
-                f.write(md_content or '')
+            document.updated_at = datetime.now(timezone.utc)
 
-            save_help_index(documents)
+            db.session.commit()
             flash('Help document updated successfully!', 'success')
             return redirect(url_for('settings.help_index'))
 
         except Exception as e:
+            db.session.rollback()
             flash(f'Error updating document: {str(e)}', 'error')
 
-    existing_docs = [doc for doc in load_help_index() if doc.get('id') != doc_id]
-    existing_docs.sort(key=lambda d: (d.get('category', ''), d.get('order_index', 0), d.get('title', '')))
-    categories = sorted({doc.get('category') for doc in load_help_index() if doc.get('category')})
+    existing_docs = HelpDocument.query.filter(HelpDocument.id != doc_id).order_by(HelpDocument.category, HelpDocument.order_index, HelpDocument.title).all()
+    categories = sorted({doc.category for doc in HelpDocument.query.all() if doc.category})
 
     return render_template('settings/help_edit.html', document=document, existing_docs=existing_docs, categories=categories)
 
-@bp.route('/help/delete/<string:doc_id>', methods=['POST'])
+@bp.route('/help/delete/<int:doc_id>', methods=['POST'])
 def help_delete(doc_id):
     """Delete a help document"""
     try:
-        documents = load_help_index()
-        document = next((doc for doc in documents if doc.get('id') == doc_id), None)
-        if not document:
-            return jsonify({'error': 'Document not found'}), 404
-
-        doc_path = os.path.join(get_help_docs_dir(), document.get('filename', ''))
-        if os.path.exists(doc_path):
-            os.remove(doc_path)
-
-        documents = [doc for doc in documents if doc.get('id') != doc_id]
-        save_help_index(documents)
+        document = HelpDocument.query.get_or_404(doc_id)
+        db.session.delete(document)
+        db.session.commit()
 
         flash('Help document deleted successfully!', 'success')
         return jsonify({'success': True})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/help/preview_markdown', methods=['POST'])

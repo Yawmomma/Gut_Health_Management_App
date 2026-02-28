@@ -9,6 +9,12 @@ class Food(db.Model):
     name = db.Column(db.String(200), nullable=False, index=True)
     category = db.Column(db.String(100), nullable=False, index=True)
 
+    # Link to USDA database for nutritional information
+    usda_food_id = db.Column(db.Integer, db.ForeignKey('usda_foods.id'), nullable=True, index=True)
+
+    # Link to AUSNUT 2023 database for Australian nutritional information
+    ausnut_food_id = db.Column(db.Integer, db.ForeignKey('ausnut_foods.id'), nullable=True, index=True)
+
     # FODMAP content (green/amber/red or Low/Medium/High) - Legacy single rating
     fructans = db.Column(db.String(20))
     gos = db.Column(db.String(20))
@@ -81,108 +87,268 @@ class Food(db.Model):
     high_serving_type = db.Column(db.String(50))
     high_serving_note = db.Column(db.String(200))
 
+    # Traffic light colors for each serving type
+    safe_traffic_light = db.Column(db.String(20), default='Green')
+    moderate_traffic_light = db.Column(db.String(20), default='Amber')
+    high_traffic_light = db.Column(db.String(20), default='Red')
+
     # Additional information
     preparation_notes = db.Column(db.Text)
     common_allergens = db.Column(db.String(200))  # Comma-separated
 
-    # Nutrition Information (for packaged items like beverages)
-    # Basic info
-    health_star_rating = db.Column(db.Float)  # 0.0 to 5.0
-    serving_size = db.Column(db.String(50))  # e.g., "250ml"
-    servings_per_pack = db.Column(db.Integer)
-
-    # Energy
-    energy_per_serve_kj = db.Column(db.Float)
-    energy_per_100_kj = db.Column(db.Float)
-    energy_per_serve_cal = db.Column(db.Float)
-    energy_per_100_cal = db.Column(db.Float)
-
-    # Macronutrients per serve
-    protein_per_serve = db.Column(db.Float)
-    fat_per_serve = db.Column(db.Float)
-    saturated_fat_per_serve = db.Column(db.Float)
-    trans_fat_per_serve = db.Column(db.Float)
-    polyunsaturated_fat_per_serve = db.Column(db.Float)
-    monounsaturated_fat_per_serve = db.Column(db.Float)
-    carbohydrate_per_serve = db.Column(db.Float)
-    sugars_per_serve = db.Column(db.Float)
-    lactose_per_serve = db.Column(db.Float)
-    galactose_per_serve = db.Column(db.Float)
-    dietary_fibre_per_serve = db.Column(db.Float)
-
-    # Macronutrients per 100ml/100g
-    protein_per_100 = db.Column(db.Float)
-    fat_per_100 = db.Column(db.Float)
-    saturated_fat_per_100 = db.Column(db.Float)
-    trans_fat_per_100 = db.Column(db.Float)
-    polyunsaturated_fat_per_100 = db.Column(db.Float)
-    monounsaturated_fat_per_100 = db.Column(db.Float)
-    carbohydrate_per_100 = db.Column(db.Float)
-    sugars_per_100 = db.Column(db.Float)
-    lactose_per_100 = db.Column(db.Float)
-    galactose_per_100 = db.Column(db.Float)
-    dietary_fibre_per_100 = db.Column(db.Float)
-
-    # Cholesterol
-    cholesterol_per_serve = db.Column(db.Float)
-    cholesterol_per_100 = db.Column(db.Float)
-
-    # Minerals per serve
-    sodium_per_serve = db.Column(db.Float)
-    potassium_per_serve = db.Column(db.Float)
-    calcium_per_serve = db.Column(db.Float)
-    phosphorus_per_serve = db.Column(db.Float)
-
-    # Minerals per 100ml/100g
-    sodium_per_100 = db.Column(db.Float)
-    potassium_per_100 = db.Column(db.Float)
-    calcium_per_100 = db.Column(db.Float)
-    phosphorus_per_100 = db.Column(db.Float)
-
-    # Vitamins per serve
-    vitamin_a_per_serve = db.Column(db.Float)
-    vitamin_b12_per_serve = db.Column(db.Float)
-    vitamin_d_per_serve = db.Column(db.Float)
-    riboflavin_b2_per_serve = db.Column(db.Float)
-
-    # Vitamins per 100ml/100g
-    vitamin_a_per_100 = db.Column(db.Float)
-    vitamin_b12_per_100 = db.Column(db.Float)
-    vitamin_d_per_100 = db.Column(db.Float)
-    riboflavin_b2_per_100 = db.Column(db.Float)
-
-    # RDI percentages (optional)
-    vitamin_a_rdi_percent = db.Column(db.String(20))
-    vitamin_b12_rdi_percent = db.Column(db.String(20))
-    vitamin_d_rdi_percent = db.Column(db.String(20))
-    riboflavin_b2_rdi_percent = db.Column(db.String(20))
-    calcium_rdi_percent = db.Column(db.String(20))
-    phosphorus_rdi_percent = db.Column(db.String(20))
-
-    # Ingredients and where to buy
-    ingredients_list = db.Column(db.Text)  # Full ingredient list as text
-    contains_allergens = db.Column(db.String(200))  # e.g., "gluten"
-    may_contain_allergens = db.Column(db.String(200))  # e.g., "Wheat"
-    where_to_buy = db.Column(db.Text)  # Store names or links, comma-separated
-
-    # Custom nutrients (stored as JSON)
-    # Format: {"vitamins": [{"name": "Vitamin C", "per_serve": 10, "per_100": 4, "unit": "mg", "rdi": "25%", "order": 0}],
-    #          "minerals": [...], "macros": [...]}
-    custom_nutrients = db.Column(db.Text)  # JSON string for custom vitamins, minerals, macros
-
-    # Units for standard vitamins (when custom unit is needed)
-    vitamin_a_unit = db.Column(db.String(20), default='mcg')
-    vitamin_b12_unit = db.Column(db.String(20), default='mcg')
-    vitamin_d_unit = db.Column(db.String(20), default='mcg')
-    riboflavin_b2_unit = db.Column(db.String(20), default='mg')
+    # Custom nutrients (stored as JSON for user-entered nutritional data when USDA link unavailable)
+    custom_nutrients = db.Column(db.Text)  # JSON string
 
     # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_complete = db.Column(db.Boolean, default=True)  # False for quick-added foods needing more info
 
+    # Relationship to USDA food (for accessing nutritional data)
+    usda_food = db.relationship('USDAFood', foreign_keys=[usda_food_id], backref='fodmap_foods', lazy='joined')
+    ausnut_food = db.relationship('AUSNUTFood', foreign_keys=[ausnut_food_id], backref='fodmap_foods', lazy='joined')
+
     def __repr__(self):
         return f'<Food {self.name}>'
+
+    # Backward compatibility properties for removed nutrient fields
+    # All return None since we now use USDA data via usda_food relationship
+    @property
+    def health_star_rating(self):
+        return None
+
+    @property
+    def serving_size(self):
+        return None
+
+    @property
+    def servings_per_pack(self):
+        return None
+
+    @property
+    def energy_per_serve_kj(self):
+        return None
+
+    @property
+    def energy_per_100_kj(self):
+        return None
+
+    @property
+    def energy_per_serve_cal(self):
+        return None
+
+    @property
+    def energy_per_100_cal(self):
+        return None
+
+    @property
+    def protein_per_serve(self):
+        return None
+
+    @property
+    def protein_per_100(self):
+        return None
+
+    @property
+    def fat_per_serve(self):
+        return None
+
+    @property
+    def fat_per_100(self):
+        return None
+
+    @property
+    def carbohydrate_per_serve(self):
+        return None
+
+    @property
+    def carbohydrate_per_100(self):
+        return None
+
+    @property
+    def sugars_per_serve(self):
+        return None
+
+    @property
+    def sugars_per_100(self):
+        return None
+
+    @property
+    def dietary_fibre_per_serve(self):
+        return None
+
+    @property
+    def dietary_fibre_per_100(self):
+        return None
+
+    @property
+    def sodium_per_serve(self):
+        return None
+
+    @property
+    def sodium_per_100(self):
+        return None
+
+    @property
+    def ingredients_list(self):
+        return None
+
+    @property
+    def contains_allergens(self):
+        return None
+
+    @property
+    def may_contain_allergens(self):
+        return None
+
+    @property
+    def where_to_buy(self):
+        return None
+
+    @property
+    def saturated_fat_per_serve(self):
+        return None
+
+    @property
+    def saturated_fat_per_100(self):
+        return None
+
+    @property
+    def trans_fat_per_serve(self):
+        return None
+
+    @property
+    def trans_fat_per_100(self):
+        return None
+
+    @property
+    def polyunsaturated_fat_per_serve(self):
+        return None
+
+    @property
+    def polyunsaturated_fat_per_100(self):
+        return None
+
+    @property
+    def monounsaturated_fat_per_serve(self):
+        return None
+
+    @property
+    def monounsaturated_fat_per_100(self):
+        return None
+
+    @property
+    def lactose_per_serve(self):
+        return None
+
+    @property
+    def lactose_per_100(self):
+        return None
+
+    @property
+    def galactose_per_serve(self):
+        return None
+
+    @property
+    def galactose_per_100(self):
+        return None
+
+    @property
+    def cholesterol_per_serve(self):
+        return None
+
+    @property
+    def cholesterol_per_100(self):
+        return None
+
+    @property
+    def potassium_per_serve(self):
+        return None
+
+    @property
+    def potassium_per_100(self):
+        return None
+
+    @property
+    def calcium_per_serve(self):
+        return None
+
+    @property
+    def calcium_per_100(self):
+        return None
+
+    @property
+    def phosphorus_per_serve(self):
+        return None
+
+    @property
+    def phosphorus_per_100(self):
+        return None
+
+    @property
+    def vitamin_a_per_serve(self):
+        return None
+
+    @property
+    def vitamin_a_per_100(self):
+        return None
+
+    @property
+    def vitamin_a_unit(self):
+        return None
+
+    @property
+    def vitamin_b12_per_serve(self):
+        return None
+
+    @property
+    def vitamin_b12_per_100(self):
+        return None
+
+    @property
+    def vitamin_b12_unit(self):
+        return None
+
+    @property
+    def vitamin_d_per_serve(self):
+        return None
+
+    @property
+    def vitamin_d_per_100(self):
+        return None
+
+    @property
+    def vitamin_d_unit(self):
+        return None
+
+    @property
+    def riboflavin_b2_per_serve(self):
+        return None
+
+    @property
+    def riboflavin_b2_per_100(self):
+        return None
+
+    @property
+    def riboflavin_b2_unit(self):
+        return None
+
+    def to_recipe_dict(self):
+        """Convert food to lightweight dictionary for recipe/meal forms."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'fructans': self.fructans,
+            'gos': self.gos,
+            'lactose': self.lactose,
+            'fructose': self.fructose,
+            'polyols': self.polyols,
+            'mannitol': self.mannitol,
+            'sorbitol': self.sorbitol,
+            'histamine_level': self.histamine_level,
+            'safe_serving': self.safe_serving
+        }
 
     def to_dict(self):
         """Convert food to dictionary"""

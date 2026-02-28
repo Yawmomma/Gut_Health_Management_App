@@ -1,0 +1,1962 @@
+{% extends "base.html" %}
+
+{% block title %}Add Custom Food - Gut Health App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fodmap-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+        gap: 4px;
+    }
+
+    .histamine-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 4px;
+    }
+
+    .fodmap-card {
+        border: none;
+        border-radius: 0;
+        padding: 6px 4px;
+        background-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-right: 1px solid var(--sage);
+    }
+
+    .fodmap-card:last-child {
+        border-right: none;
+    }
+
+    .fodmap-card label,
+    .fodmap-card small {
+        color: var(--white-ish) !important;
+    }
+
+    .fodmap-card small {
+        font-size: var(--text-label);
+        color: var(--sage) !important;
+    }
+
+    .fodmap-text-content {
+        flex: 1;
+    }
+
+    .color-selector {
+        display: flex;
+        gap: 6px;
+        flex-direction: column;
+    }
+
+    .color-option {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: normal;
+        font-size: 0;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .color-option:hover {
+        transform: scale(1.15);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .color-option.selected {
+        border-color: #000000;
+        box-shadow: 0 0 0 1px #000000;
+        transform: scale(1.1);
+    }
+
+    .color-option.selected::after {
+        content: '✓';
+        font-size: 9px;
+        color: white;
+        font-weight: normal;
+        text-shadow: 0 0 2px rgba(0,0,0,0.5);
+    }
+
+    /* Pastel colors by default */
+    .green { background-color: #a8e6b3; color: white; }
+    .amber { background-color: #ffe8a1; color: #333; }
+    .red { background-color: #f5b7bd; color: white; }
+
+    /* Darker colors when selected */
+    .green.selected { background-color: #28a745; }
+    .amber.selected { background-color: #ffc107; color: white; }
+    .amber.selected::after { color: #333; }
+    .red.selected { background-color: #dc3545; }
+
+
+    /* Section containers with borders */
+    .fodmap-section,
+    .additional-section {
+        border: var(--bevel);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: var(--bg-deep);
+    }
+
+    .collapsible-section {
+        display: block;
+        border: var(--bevel);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        background-color: rgba(139, 164, 139, 0.15);
+        width: 100%;
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .collapsible-section.safe {
+        border-left: 3px solid #28a745;
+    }
+
+    .collapsible-section.moderate {
+        border-left: 3px solid #ffc107;
+    }
+
+    .collapsible-section.high {
+        border-left: 3px solid #dc3545;
+    }
+
+    .collapsible-section.additional {
+        background-color: var(--bg-deep);
+    }
+
+    .collapsible-summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--text-body);
+        color: var(--white-ish);
+    }
+
+    .collapsible-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .collapsible-summary .chevron {
+        margin-left: auto;
+        transition: transform 0.2s ease;
+    }
+
+    .collapsible-section[open] .collapsible-summary .chevron {
+        transform: rotate(180deg);
+    }
+
+    .collapsible-body {
+        padding: 8px 10px 12px;
+        border-top: 1px solid rgba(214, 189, 152, 0.2);
+    }
+
+    /* Serving section header styling (kept for compatibility) */
+    .serving-header {
+        cursor: pointer;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s;
+    }
+
+    .serving-header:hover {
+        transform: translateX(5px);
+    }
+
+    .serving-header.safe {
+        background-color: rgba(40, 167, 69, 0.15);
+        border-left: 4px solid #28a745;
+    }
+
+    .serving-header.moderate {
+        background-color: rgba(255, 193, 7, 0.15);
+        border-left: 4px solid #ffc107;
+    }
+
+    .serving-header.high {
+        background-color: rgba(220, 53, 69, 0.15);
+        border-left: 4px solid #dc3545;
+    }
+
+    .serving-indicator {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .serving-indicator.safe { background-color: #28a745; }
+    .serving-indicator.moderate { background-color: #ffc107; }
+    .serving-indicator.high { background-color: #dc3545; }
+
+    /* Light tan for serving size and notes */
+    .serving-size-field,
+    #notes {
+        background-color: var(--bg-deep) !important;
+        border: 1px solid rgba(214, 189, 152, 0.2) !important;
+        color: var(--white-ish) !important;
+    }
+
+    .serving-size-field::placeholder,
+    #notes::placeholder {
+        color: var(--sage) !important;
+        opacity: 0.7 !important;
+    }
+
+    .serving-size-field:focus,
+    #notes:focus {
+        background-color: var(--bg-deep) !important;
+        border-color: rgba(214, 189, 152, 0.35) !important;
+        color: var(--white-ish) !important;
+        box-shadow: 0 0 0 0.2rem rgba(214, 189, 152, 0.15) !important;
+    }
+
+    .section-divider {
+        border-top: 2px solid var(--sage);
+        margin: 20px 0;
+        opacity: 0.3;
+    }
+
+    /* Remove spinner buttons from number inputs */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar-nav-item {
+        transition: transform 0.2s ease;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+    .sidebar-nav-item:hover {
+        transform: translateX(3px);
+        background: rgba(214, 189, 152, 0.15) !important;
+    }
+    .sidebar-column {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: calc(100vh - 50px);
+        background: linear-gradient(135deg, #8BA48B, #677D6A);
+        overflow-y: auto;
+        z-index: 100;
+    }
+    .foods-sidebar {
+        padding: 12px;
+        padding-top: 40px;
+    }
+    .main-content-area {
+        padding-left: 15px;
+        margin-left: 200px;
+    }
+    .section-title {
+        font-size: var(--text-title);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid rgba(214, 189, 152, 0.5);
+        text-align: center;
+    }
+</style>
+
+<!-- Main Layout with Sidebar -->
+<div class="row g-0">
+    <!-- Left Sidebar: Navigation -->
+    <div class="sidebar-column">
+        <div class="foods-sidebar">
+            <h6 class="section-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.4);"><i class="bi bi-egg-fried"></i> Food Compendium</h6>
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('main.dashboard') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Dashboard</span>
+                </div>
+            </a>
+
+            <!-- Food Compendium -->
+            <a href="{{ url_for('compendium.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M3 2h8"/>
+                            <path d="M21 2v10c0 1.1-.9 2-2 2h-1"/>
+                            <path d="M18 14v8"/>
+                            <path d="M21 2c0 4-3 6-3 10"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Food Compendium</span>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a href="{{ url_for('diary.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/>
+                            <line x1="8" y1="11" x2="16" y2="11"/>
+                            <line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Diary</span>
+                </div>
+            </a>
+
+            <!-- Recipes -->
+            <a href="{{ url_for('recipes.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 13c-2 0-3.5-1.5-3.5-3.5 0-2 1.5-3.5 3.5-3.5.5-2 2.5-3.5 5-3.5s4.5 1.5 5 3.5c2 0 3.5 1.5 3.5 3.5 0 2-1.5 3.5-3.5 3.5"/>
+                            <path d="M6 13v5c0 1 1 2 2 2h8c1 0 2-1 2-2v-5"/>
+                            <line x1="6" y1="17" x2="18" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">My Recipe Book</span>
+                </div>
+            </a>
+
+            <!-- Education -->
+            <a href="{{ url_for('education.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10l-10-5L2 10l10 5 10-5z"/>
+                            <path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/>
+                            <line x1="22" y1="10" x2="22" y2="16"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Education</span>
+                </div>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings.index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Settings</span>
+                </div>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="{{ url_for('settings.help_index') }}" class="text-decoration-none">
+                <div class="sidebar-nav-item d-flex align-items-center py-1 px-1" style="cursor: pointer;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <span class="text-label" style="font-weight: 500; color: #fff;">Help & Support</span>
+                </div>
+            </a>
+
+            <!-- Separator Line -->
+            <div style="margin: 20px 0; border-top: 1px solid rgba(255, 255, 255, 0.3);"></div>
+
+            <!-- Action Buttons Section -->
+            <div class="d-flex flex-column gap-2">
+                <button type="submit" form="add-food-form" class="btn btn-success btn-sm w-100 text-body">
+                    <i class="bi bi-plus-circle"></i> Add Food to Library
+                </button>
+                <a href="{{ url_for('compendium.index') }}" class="btn btn-secondary btn-sm w-100 text-body">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <div style="margin: 10px 0;"></div>
+                <a href="{{ url_for('compendium.index') }}" class="btn btn-outline-light btn-sm w-100 text-body">
+                    <i class="bi bi-arrow-left"></i> Back to Food Compendium
+                </a>
+                <a href="{{ url_for('compendium.add_food') }}" class="btn btn-outline-light btn-sm w-100 text-body">
+                    <i class="bi bi-arrow-clockwise"></i> Add Another Food
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="main-content-area" style="padding-top: 40px;">
+        <div class="mb-4">
+            <h1 class="mb-0" style="font-size: var(--text-h2);"><i class="bi bi-plus-circle"></i> Add Custom Food/Drink</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="add-food-form" novalidate>
+                    <!-- Basic Information -->
+                    <h5 class="mb-3"><i class="bi bi-tag"></i> Basic Information</h5>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="food_name" class="form-label"><strong>Food/Drink Name *</strong></label>
+                            <input type="text" class="form-control" id="food_name" name="food_name"
+                                   placeholder="e.g., Kippers, Green Tea, Sourdough Bread" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="category" class="form-label"><strong>Category *</strong></label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Choose...</option>
+                                <option value="Vegetables">Vegetables</option>
+                                <option value="Fruits">Fruits</option>
+                                <option value="Grains">Grains</option>
+                                <option value="Proteins">Proteins</option>
+                                <option value="Dairy">Dairy</option>
+                                <option value="Nuts & Seeds">Nuts & Seeds</option>
+                                <option value="Fats/Oils">Fats/Oils</option>
+                                <option value="Herbs & Spices">Herbs & Spices</option>
+                                <option value="Beverages">Beverages</option>
+                                <option value="Packaged Food">Packaged Food</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- USDA Nutritional Database Link -->
+                    <div class="card mb-3" style="background-color: var(--bg-elevated); border: 1px solid rgba(214, 189, 152, 0.3); border-radius: 4px;">
+                        <div class="card-body" style="padding: 12px;">
+                            <h6 class="mb-2" style="color: var(--gold); font-size: var(--text-title);">
+                                <i class="bi bi-database"></i> USDA Nutritional Database
+                            </h6>
+                            <p class="mb-2" style="font-size: var(--text-label); color: var(--white-ish); opacity: 0.8;">
+                                Link this food to a USDA food item for comprehensive nutritional information.
+                            </p>
+
+                            <!-- Hidden input for USDA food ID -->
+                            <input type="hidden" id="usda_food_id" name="usda_food_id" value="">
+
+                            <!-- Display area for selected USDA food -->
+                            <div id="usda-link-display" style="display: none; background-color: rgba(214, 189, 152, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div style="flex: 1;">
+                                        <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold;" id="usda-food-name"></div>
+                                        <div style="font-size: var(--text-label); color: var(--sage); margin-top: 2px;">
+                                            <span id="usda-food-type" class="badge" style="font-size: var(--text-label); padding: 2px 6px;"></span>
+                                            <span id="usda-food-category" style="margin-left: 6px;"></span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="clearUsdaLink()" style="padding: 2px 8px; font-size: var(--text-label); background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search button -->
+                            <button type="button" class="btn btn-sm" id="usda-search-btn" data-bs-toggle="modal" data-bs-target="#usdaSearchModal" style="background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3); padding: 4px 12px; font-size: var(--text-body);">
+                                <i class="bi bi-search"></i> Search USDA Database
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FODMAP & Histamine Content by Serving Size -->
+                    <div class="fodmap-section">
+                        <h5 class="mb-3"><i class="bi bi-diagram-3"></i> FODMAP & Histamine Content by Serving Size</h5>
+
+                        <div class="d-flex flex-column">
+                            <!-- Safe Serving -->
+                            <details class="collapsible-section safe">
+                                <summary class="collapsible-summary">
+                                    <i class="bi bi-circle-fill" style="color: #28a745;"></i> Safe Serving
+                                    <i class="bi bi-chevron-down chevron"></i>
+                                </summary>
+                                <div class="collapsible-body">
+
+                                <div class="mb-2">
+                                    <label for="safe_serving" class="form-label mb-1 text-body"><strong>Serving Size *</strong></label>
+                                    <div class="d-flex gap-1 mb-1">
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="safe_serving" name="safe_serving"
+                                               placeholder="e.g., 75" required style="width: 80px; font-size: var(--text-body);">
+                                        <input type="text" class="form-control form-control-sm" id="safe_serving_unit" name="safe_serving_unit"
+                                               placeholder="g, ml" required style="width: 50px; font-size: var(--text-body);">
+                                    </div>
+                                    <div class="d-flex gap-1 mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-info text-label" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('safe_serving')" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator"></i> Convert
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary text-label" data-bs-toggle="modal" data-bs-target="#calculatorModal" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator-fill"></i> Calc
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="safe_serving_type" class="form-label mb-1 text-body"><strong>Serving Type:</strong></label>
+                                    <select class="form-select form-select-sm text-body" id="safe_serving_type" name="safe_serving_type" style="margin-bottom: 4px;">
+                                        <option value="">Select...</option>
+                                        <option value="1 serve">1 serve</option>
+                                        <option value="low serve">low serve</option>
+                                        <option value="moderate serve">moderate serve</option>
+                                        <option value="high serve">high serve</option>
+                                    </select>
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="safe_serving_note" name="safe_serving_note"
+                                           placeholder="e.g., (1/2 cup) - per meal" style="font-size: var(--text-body);">
+                                </div>
+
+                                <h6 class="text-white-ish mt-2 mb-1 text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+                                <div class="fodmap-grid mb-2">
+                                    {% for fodmap in ['fructose', 'sorbitol', 'lactose', 'gos', 'mannitol', 'fructans', 'polyols'] %}
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="safe_{{ fodmap }}" data-value="Green"></div>
+                                            <div class="color-option amber" data-field="safe_{{ fodmap }}" data-value="Amber"></div>
+                                            <div class="color-option red" data-field="safe_{{ fodmap }}" data-value="Red"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>{{ fodmap.capitalize() }}</strong></label>
+                                        </div>
+                                        <input type="hidden" name="safe_{{ fodmap }}" id="safe_{{ fodmap }}" value="Green">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="section-divider"></div>
+
+                                <h6 class="text-white-ish mb-1 text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+                                <div class="histamine-grid">
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="safe_histamine_level" data-value="Low"></div>
+                                            <div class="color-option amber" data-field="safe_histamine_level" data-value="Medium"></div>
+                                            <div class="color-option red" data-field="safe_histamine_level" data-value="High"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Level</strong></label>
+                                        </div>
+                                        <input type="hidden" name="safe_histamine_level" id="safe_histamine_level" value="Low">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="safe_dao_blocker" data-value="No"></div>
+                                            <div class="color-option red" data-field="safe_dao_blocker" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>DAO Blocker</strong></label>
+                                        </div>
+                                        <input type="hidden" name="safe_dao_blocker" id="safe_dao_blocker" value="No">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="safe_histamine_liberator" data-value="No"></div>
+                                            <div class="color-option red" data-field="safe_histamine_liberator" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Liberator</strong></label>
+                                        </div>
+                                        <input type="hidden" name="safe_histamine_liberator" id="safe_histamine_liberator" value="No">
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- Moderate Serving -->
+                            <details class="collapsible-section moderate">
+                                <summary class="collapsible-summary">
+                                    <i class="bi bi-circle-fill" style="color: #ffc107;"></i> Moderate Serving
+                                    <i class="bi bi-chevron-down chevron"></i>
+                                </summary>
+                                <div class="collapsible-body">
+
+                                <div class="mb-2">
+                                    <label for="moderate_serving" class="form-label mb-1 text-body"><strong>Serving Size *</strong></label>
+                                    <div class="d-flex gap-1 mb-1">
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="moderate_serving" name="moderate_serving"
+                                               placeholder="e.g., 150" required style="width: 80px; font-size: var(--text-body);">
+                                        <input type="text" class="form-control form-control-sm" id="moderate_serving_unit" name="moderate_serving_unit"
+                                               placeholder="g, ml" required style="width: 50px; font-size: var(--text-body);">
+                                    </div>
+                                    <div class="d-flex gap-1 mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-info text-label" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('moderate_serving')" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator"></i> Convert
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary text-label" data-bs-toggle="modal" data-bs-target="#calculatorModal" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator-fill"></i> Calc
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="moderate_serving_type" class="form-label mb-1 text-body"><strong>Serving Type:</strong></label>
+                                    <select class="form-select form-select-sm text-body" id="moderate_serving_type" name="moderate_serving_type" style="margin-bottom: 4px;">
+                                        <option value="">Select...</option>
+                                        <option value="1 serve">1 serve</option>
+                                        <option value="low serve">low serve</option>
+                                        <option value="moderate serve">moderate serve</option>
+                                        <option value="high serve">high serve</option>
+                                    </select>
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="moderate_serving_note" name="moderate_serving_note"
+                                           placeholder="e.g., (1 cup) - per meal" style="font-size: var(--text-body);">
+                                </div>
+
+                                <h6 class="text-white-ish mt-2 mb-1 text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+                                <div class="fodmap-grid mb-2">
+                                    {% for fodmap in ['fructose', 'sorbitol', 'lactose', 'gos', 'mannitol', 'fructans', 'polyols'] %}
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="moderate_{{ fodmap }}" data-value="Green"></div>
+                                            <div class="color-option amber selected" data-field="moderate_{{ fodmap }}" data-value="Amber"></div>
+                                            <div class="color-option red" data-field="moderate_{{ fodmap }}" data-value="Red"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>{{ fodmap.capitalize() }}</strong></label>
+                                        </div>
+                                        <input type="hidden" name="moderate_{{ fodmap }}" id="moderate_{{ fodmap }}" value="Amber">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="section-divider"></div>
+
+                                <h6 class="text-white-ish mb-1 text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+                                <div class="histamine-grid">
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="moderate_histamine_level" data-value="Low"></div>
+                                            <div class="color-option amber selected" data-field="moderate_histamine_level" data-value="Medium"></div>
+                                            <div class="color-option red" data-field="moderate_histamine_level" data-value="High"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Level</strong></label>
+                                        </div>
+                                        <input type="hidden" name="moderate_histamine_level" id="moderate_histamine_level" value="Medium">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="moderate_dao_blocker" data-value="No"></div>
+                                            <div class="color-option red" data-field="moderate_dao_blocker" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>DAO Blocker</strong></label>
+                                        </div>
+                                        <input type="hidden" name="moderate_dao_blocker" id="moderate_dao_blocker" value="No">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green selected" data-field="moderate_histamine_liberator" data-value="No"></div>
+                                            <div class="color-option red" data-field="moderate_histamine_liberator" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Liberator</strong></label>
+                                        </div>
+                                        <input type="hidden" name="moderate_histamine_liberator" id="moderate_histamine_liberator" value="No">
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- High Serving -->
+                            <details class="collapsible-section high">
+                                <summary class="collapsible-summary">
+                                    <i class="bi bi-circle-fill" style="color: #dc3545;"></i> High Serving
+                                    <i class="bi bi-chevron-down chevron"></i>
+                                </summary>
+                                <div class="collapsible-body">
+
+                                <div class="mb-2">
+                                    <label for="high_serving" class="form-label mb-1 text-body"><strong>Serving Size *</strong></label>
+                                    <div class="d-flex gap-1 mb-1">
+                                        <input type="text" class="form-control form-control-sm serving-size-field" id="high_serving" name="high_serving"
+                                               placeholder="e.g., 300" required style="width: 80px; font-size: var(--text-body);">
+                                        <input type="text" class="form-control form-control-sm" id="high_serving_unit" name="high_serving_unit"
+                                               placeholder="g, ml" required style="width: 50px; font-size: var(--text-body);">
+                                    </div>
+                                    <div class="d-flex gap-1 mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-info text-label" data-bs-toggle="modal" data-bs-target="#conversionModal" onclick="setConversionTarget('high_serving')" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator"></i> Convert
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary text-label" data-bs-toggle="modal" data-bs-target="#calculatorModal" style="padding: 2px 6px;">
+                                            <i class="bi bi-calculator-fill"></i> Calc
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="high_serving_type" class="form-label mb-1 text-body"><strong>Serving Type:</strong></label>
+                                    <select class="form-select form-select-sm text-body" id="high_serving_type" name="high_serving_type" style="margin-bottom: 4px;">
+                                        <option value="">Select...</option>
+                                        <option value="1 serve">1 serve</option>
+                                        <option value="low serve">low serve</option>
+                                        <option value="moderate serve">moderate serve</option>
+                                        <option value="high serve">high serve</option>
+                                    </select>
+                                    <input type="text" class="form-control form-control-sm serving-size-field" id="high_serving_note" name="high_serving_note"
+                                           placeholder="e.g., (2 cups) - per meal" style="font-size: var(--text-body);">
+                                </div>
+
+                                <h6 class="text-white-ish mt-2 mb-1 text-body"><i class="bi bi-diagram-3"></i> FODMAP Ratings</h6>
+                                <div class="fodmap-grid mb-2">
+                                    {% for fodmap in ['fructose', 'sorbitol', 'lactose', 'gos', 'mannitol', 'fructans', 'polyols'] %}
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="high_{{ fodmap }}" data-value="Green"></div>
+                                            <div class="color-option amber" data-field="high_{{ fodmap }}" data-value="Amber"></div>
+                                            <div class="color-option red selected" data-field="high_{{ fodmap }}" data-value="Red"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>{{ fodmap.capitalize() }}</strong></label>
+                                        </div>
+                                        <input type="hidden" name="high_{{ fodmap }}" id="high_{{ fodmap }}" value="Red">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="section-divider"></div>
+
+                                <h6 class="text-white-ish mb-1 text-body"><i class="bi bi-activity"></i> Histamine Ratings</h6>
+                                <div class="histamine-grid">
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="high_histamine_level" data-value="Low"></div>
+                                            <div class="color-option amber" data-field="high_histamine_level" data-value="Medium"></div>
+                                            <div class="color-option red selected" data-field="high_histamine_level" data-value="High"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Level</strong></label>
+                                        </div>
+                                        <input type="hidden" name="high_histamine_level" id="high_histamine_level" value="High">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="high_dao_blocker" data-value="No"></div>
+                                            <div class="color-option red selected" data-field="high_dao_blocker" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>DAO Blocker</strong></label>
+                                        </div>
+                                        <input type="hidden" name="high_dao_blocker" id="high_dao_blocker" value="Yes">
+                                    </div>
+                                    <div class="fodmap-card">
+                                        <div class="color-selector">
+                                            <div class="color-option green" data-field="high_histamine_liberator" data-value="No"></div>
+                                            <div class="color-option red selected" data-field="high_histamine_liberator" data-value="Yes"></div>
+                                        </div>
+                                        <div class="fodmap-text-content">
+                                            <label class="form-label mb-0 text-label"><strong>Histamine Liberator</strong></label>
+                                        </div>
+                                        <input type="hidden" name="high_histamine_liberator" id="high_histamine_liberator" value="Yes">
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="additional-section">
+                    <!-- Nutrition Information Section (Optional - for packaged items) -->
+                                        <details class="collapsible-section additional">
+
+                        <summary class="collapsible-summary">
+
+                            <i class="bi bi-clipboard-data"></i> Custom Nutrition Information
+
+                            <small class="text-muted ms-2">(Optional - Manual entry if USDA data unavailable)</small>
+
+                            <i class="bi bi-chevron-down chevron"></i>
+
+                        </summary>
+
+                        <div class="collapsible-body">
+
+                            <p class="text-muted mb-3" style="font-size: var(--text-label);">
+                                <i class="bi bi-info-circle"></i> Use this section to manually add nutritional data if no USDA food is linked. Add custom nutrients organized by category.
+                            </p>
+
+                            <!-- Hidden input to store custom nutrients as JSON -->
+                            <input type="hidden" id="custom_nutrients_json" name="custom_nutrients" value="{}">
+
+                            <!-- Serving Sizes Section -->
+                            <div class="nutrition-section mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                    <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                        <i class="bi bi-rulers"></i> Serving Sizes
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="addNutrientRow('servings')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                        <i class="bi bi-plus-circle"></i> Add Item
+                                    </button>
+                                </div>
+                                <div id="servings-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 40px;">
+                                    <!-- Dynamic rows added here -->
+                                    <p class="text-muted text-center py-2 mb-0" id="servings-empty" style="font-size: var(--text-label);">No serving sizes added</p>
+                                </div>
+                            </div>
+
+                            <!-- Energy Section -->
+                            <div class="nutrition-section mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                    <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                        <i class="bi bi-lightning-fill"></i> Energy
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="addNutrientRow('energy')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                        <i class="bi bi-plus-circle"></i> Add Item
+                                    </button>
+                                </div>
+                                <div id="energy-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 40px;">
+                                    <!-- Dynamic rows added here -->
+                                    <p class="text-muted text-center py-2 mb-0" id="energy-empty" style="font-size: var(--text-label);">No energy values added</p>
+                                </div>
+                            </div>
+
+                            <!-- Proximates Section -->
+                            <div class="nutrition-section mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                    <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                        <i class="bi bi-diagram-3"></i> Proximates
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="addNutrientRow('proximates')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                        <i class="bi bi-plus-circle"></i> Add Item
+                                    </button>
+                                </div>
+                                <div id="proximates-container" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 40px;">
+                                    <!-- Dynamic rows added here -->
+                                    <p class="text-muted text-center py-2 mb-0" id="proximates-empty" style="font-size: var(--text-label);">No proximates added</p>
+                                </div>
+                            </div>
+
+                            <!-- Vitamins Section -->
+                            <div class="nutrition-section mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                    <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                        <i class="bi bi-capsule"></i> Vitamins
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="addNutrientRow('vitamins')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                        <i class="bi bi-plus-circle"></i> Add Item
+                                    </button>
+                                </div>
+                                <div id="vitamins-container-custom" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 40px;">
+                                    <!-- Dynamic rows added here -->
+                                    <p class="text-muted text-center py-2 mb-0" id="vitamins-empty" style="font-size: var(--text-label);">No vitamins added</p>
+                                </div>
+                            </div>
+
+                            <!-- Minerals Section -->
+                            <div class="nutrition-section mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2" style="background: rgba(214, 189, 152, 0.1); padding: 6px 10px; border-radius: 4px;">
+                                    <div style="font-size: var(--text-title); font-weight: 600; color: var(--gold);">
+                                        <i class="bi bi-gem"></i> Minerals
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="addNutrientRow('minerals')" style="padding: 3px 8px; font-size: var(--text-label); background-color: rgba(214, 189, 152, 0.2); color: var(--gold); border: 1px solid rgba(214, 189, 152, 0.3);">
+                                        <i class="bi bi-plus-circle"></i> Add Item
+                                    </button>
+                                </div>
+                                <div id="minerals-container-custom" style="background: rgba(255, 255, 255, 0.02); border-radius: 0 0 4px 4px; min-height: 40px;">
+                                    <!-- Dynamic rows added here -->
+                                    <p class="text-muted text-center py-2 mb-0" id="minerals-empty" style="font-size: var(--text-label);">No minerals added</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </details>
+
+
+                     (Optional)
+                            <i class="bi bi-chevron-down chevron"></i>
+                        </summary>
+                        <div class="collapsible-body">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="Any special notes, preparation tips, or observations about this food..."></textarea>
+                            </div>
+                        </div>
+                    </details>
+                    </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
+            </div> <!-- Close col-md-9 -->
+        </div> <!-- Close row -->
+    </div> <!-- Close main-content-area -->
+</div> <!-- Close row g-0 -->
+
+<!-- Conversion Helper Modal -->
+<div class="modal fade" id="conversionModal" tabindex="-1" aria-labelledby="conversionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="conversionModalLabel"><i class="bi bi-calculator"></i> Cup/Tbsp to Grams Converter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="conversionAmount" class="form-label"><strong>Amount</strong></label>
+                        <input type="number" class="form-control" id="conversionAmount" step="any" placeholder="e.g., 0.5, 1, 2">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="conversionUnit" class="form-label"><strong>Unit</strong></label>
+                        <select class="form-select" id="conversionUnit">
+                            <option value="cup">Cup</option>
+                            <option value="tbsp">Tablespoon (Tbsp)</option>
+                            <option value="tsp">Teaspoon (tsp)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="conversionFoodType" class="form-label"><strong>Food Type</strong></label>
+                    <select class="form-select" id="conversionFoodType">
+                        <option value="">Select food type...</option>
+                        <optgroup label="Liquids">
+                            <option value="liquid">Water/Milk/Juice (liquid)</option>
+                        </optgroup>
+                        <optgroup label="Grains & Flour">
+                            <option value="flour">All-purpose Flour</option>
+                            <option value="rice_cooked">Rice (cooked)</option>
+                            <option value="rice_raw">Rice (raw)</option>
+                            <option value="oats">Oats (rolled)</option>
+                        </optgroup>
+                        <optgroup label="Sugars">
+                            <option value="sugar_white">Sugar (white granulated)</option>
+                            <option value="sugar_brown">Sugar (brown)</option>
+                            <option value="honey">Honey</option>
+                        </optgroup>
+                        <optgroup label="Vegetables">
+                            <option value="veg_leafy">Leafy Greens (spinach, lettuce)</option>
+                            <option value="veg_chopped">Chopped Vegetables</option>
+                            <option value="veg_grated">Grated Vegetables (carrot)</option>
+                        </optgroup>
+                        <optgroup label="Fruits">
+                            <option value="berries">Berries</option>
+                            <option value="fruit_chopped">Chopped Fruit</option>
+                        </optgroup>
+                        <optgroup label="Nuts & Seeds">
+                            <option value="nuts">Nuts (whole)</option>
+                            <option value="nuts_chopped">Nuts (chopped)</option>
+                            <option value="seeds">Seeds</option>
+                        </optgroup>
+                        <optgroup label="Dairy">
+                            <option value="butter">Butter</option>
+                            <option value="cheese_grated">Cheese (grated)</option>
+                            <option value="yogurt">Yogurt</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" id="calculateBtn">
+                    <i class="bi bi-calculator"></i> Calculate
+                </button>
+                <div id="conversionResult" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6><i class="bi bi-check-circle"></i> Conversion Result:</h6>
+                        <p class="mb-2"><strong id="conversionResultText"></strong></p>
+                        <button type="button" class="btn btn-sm btn-success" id="applyBtn">
+                            <i class="bi bi-check2"></i> Use This Value
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Calculator Modal -->
+<div class="modal fade" id="calculatorModal" tabindex="-1" aria-labelledby="calculatorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calculatorModalLabel"><i class="bi bi-calculator-fill"></i> Simple Calculator</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="calculator-display mb-3">
+                    <input type="text" class="form-control form-control-lg text-end" id="calcDisplay" readonly value="0" style="font-size: 1.5rem; font-family: monospace;">
+                </div>
+                <div class="calculator-buttons">
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcClear()">C</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcBackspace()">⌫</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('/')">/</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('*')">×</button></div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('7')">7</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('8')">8</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('9')">9</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('-')">-</button></div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('4')">4</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('5')">5</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('6')">6</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100" onclick="calcAppend('+')">+</button></div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('1')">1</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('2')">2</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('3')">3</button></div>
+                        <div class="col-3 row-span-2"><button type="button" class="btn btn-primary w-100 h-100" onclick="calcEquals()" style="height: 100%;">=</button></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('0')">0</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-outline-dark w-100" onclick="calcAppend('.')">.</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto">
+                    <strong>Keyboard:</strong> Numbers, +, -, *, /, . | Enter = Calculate | Backspace = Delete | Esc = Clear
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- USDA Food Search Modal -->
+<div class="modal fade" id="usdaSearchModal" tabindex="-1" aria-labelledby="usdaSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background-color: var(--bg-elevated); color: var(--white-ish);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(214, 189, 152, 0.3);">
+                <h5 class="modal-title" id="usdaSearchModalLabel" style="color: var(--gold);">
+                    <i class="bi bi-search"></i> Search USDA Food Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search input -->
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="usda-search-input" placeholder="Search for a food (e.g., banana, chicken breast)..." style="font-size: var(--text-body);">
+                    <small class="text-muted" style="font-size: var(--text-label);">Type at least 2 characters to search</small>
+                </div>
+
+                <!-- Loading indicator -->
+                <div id="usda-search-loading" style="display: none; text-align: center; padding: 20px;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Results container -->
+                <div id="usda-search-results" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted text-center" style="font-size: var(--text-label);">
+                        Enter a search term to find USDA foods
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(214, 189, 152, 0.3);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+// ==================== CUSTOM NUTRITION FUNCTIONS ====================
+
+let nutrientCounter = {
+    servings: 0,
+    energy: 0,
+    proximates: 0,
+    vitamins: 0,
+    minerals: 0
+};
+
+// Add a new nutrient row to the specified category
+function addNutrientRow(category) {
+    nutrientCounter[category]++;
+    const rowId = `${category}-row-${nutrientCounter[category]}`;
+    const container = document.getElementById(`${category}-container${category === 'vitamins' || category === 'minerals' ? '-custom' : ''}`);
+    const emptyMessage = document.getElementById(`${category}-empty`);
+
+    // Hide empty message
+    if (emptyMessage) {
+        emptyMessage.style.display = 'none';
+    }
+
+    // Create row based on category
+    let rowHTML = '';
+    if (category === 'servings') {
+        rowHTML = `
+            <div id="${rowId}" class="nutrient-row" style="display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <input type="text" class="form-control form-control-sm" placeholder="Serving description (e.g., 1 cup)"
+                    style="flex: 2; margin-right: 8px; font-size: var(--text-body);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Grams"
+                    style="flex: 1; margin-right: 8px; font-size: var(--text-body);"
+                    onchange="updateCustomNutrients()">
+                <span style="color: var(--sage); font-size: var(--text-label); margin-right: 8px;">g</span>
+                <button type="button" class="btn btn-sm" onclick="deleteNutrientRow('${rowId}', '${category}')"
+                    style="padding: 2px 6px; background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <i class="bi bi-trash" style="font-size: 0.65rem;"></i>
+                </button>
+            </div>
+        `;
+    } else {
+        rowHTML = `
+            <div id="${rowId}" class="nutrient-row" style="display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <input type="text" class="form-control form-control-sm" placeholder="Nutrient name"
+                    style="flex: 2; margin-right: 8px; font-size: var(--text-body); color: var(--white-ish);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Amount"
+                    style="flex: 1; margin-right: 8px; font-size: var(--text-body); text-align: right; color: var(--gold);"
+                    onchange="updateCustomNutrients()">
+                <input type="text" class="form-control form-control-sm" placeholder="Unit"
+                    style="flex: 0.8; margin-right: 8px; font-size: var(--text-label); color: var(--sage);"
+                    onchange="updateCustomNutrients()">
+                <button type="button" class="btn btn-sm" onclick="deleteNutrientRow('${rowId}', '${category}')"
+                    style="padding: 2px 6px; background-color: rgba(220, 53, 69, 0.2); color: var(--white-ish); border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <i class="bi bi-trash" style="font-size: 0.65rem;"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    container.insertAdjacentHTML('beforeend', rowHTML);
+    updateCustomNutrients();
+}
+
+// Delete a nutrient row
+function deleteNutrientRow(rowId, category) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+    }
+
+    // Check if container is empty, show empty message
+    const container = document.getElementById(`${category}-container${category === 'vitamins' || category === 'minerals' ? '-custom' : ''}`);
+    const rows = container.querySelectorAll('.nutrient-row');
+    const emptyMessage = document.getElementById(`${category}-empty`);
+
+    if (rows.length === 0 && emptyMessage) {
+        emptyMessage.style.display = 'block';
+    }
+
+    updateCustomNutrients();
+}
+
+// Collect all custom nutrient data and save to hidden input
+function updateCustomNutrients() {
+    const data = {
+        servings: [],
+        energy: [],
+        proximates: [],
+        vitamins: [],
+        minerals: []
+    };
+
+    // Helper function to extract data from a container
+    function extractNutrients(category, hasGramWeight = false) {
+        const containerSuffix = (category === 'vitamins' || category === 'minerals') ? '-custom' : '';
+        const container = document.getElementById(`${category}-container${containerSuffix}`);
+        const rows = container.querySelectorAll('.nutrient-row');
+
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (hasGramWeight) {
+                // Serving sizes: description + gram weight
+                const description = inputs[0].value.trim();
+                const gramWeight = inputs[1].value.trim();
+                if (description || gramWeight) {
+                    data[category].push({
+                        description: description,
+                        gram_weight: gramWeight
+                    });
+                }
+            } else {
+                // Other nutrients: name + amount + unit
+                const name = inputs[0].value.trim();
+                const amount = inputs[1].value.trim();
+                const unit = inputs[2].value.trim();
+                if (name || amount || unit) {
+                    data[category].push({
+                        name: name,
+                        amount: amount,
+                        unit: unit
+                    });
+                }
+            }
+        });
+    }
+
+    extractNutrients('servings', true);
+    extractNutrients('energy');
+    extractNutrients('proximates');
+    extractNutrients('vitamins');
+    extractNutrients('minerals');
+
+    // Save to hidden input as JSON
+    const hiddenInput = document.getElementById('custom_nutrients_json');
+    if (hiddenInput) {
+        hiddenInput.value = JSON.stringify(data);
+    }
+}
+
+// ==================== END CUSTOM NUTRITION FUNCTIONS ====================
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Add food form loaded');
+
+    // Category change handler - make serving sizes optional for Packaged Food
+    const categorySelect = document.getElementById('category');
+    const servingFields = [
+        'safe_serving', 'safe_serving_unit',
+        'moderate_serving', 'moderate_serving_unit',
+        'high_serving', 'high_serving_unit'
+    ];
+
+    function toggleServingSizeRequired() {
+        const isPackagedFood = categorySelect.value === 'Packaged Food';
+        servingFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (isPackagedFood) {
+                    field.removeAttribute('required');
+                } else {
+                    field.setAttribute('required', 'required');
+                }
+            }
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', toggleServingSizeRequired);
+        // Run on page load in case category is pre-selected
+        toggleServingSizeRequired();
+    }
+
+    // Color selector functionality
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const field = this.dataset.field;
+            const value = this.dataset.value;
+
+            // Remove 'selected' class from siblings
+            this.parentElement.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Add 'selected' to clicked option
+            this.classList.add('selected');
+
+            // Update hidden input value
+            document.getElementById(field).value = value;
+        });
+    });
+
+    // Wait a bit for the modal to be in the DOM, then attach listeners
+    setTimeout(function() {
+        // Attach event listener to calculate button
+        const calculateBtn = document.getElementById('calculateBtn');
+        if (calculateBtn) {
+            calculateBtn.addEventListener('click', function() {
+                console.log('Calculate button clicked');
+                window.calculateConversion();
+            });
+            console.log('Calculate button listener attached');
+        } else {
+            console.error('Calculate button not found');
+        }
+
+        // Attach event listener to apply button
+        const applyBtn = document.getElementById('applyBtn');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', function() {
+                console.log('Apply button clicked');
+                window.applyConversion();
+            });
+            console.log('Apply button listener attached');
+        } else {
+            console.error('Apply button not found');
+        }
+    }, 100);
+});
+
+// Conversion Helper Variables - Define globally
+let currentConversionTarget = '';
+let calculatedGrams = 0;
+let originalInput = '';
+
+// Define functions globally so they can be called from onclick attributes
+window.setConversionTarget = function(targetId) {
+    console.log('Setting conversion target to:', targetId);
+    currentConversionTarget = targetId;
+    const resultDiv = document.getElementById('conversionResult');
+    if (resultDiv) {
+        resultDiv.style.display = 'none';
+    }
+};
+
+// Conversion rates per cup in grams
+const conversionRates = {
+    // Liquids (1 cup = ~240ml = ~240g for water-based liquids)
+    liquid: { cup: 240, tbsp: 15, tsp: 5 },
+
+    // Grains & Flour
+    flour: { cup: 125, tbsp: 8, tsp: 2.6 },
+    rice_cooked: { cup: 195, tbsp: 12, tsp: 4 },
+    rice_raw: { cup: 185, tbsp: 11.5, tsp: 3.8 },
+    oats: { cup: 80, tbsp: 5, tsp: 1.7 },
+
+    // Sugars
+    sugar_white: { cup: 200, tbsp: 12.5, tsp: 4 },
+    sugar_brown: { cup: 220, tbsp: 14, tsp: 4.6 },
+    honey: { cup: 340, tbsp: 21, tsp: 7 },
+
+    // Vegetables
+    veg_leafy: { cup: 30, tbsp: 2, tsp: 0.6 },
+    veg_chopped: { cup: 150, tbsp: 9, tsp: 3 },
+    veg_grated: { cup: 110, tbsp: 7, tsp: 2.3 },
+
+    // Fruits
+    berries: { cup: 150, tbsp: 9, tsp: 3 },
+    fruit_chopped: { cup: 150, tbsp: 9, tsp: 3 },
+
+    // Nuts & Seeds
+    nuts: { cup: 140, tbsp: 9, tsp: 3 },
+    nuts_chopped: { cup: 115, tbsp: 7, tsp: 2.4 },
+    seeds: { cup: 150, tbsp: 9, tsp: 3 },
+
+    // Dairy
+    butter: { cup: 227, tbsp: 14, tsp: 4.7 },
+    cheese_grated: { cup: 110, tbsp: 7, tsp: 2.3 },
+    yogurt: { cup: 245, tbsp: 15, tsp: 5 }
+};
+
+window.calculateConversion = function() {
+    console.log('Calculate conversion called');
+
+    // Query within the modal to ensure we get the right elements
+    const modal = document.getElementById('conversionModal');
+    if (!modal) {
+        console.error('Conversion modal not found');
+        alert('Error: Conversion modal not loaded');
+        return;
+    }
+
+    const amountInput = modal.querySelector('#conversionAmount');
+    const unitInput = modal.querySelector('#conversionUnit');
+    const foodTypeInput = modal.querySelector('#conversionFoodType');
+
+    if (!amountInput || !unitInput || !foodTypeInput) {
+        console.error('Conversion inputs not found');
+        alert('Error: Conversion form elements not found');
+        return;
+    }
+
+    const amount = parseFloat(amountInput.value);
+    const unit = unitInput.value;
+    const foodType = foodTypeInput.value;
+
+    console.log('Conversion params:', { amount, unit, foodType });
+
+    if (!amount || isNaN(amount)) {
+        alert('Please enter a valid amount');
+        return;
+    }
+
+    if (!foodType) {
+        alert('Please select a food type');
+        return;
+    }
+
+    const rates = conversionRates[foodType];
+    if (!rates) {
+        console.error('Invalid food type:', foodType);
+        alert('Invalid food type selected');
+        return;
+    }
+
+    if (!rates[unit]) {
+        console.error('Invalid unit:', unit);
+        alert('Invalid unit selected');
+        return;
+    }
+
+    calculatedGrams = Math.round(amount * rates[unit]);
+    console.log('Calculated grams:', calculatedGrams);
+
+    // Format the unit display
+    let unitDisplay = unit;
+    if (amount !== 1) {
+        if (unit === 'cup') unitDisplay = 'cups';
+        else if (unit === 'tbsp') unitDisplay = 'tablespoons';
+        else if (unit === 'tsp') unitDisplay = 'teaspoons';
+    } else {
+        if (unit === 'tbsp') unitDisplay = 'tablespoon';
+        else if (unit === 'tsp') unitDisplay = 'teaspoon';
+    }
+
+    // Format amount display
+    let amountDisplay = amount;
+    if (amount === 0.5) amountDisplay = '1/2';
+    else if (amount === 0.33 || amount === 0.333) amountDisplay = '1/3';
+    else if (amount === 0.66 || amount === 0.667) amountDisplay = '2/3';
+    else if (amount === 0.25) amountDisplay = '1/4';
+    else if (amount === 0.75) amountDisplay = '3/4';
+
+    originalInput = `${amountDisplay} ${unitDisplay}`;
+
+    const resultText = `${amountDisplay} ${unitDisplay} = ${calculatedGrams}g`;
+    console.log('Result:', resultText);
+
+    // Query for result container within the modal
+    const resultElement = modal.querySelector('#conversionResult');
+
+    if (!resultElement) {
+        console.error('Result container not found in modal');
+        alert('Error: Result display container not found. Please refresh the page.');
+        return;
+    }
+
+    console.log('Result element found:', resultElement);
+
+    // Find or create the strong tag within the result element
+    let resultTextElement = resultElement.querySelector('strong');
+
+    if (!resultTextElement) {
+        console.log('Strong element not found, creating it dynamically');
+        // Create the strong element if it doesn't exist
+        resultTextElement = document.createElement('strong');
+        resultTextElement.id = 'conversionResultText';
+
+        // Find the paragraph to append to, or create structure if needed
+        let paragraph = resultElement.querySelector('p.mb-2');
+        if (!paragraph) {
+            // If paragraph doesn't exist, create the full structure
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success';
+
+            const heading = document.createElement('h6');
+            heading.innerHTML = '<i class="bi bi-check-circle"></i> Conversion Result:';
+
+            paragraph = document.createElement('p');
+            paragraph.className = 'mb-2';
+            paragraph.appendChild(resultTextElement);
+
+            alertDiv.appendChild(heading);
+            alertDiv.appendChild(paragraph);
+            resultElement.appendChild(alertDiv);
+        } else {
+            // Paragraph exists, just append the strong element
+            paragraph.appendChild(resultTextElement);
+        }
+        console.log('Strong element created and added to DOM');
+    }
+
+    console.log('Text element ready:', resultTextElement);
+
+    // Update the text and show the result
+    resultTextElement.textContent = resultText;
+    resultElement.style.display = 'block';
+    console.log('Result displayed successfully:', resultText);
+};
+
+window.applyConversion = function() {
+    console.log('Apply conversion called, target:', currentConversionTarget, 'grams:', calculatedGrams);
+    if (currentConversionTarget && calculatedGrams > 0) {
+        const targetInput = document.getElementById(currentConversionTarget);
+        if (!targetInput) {
+            console.error('Target input not found:', currentConversionTarget);
+            alert('Error: Could not find the target input field');
+            return;
+        }
+        targetInput.value = `${calculatedGrams}g or ${originalInput}`;
+
+        // Close the modal
+        const modalElement = document.getElementById('conversionModal');
+        if (!modalElement) {
+            console.error('Modal element not found');
+            return;
+        }
+
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        } else {
+            // If instance doesn't exist, create one and hide it
+            const newModal = new bootstrap.Modal(modalElement);
+            newModal.hide();
+        }
+
+        // Reset - query within modal
+        const amountInput = modalElement.querySelector('#conversionAmount');
+        const foodTypeInput = modalElement.querySelector('#conversionFoodType');
+        const resultDiv = modalElement.querySelector('#conversionResult');
+
+        if (amountInput) amountInput.value = '';
+        if (foodTypeInput) foodTypeInput.value = '';
+        if (resultDiv) resultDiv.style.display = 'none';
+
+        console.log('Conversion applied successfully');
+    } else {
+        console.error('Cannot apply conversion:', { currentConversionTarget, calculatedGrams });
+    }
+};
+
+// Calculator Functions
+let calcCurrentValue = '0';
+let calcWaitingForOperand = false;
+
+window.calcClear = function() {
+    calcCurrentValue = '0';
+    calcWaitingForOperand = false;
+    document.getElementById('calcDisplay').value = calcCurrentValue;
+};
+
+window.calcBackspace = function() {
+    const display = document.getElementById('calcDisplay');
+    if (calcCurrentValue.length > 1) {
+        calcCurrentValue = calcCurrentValue.slice(0, -1);
+    } else {
+        calcCurrentValue = '0';
+    }
+    display.value = calcCurrentValue;
+};
+
+window.calcAppend = function(value) {
+    const display = document.getElementById('calcDisplay');
+
+    if (calcCurrentValue === '0' && value !== '.') {
+        calcCurrentValue = value;
+    } else if (calcCurrentValue === '0' && value === '.') {
+        calcCurrentValue = '0.';
+    } else {
+        calcCurrentValue += value;
+    }
+
+    display.value = calcCurrentValue;
+};
+
+window.calcEquals = function() {
+    const display = document.getElementById('calcDisplay');
+
+    try {
+        // Use Function constructor instead of eval for safety
+        const result = Function('"use strict"; return (' + calcCurrentValue + ')')();
+
+        if (isNaN(result) || !isFinite(result)) {
+            calcCurrentValue = 'Error';
+        } else {
+            // Round to 2 decimal places
+            calcCurrentValue = Math.round(result * 100) / 100;
+            calcCurrentValue = calcCurrentValue.toString();
+        }
+    } catch (e) {
+        calcCurrentValue = 'Error';
+    }
+
+    display.value = calcCurrentValue;
+    calcWaitingForOperand = true;
+};
+
+// Reset calculator when modal is opened
+document.addEventListener('DOMContentLoaded', function() {
+    const calcModal = document.getElementById('calculatorModal');
+    if (calcModal) {
+        calcModal.addEventListener('show.bs.modal', function() {
+            calcClear();
+        });
+    }
+});
+
+// Keyboard support for calculator
+document.addEventListener('keydown', function(event) {
+    // Only handle keyboard input when calculator modal is open
+    const calcModal = document.getElementById('calculatorModal');
+    if (!calcModal || !calcModal.classList.contains('show')) {
+        return;
+    }
+
+    const key = event.key;
+
+    // Prevent default for keys we handle
+    if (/^[0-9+\-*/=.]$/.test(key) || key === 'Enter' || key === 'Escape' || key === 'Backspace' || key === 'Delete') {
+        event.preventDefault();
+    }
+
+    // Numbers and operators
+    if (/^[0-9]$/.test(key)) {
+        calcAppend(key);
+    } else if (key === '+') {
+        calcAppend('+');
+    } else if (key === '-') {
+        calcAppend('-');
+    } else if (key === '*' || key === 'x' || key === 'X') {
+        calcAppend('*');
+    } else if (key === '/') {
+        calcAppend('/');
+    } else if (key === '.') {
+        calcAppend('.');
+    }
+    // Enter or = to calculate
+    else if (key === 'Enter' || key === '=') {
+        calcEquals();
+    }
+    // Backspace to delete last character
+    else if (key === 'Backspace') {
+        calcBackspace();
+    }
+    // Escape or Delete to clear
+    else if (key === 'Escape' || key === 'Delete') {
+        calcClear();
+    }
+});
+
+// Nutrition row management functions
+let customVitaminCounter = 0;
+let customMineralCounter = 0;
+let customMacronutrientCounter = 0;
+
+function removeNutritionRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row && confirm('Are you sure you want to remove this nutrition field?')) {
+        row.remove();
+    }
+}
+
+// Drag and drop functionality for nutrition rows
+let draggedElement = null;
+
+function initDragAndDrop() {
+    const containers = ['vitamins-container', 'minerals-container', 'macronutrients-container'];
+
+    containers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        // Add event listeners to all draggable rows
+        container.querySelectorAll('.nutrition-row[draggable="true"]').forEach(row => {
+            setupDragEvents(row);
+        });
+
+        // Container drop zone events
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (draggedElement && afterElement) {
+                container.insertBefore(draggedElement, afterElement);
+            } else if (draggedElement) {
+                container.appendChild(draggedElement);
+            }
+        });
+
+        container.addEventListener('drop', function(e) {
+            e.preventDefault();
+        });
+    });
+}
+
+function setupDragEvents(element) {
+    element.addEventListener('dragstart', function(e) {
+        draggedElement = this;
+        this.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    element.addEventListener('dragend', function(e) {
+        this.style.opacity = '1';
+        draggedElement = null;
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.nutrition-row:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Initialize drag and drop on page load
+document.addEventListener('DOMContentLoaded', initDragAndDrop);
+
+function addCustomVitamin() {
+    customVitaminCounter++;
+    const container = document.getElementById('vitamins-container');
+    const rowId = `custom-vitamin-${customVitaminCounter}`;
+
+    const newRow = document.createElement('tr');
+    newRow.id = rowId;
+    newRow.innerHTML = `
+        <td style="width: 35%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_vitamin_name_${customVitaminCounter}"
+                   placeholder="e.g., Vitamin C, B12" required style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 22%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_vitamin_per_serve_${customVitaminCounter}"
+                   placeholder="0.0" style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 22%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_vitamin_per_100_${customVitaminCounter}"
+                   placeholder="0.0" style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 21%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_vitamin_rdi_${customVitaminCounter}"
+                   placeholder="%" style="font-size: var(--text-micro); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: auto; padding: 4px;">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    onclick="removeNutritionRow('${rowId}')" style="font-size: var(--text-micro); padding: 2px 6px;">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    container.appendChild(newRow);
+}
+
+function addCustomMineral() {
+    customMineralCounter++;
+    const container = document.getElementById('minerals-container');
+    const rowId = `custom-mineral-${customMineralCounter}`;
+
+    const newRow = document.createElement('tr');
+    newRow.id = rowId;
+    newRow.innerHTML = `
+        <td style="width: 35%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_mineral_name_${customMineralCounter}"
+                   placeholder="e.g., Iron, Zinc, Magnesium" required style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 22%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_mineral_per_serve_${customMineralCounter}"
+                   placeholder="0.0" style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 22%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_mineral_per_100_${customMineralCounter}"
+                   placeholder="0.0" style="font-size: var(--text-value); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: 21%; padding: 4px;">
+            <input type="text" class="form-control form-control-sm"
+                   name="custom_mineral_rdi_${customMineralCounter}"
+                   placeholder="%" style="font-size: var(--text-micro); padding: 4px;">
+        </td>
+        <td class="text-center" style="width: auto; padding: 4px;">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    onclick="removeNutritionRow('${rowId}')" style="font-size: var(--text-micro); padding: 2px 6px;">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    container.appendChild(newRow);
+}
+
+function addCustomMacronutrient() {
+    customMacronutrientCounter++;
+    const container = document.getElementById('macronutrients-container');
+    const rowId = `custom-macro-${customMacronutrientCounter}`;
+
+    const newRow = document.createElement('table');
+    newRow.className = 'table table-borderless';
+    newRow.style.cssText = 'color: var(--white-ish); font-size: var(--text-label); margin-bottom: 2px; margin-top: 0; width: 100%;';
+    newRow.id = rowId;
+    newRow.innerHTML = `
+        <tbody>
+            <tr>
+                <td style="width: 40%; padding: 2px;">
+                    <input type="text" class="form-control form-control-sm"
+                           name="custom_macro_name_${customMacronutrientCounter}"
+                           placeholder="Omega-3" required style="font-size: var(--text-micro); padding: 2px;">
+                </td>
+                <td class="text-center" style="width: 20%; padding: 2px;">
+                    <input type="text" class="form-control form-control-sm"
+                           name="custom_macro_per_serve_${customMacronutrientCounter}"
+                           placeholder="0" style="font-size: var(--text-micro); padding: 2px;">
+                </td>
+                <td class="text-center" style="width: 20%; padding: 2px;">
+                    <input type="text" class="form-control form-control-sm"
+                           name="custom_macro_per_100_${customMacronutrientCounter}"
+                           placeholder="0" style="font-size: var(--text-micro); padding: 2px;">
+                </td>
+                <td class="text-center" style="width: 20%; padding: 2px;">
+                    <div class="d-flex align-items-center justify-content-center" style="gap: 2px;">
+                        <input type="text" class="form-control form-control-sm"
+                               name="custom_macro_rdi_percent_${customMacronutrientCounter}"
+                               placeholder="%" style="font-size: var(--text-micro); padding: 1px; max-width: 40px;">
+                        <button type="button" class="btn btn-outline-danger"
+                                onclick="removeNutritionRow('${rowId}')" style="font-size: var(--text-micro); padding: 0px 3px; line-height: 1;">
+                            <i class="bi bi-trash" style="font-size: var(--text-micro);"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    `;
+    container.appendChild(newRow);
+}
+
+// USDA Food Search Functions
+let usdaSearchTimeout = null;
+
+function clearUsdaLink() {
+    document.getElementById('usda_food_id').value = '';
+    document.getElementById('usda-link-display').style.display = 'none';
+    document.getElementById('usda-search-btn').style.display = 'inline-block';
+}
+
+function selectUsdaFood(foodId, foodName, foodType, foodCategory) {
+    // Set hidden input
+    document.getElementById('usda_food_id').value = foodId;
+
+    // Update display
+    document.getElementById('usda-food-name').textContent = foodName;
+
+    // Set badge color based on data type
+    const typeBadge = document.getElementById('usda-food-type');
+    typeBadge.textContent = foodType;
+    if (foodType === 'Foundation') {
+        typeBadge.style.backgroundColor = 'rgba(40, 167, 69, 0.3)';
+        typeBadge.style.color = '#28a745';
+    } else if (foodType === 'SR Legacy') {
+        typeBadge.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+        typeBadge.style.color = '#007bff';
+    } else {
+        typeBadge.style.backgroundColor = 'rgba(108, 117, 125, 0.3)';
+        typeBadge.style.color = '#6c757d';
+    }
+
+    document.getElementById('usda-food-category').textContent = foodCategory || '';
+
+    // Show display, hide search button
+    document.getElementById('usda-link-display').style.display = 'block';
+    document.getElementById('usda-search-btn').style.display = 'none';
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('usdaSearchModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function performUsdaSearch(query) {
+    const resultsContainer = document.getElementById('usda-search-results');
+    const loadingIndicator = document.getElementById('usda-search-loading');
+
+    if (query.length < 2) {
+        resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter at least 2 characters to search</p>';
+        return;
+    }
+
+    // Show loading
+    loadingIndicator.style.display = 'block';
+    resultsContainer.innerHTML = '';
+
+    // Perform AJAX search
+    fetch(`/compendium/api/usda-search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            loadingIndicator.style.display = 'none';
+
+            if (data.foods && data.foods.length > 0) {
+                resultsContainer.innerHTML = '';
+                data.foods.forEach(food => {
+                    const foodItem = document.createElement('div');
+                    foodItem.className = 'usda-search-result';
+                    foodItem.style.cssText = 'padding: 10px; margin-bottom: 8px; background-color: rgba(214, 189, 152, 0.1); border-radius: 4px; cursor: pointer; transition: background-color 0.2s;';
+                    foodItem.onmouseover = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.2)'; };
+                    foodItem.onmouseout = function() { this.style.backgroundColor = 'rgba(214, 189, 152, 0.1)'; };
+                    foodItem.onclick = function() {
+                        selectUsdaFood(food.id, food.description, food.data_type, food.category);
+                    };
+
+                    let badgeColor = '';
+                    if (food.data_type === 'Foundation') {
+                        badgeColor = 'background-color: rgba(40, 167, 69, 0.3); color: #28a745;';
+                    } else if (food.data_type === 'SR Legacy') {
+                        badgeColor = 'background-color: rgba(0, 123, 255, 0.3); color: #007bff;';
+                    } else {
+                        badgeColor = 'background-color: rgba(108, 117, 125, 0.3); color: #6c757d;';
+                    }
+
+                    foodItem.innerHTML = `
+                        <div style="font-size: var(--text-body); color: var(--white-ish); font-weight: bold; margin-bottom: 4px;">${food.description}</div>
+                        <div style="font-size: var(--text-label); color: var(--sage);">
+                            <span class="badge" style="font-size: var(--text-label); padding: 2px 6px; ${badgeColor}">${food.data_type}</span>
+                            ${food.category ? '<span style="margin-left: 8px;">' + food.category + '</span>' : ''}
+                        </div>
+                    `;
+
+                    resultsContainer.appendChild(foodItem);
+                });
+            } else {
+                resultsContainer.innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">No foods found. Try a different search term.</p>';
+            }
+        })
+        .catch(error => {
+            loadingIndicator.style.display = 'none';
+            resultsContainer.innerHTML = '<p class="text-danger text-center" style="font-size: var(--text-label);">Error searching foods. Please try again.</p>';
+            console.error('USDA search error:', error);
+        });
+}
+
+// Set up USDA search input handler
+document.addEventListener('DOMContentLoaded', function() {
+    const usdaSearchInput = document.getElementById('usda-search-input');
+    if (usdaSearchInput) {
+        usdaSearchInput.addEventListener('input', function() {
+            clearTimeout(usdaSearchTimeout);
+            const query = this.value.trim();
+            usdaSearchTimeout = setTimeout(() => performUsdaSearch(query), 300);
+        });
+
+        // Clear results when modal is closed
+        document.getElementById('usdaSearchModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('usda-search-input').value = '';
+            document.getElementById('usda-search-results').innerHTML = '<p class="text-muted text-center" style="font-size: var(--text-label);">Enter a search term to find USDA foods</p>';
+        });
+    }
+});
+</script>
+{% endblock %}

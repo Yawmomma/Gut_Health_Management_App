@@ -39,3 +39,12 @@ class Config:
     # Template configuration - disable caching for development
     TEMPLATES_AUTO_RELOAD = True
     SEND_FILE_MAX_AGE_DEFAULT = 0
+
+    # Admin mode - controls visibility of content management UI
+    # Set ADMIN_MODE=true in environment to enable upload/edit/delete features
+    ADMIN_MODE = os.environ.get('ADMIN_MODE', 'false').lower() == 'true'
+
+    # External webhook secrets for HMAC signature validation
+    # Empty = signature validation skipped (safe for development)
+    EXTERNAL_WEBHOOK_SECRET = os.environ.get('EXTERNAL_WEBHOOK_SECRET', '')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')

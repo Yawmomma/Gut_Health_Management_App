@@ -26,6 +26,23 @@ class EducationalContent(db.Model):
     def __repr__(self):
         return f'<EducationalContent Chapter {self.chapter_number}: {self.title}>'
 
+    def to_dict(self):
+        """Convert educational content to dictionary"""
+        return {
+            'id': self.id,
+            'chapter_number': self.chapter_number,
+            'section': self.section,
+            'title': self.title,
+            'content': self.content,
+            'markdown_source': self.markdown_source,
+            'filename': self.filename,
+            'is_markdown': self.is_markdown,
+            'order_index': self.order_index,
+            'parent_chapter': self.parent_chapter,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class ResearchPaper(db.Model):
     """Research paper repository"""
@@ -52,6 +69,24 @@ class ResearchPaper(db.Model):
     def __repr__(self):
         return f'<ResearchPaper {self.title}>'
 
+    def to_dict(self):
+        """Convert research paper to dictionary"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'authors': self.authors,
+            'journal': self.journal,
+            'publication_year': self.publication_year,
+            'topic': self.topic,
+            'abstract': self.abstract,
+            'key_findings': self.key_findings,
+            'relevance_notes': self.relevance_notes,
+            'pdf_path': self.pdf_path,
+            'external_url': self.external_url,
+            'star_rating': self.star_rating,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 
 class UserBookmark(db.Model):
     """Bookmarks for educational content"""
@@ -68,6 +103,16 @@ class UserBookmark(db.Model):
 
     def __repr__(self):
         return f'<Bookmark for content {self.content_id}>'
+
+    def to_dict(self):
+        """Convert user bookmark to dictionary"""
+        return {
+            'id': self.id,
+            'content_id': self.content_id,
+            'user_note': self.user_note,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'content': self.content.to_dict() if self.content else None
+        }
 
 
 class HelpDocument(db.Model):
@@ -92,3 +137,18 @@ class HelpDocument(db.Model):
 
     def __repr__(self):
         return f'<HelpDocument {self.category}: {self.title}>'
+
+    def to_dict(self):
+        """Convert help document to dictionary"""
+        return {
+            'id': self.id,
+            'category': self.category,
+            'title': self.title,
+            'content': self.content,
+            'markdown_source': self.markdown_source,
+            'filename': self.filename,
+            'is_markdown': self.is_markdown,
+            'order_index': self.order_index,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

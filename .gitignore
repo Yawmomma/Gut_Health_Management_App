@@ -36,6 +36,11 @@ data/embeddings/
 # See README for download instructions
 data/recipes/external/
 
+# Large external data files (USDA, AusNut - download separately)
+# See README for download instructions
+data/usda/*.json
+data/ausnut/
+
 # User uploads (recipe images, etc.)
 static/uploads/
 

@@ -5,14 +5,14 @@ Based on comprehensive categorization system
 
 # PRIMARY CATEGORIES (Meal Type)
 MEAL_TYPES = [
-    'Breakfast & Brunch',
-    'Lunch & Meal Prep',
+    'Breakfast',
+    'Lunch',
     'Dinner',
-    'Snacks & Appetizers',
-    'Desserts & Baked Goods',
-    'Drinks & Smoothies',
+    'Snacks',
+    'Desserts',
+    'Beverages',
     'Salads',
-    'Sauces & Gravies'
+    'Sauces/Gravies'
 ]
 
 # SUBCATEGORIES for Salads
@@ -140,7 +140,7 @@ def get_subcategories_for_category(category):
     """Get appropriate subcategories based on primary category"""
     if category == 'Salads':
         return SALAD_SUBCATEGORIES
-    elif category == 'Sauces & Gravies':
+    elif category == 'Sauces/Gravies':
         return SAUCE_SUBCATEGORIES
     else:
         return []
