@@ -37,6 +37,661 @@ templates/
 ---
 
 ## 🗓️ Version History
+
+**2026-03-03 (Security: Remove fake secret values from WEBHOOK_REFERENCE.md)**
+
+- **File**: `docs/api/WEBHOOK_REFERENCE.md`
+- **Issue**: GitHub secret scanning flagged `whsec_1234567890abcdef1234567890abcdef` (lines 63 and 86) — a fake placeholder used in JSON and Python code examples.
+- **Root cause**: Example values used the real Stripe `whsec_` prefix format. GitHub's scanner matches on format, not context.
+- **Fix**: Replaced fake value at line 63 with `whsec_<YOUR_WEBHOOK_SECRET>` (angle-bracket placeholder cannot be matched as a real secret). Replaced fake value at line 86 with `os.environ.get("WEBHOOK_SECRET")` to also demonstrate best practice in the code example.
+- **Impact**: No real credential was exposed. No rotation required.
+- **Prevention**: Always use angle-bracket placeholders (`<YOUR_SECRET_HERE>`) in docs. Never use real-format strings, even with fake content.
+
+---
+
+**2026-03-03 (Phase DC Pass 1 — docs/api/API_SDK_EXAMPLES.md)**
+
+Pass 1 accuracy review applied to `docs/api/API_SDK_EXAMPLES.md`:
+- **Ownership metadata block**: added; old Version/Last Updated header lines replaced with canonical block
+- **Version**: corrected from 1.0.0 → v1.8.5 (header and footer)
+- **Date**: corrected from February 28, 2026 → 2026-03-03 (header and footer)
+- **`find_substitutes` response access**: corrected `response["data"]["substitutes"]` → `response["substitutes"]` — `GET /foods/substitutes` returns a plain `jsonify({...})` not the standard `{"success": true, "data": {...}}` wrapper; verified against route handler in `foods.py`
+- **`fodmap_rating` field**: corrected in Python example (line ~144) and JS example (line ~493) — no such field exists in `Food.to_dict()`; replaced with `food['category']` / `food.category` which is a real top-level field; inline correction notes added with date and reason
+- All 15 endpoint paths verified as correct; all scopes, auth headers, base URL, and response shapes confirmed accurate
+
+---
+
+**2026-03-03 (Fix TOO_MANY_REQUESTS response shape inconsistency)**
+
+Discovered during Phase DC Pass 2 doc review. The rate-limit 429 response in `utils/auth.py` was using a flat `{"status", "code", "message", "details"}` structure inconsistent with the standard `{"success": false, "error": {...}}` format used by every other error response.
+
+Changes:
+- `utils/auth.py`: Two `jsonify()` blocks restructured to standard nested shape. Inline comments added with date and reason.
+- `tests/test_auth.py`: Four assertions updated — `data['code']` → `data['error']['code']`; `data['details']` → `data['error']['details']`. Inline comments added with date and reason.
+- `docs/api/API_PAGINATION_ERRORS_REFERENCE.md`: Warning banner removed from `TOO_MANY_REQUESTS` section; example JSON updated to show correct standard shape.
+
+---
+
+**2026-03-03 (Phase DC Pass 2 — docs/api/API_PAGINATION_ERRORS_REFERENCE.md)**
+
+Pass 2 content quality review applied to `docs/api/API_PAGINATION_ERRORS_REFERENCE.md`:
+- **Duplicate metadata removed**: redundant Version/Last verified/Applies to lines left over from Pass 1 ownership block addition
+- **[Planned] label**: added to "Cursor-Based Pagination" section (was labelled "Future" with no status marker)
+- **Wordiness**: tightened overview sentences in two sections; removed "for some reason" and "if possible" filler
+- **Retry-After**: simplified `response.headers.get('Retry-After', 60)` to literal `60` — hardcoded in auth.py, never varies
+- **Two missing 429 codes added to error table**: `TOO_MANY_REQUESTS` (rate limit — non-standard response shape, documented with warning) and `DAILY_WRITE_LIMIT_EXCEEDED` (daily quota — standard shape); both verified against auth.py
+- **Constraint table corrected**: "Max request size" fixed 1 MB → 16 MB (verified: `MAX_CONTENT_LENGTH = 16 * 1024 * 1024` in config.py); "Request timeout" changed from unverified "30 seconds" to `[Needs value]` with dated correction note
+- **EXTERNAL_SERVICE_ERROR example**: replaced "USDA API unavailable" (USDA is local SQLite, not an external API) with LLM provider unavailable, which is the actual external call in this app
+- **Cross-reference added**: inline error handling snippet now points to full Error Handling Best Practices section; both blocks kept as they serve different purposes
+
+---
+
+**2026-03-03 (Phase DC Pass 1 — docs/api/API_PAGINATION_ERRORS_REFERENCE.md)**
+
+Pass 1 accuracy review applied to `docs/api/API_PAGINATION_ERRORS_REFERENCE.md`:
+- **Endpoint count**: corrected from 137 → 142 (appeared in 3 places: header, footer, "Applies to" line)
+- **Version**: corrected from 1.0.0 → v1.8.5 (appeared in 2 places)
+- **Date**: corrected from February 28, 2026 → 2026-03-03 (appeared in 2 places)
+- **Ownership metadata block**: added near top of file
+- **Cross-file links**: added `docs/api/` prefix to references to `api_endpoint_full_documentation.md` and `DATA_SCHEMA_REFERENCE.md` (3 places)
+- **Removed two non-existent pagination endpoints**: `GET /compendium/foods` and `GET /ausnut/foods` do not exist as routes; removed from the pagination list
+- **Tracked missing endpoints**: added `GET /compendium/foods` and `GET /ausnut/foods` to Section 22 Planned Endpoints in `docs/api/api_endpoints.md` and to the Deferred Issues Log in `docs/dev/AGENT_INTEGRATION_TODO.md`
+
+---
+
+**2026-03-02 (v1.8.5: Phase DC Pass 2 — docs/api/API_MIGRATION_GUIDE.md)**
+
+Pass 2 content quality review applied to `docs/api/API_MIGRATION_GUIDE.md`:
+- **401 troubleshooting curl**: added missing `-H "X-API-Key: YOUR_ADMIN_KEY"` header — the endpoint requires `admin:security` scope; the 403 section directly below it already showed this correctly; now consistent throughout
+- **Deferred**: bootstrap gap in Migration Checklist (no guidance on getting the first admin key) — new content, logged in Deferred Issues Log
+
+---
+
+**2026-03-02 (v1.8.4: Add `flask create-admin-key` CLI command)**
+
+Added a Flask CLI bootstrap command to `app.py` to solve the API key chicken-and-egg problem (the `POST /api/v1/auth/api-keys` endpoint requires `admin:security` scope, so there was no way to create the first key without this).
+
+Changes:
+- `app.py`: Added `import click`, `import hashlib`, `import secrets` to the stdlib imports block
+- `app.py`: Added `@app.cli.command('create-admin-key')` with `--name` (required), `--rate-limit` (default 500), and `--is-bot` (flag) options
+- Command generates a `secrets.token_hex(32)` key, stores the SHA-256 hash in `api_keys` table with all 37 scopes, and prints the raw key once to stdout in a colour-coded box
+- Warns (yellow) if a key with the same name already exists, but still creates the new one (names are not unique in the model)
+- Zero impact on running app — CLI commands are only active when Flask CLI is invoked, not during `python app.py` or any web request
+
+Usage:
+```
+flask create-admin-key --name "skeleton-key"
+flask create-admin-key --name "bot-testing" --rate-limit 1000 --is-bot
+```
+Copy the printed key to `.env` as `ADMIN_API_KEY=<key>` (for your reference only — the app does not read this variable).
+
+---
+
+**2026-03-02 (v1.8.3: Phase DC Pass 1 — docs/api/API_MIGRATION_GUIDE.md)**
+
+Pass 1 accuracy fixes applied to `docs/api/API_MIGRATION_GUIDE.md`:
+- **Ownership metadata block**: added (`Owner`, `Last verified`, `Applies to version`, `Doc Status`)
+- **Stale dates**: corrected `February 28, 2026` → `2026-03-02` and `94 days` → `91 days` (3 occurrences)
+- **Postman link path**: corrected `postman_collection.json` → `../../postman_collection.json` (file is at project root, not in `docs/api/`)
+- **Error response shape**: `result['error']['code']` → `result['error_code']` in Python example; `result.error.code` → `result.error_code` in JavaScript example — corrected to match confirmed standard envelope format
+- **Base URL consistency**: replaced all `http://localhost:5000` → `http://127.0.0.1:5000` to match `api_endpoints.md` (verified correct)
+
+---
+
+**2026-03-02 (v1.8.1: Phase DC test pass — docs/api/api_endpoints.md)**
+
+Phase DC documentation review of `docs/api/api_endpoints.md` (first file, test run of the two-pass checklist).
+
+Pass 1 accuracy fixes:
+- **Error response format**: corrected from `{"error": "message"}` to the actual standard envelope (`success`, `message`, `error_code`, `timestamp` fields)
+- **Gamification quick reference**: removed `GET /gamification/leaderboard` (never built); added `POST /gamification/challenges` (admin, exists in live code)
+- **Integrations quick reference**: fixed path prefix — routes are `/wearables/connect`, `/wearables/sync`, `/voice/log` (not `/integrations/wearables/…`)
+- **`POST /notifications/schedule` field names**: request body used `"scheduled_time"` (wrong) — corrected to `"send_at"`; response used `"notification_id"` (wrong) — corrected to `"scheduled_id"` with accurate shape
+- **Phantom notification endpoints** (`GET /notifications`, `POST /notifications/{id}/mark-read`): marked `[Planned]` — neither exists in live code
+- **Stub endpoints** (all integrations, `POST /notifications/send`): labelled `[Planned]` with explanation that these return HTTP 501 only
+- **Final summary section**: was merging Settings (5 endpoints) and Help (7 endpoints) into one item, making items 8–20 misaligned with the TOC; expanded to 21 correctly numbered items
+- **Boolean strings**: notification settings JSON example had `"false"` (text) instead of `false` (boolean)
+- **"Alternative" wording**: cleaned up redundant phrasing in `POST /diary/meals` docs
+- **Ownership metadata block**: added to top of file
+
+Pass 2 quality items deferred to Deferred Issues Log:
+- `api_endpoint_full_documentation.md` likely has same `scheduled_time`/`notification_id` errors — HIGH priority
+- `GET /notifications` and `POST /notifications/{id}/mark-read` — user confirmed: defer to future phase
+- `PUT /notifications/rules/{id}` and `DELETE /notifications/rules/{id}` exist in code and QR table but have no detail sections — MEDIUM priority
+
+---
+
+**2026-03-02 (v1.8.2: Phase DC — docs/api/API_DOCUMENTATION_INDEX.md two-pass review complete)**
+
+Pass 1 (accuracy) and Pass 2 (content quality) applied to `docs/api/API_DOCUMENTATION_INDEX.md`.
+
+Pass 1 fixes:
+- Version metadata updated: `1.0.0` / February 28, 2026 → `1.8.2` / 2026-03-02
+- Endpoint counts corrected: `136` → `142` (two occurrences)
+- Scope count corrected: `40` → `37`
+- `API_MIGRATION_GUIDE.md` added as item 7 (was entirely absent from the index)
+- Renumbered DATA_SCHEMA_REFERENCE → 8, API_PAGINATION_ERRORS_REFERENCE → 9
+- Diary quick nav counts corrected: `9 endpoints` → `11 endpoints` (two occurrences)
+- Getting Started Checklist: removed false "no auth needed" claim; replaced with accurate note that all endpoints require an API key
+- Document Summaries table: added `API_MIGRATION_GUIDE.md` row
+- Version History block: added v1.8.2 entry; standardised v1.0.0 date format
+
+Pass 2 fixes:
+- Ownership metadata block added (Owner, Last verified, Applies to version, Status)
+- Rate Limiting quick nav: `WEBHOOK_REFERENCE.md → "Retry Logic"` → `API_PAGINATION_ERRORS_REFERENCE.md → "Error Codes Reference"` (webhook retry logic is for webhook delivery, not HTTP 429s)
+- Python integration steps: `Handle:` → `Read:` (parallel verb structure restored)
+- Duplicate `## 📝 Last Updated` section removed (duplicated top-of-file metadata)
+
+---
+
+**2026-03-02 (v1.8.2: Phase DC Pass 2 — docs/api/api_endpoints.md content quality review)**
+
+Pass 2 of the DC two-pass workflow applied to `docs/api/api_endpoints.md`.
+
+Critical fix:
+- **Security section corruption** (lines ~3950–3985): `GET /auth/rate-limit` and `GET /auth/audit-log` sections were severely corrupted — the audit-log block had been stamped 17 times across alternating lines of the rate-limit response JSON, destroying both sections. Both were reconstructed from live code in `routes/api_v1/security.py`. The old rate-limit response also contained wrong fields (`limit: 1000`, `tier: "free"`) that do not exist in the code; the reconstructed version is accurate.
+
+Pass 2 quality findings:
+- **Category F/B/H (wordiness, passive voice, tone)**: Full line-by-line scan found zero instances. Document was already in clean spec-style throughout.
+- **Category G (factual field names)**: `traffic_light_color` (analytics), `safe_traffic_light` (food detail), and `traffic_light` (search results) are all correct — each reflects the actual field name returned by that specific endpoint.
+- **Category C/D (type constraints, error responses)**: ~30 parameters lack min/max constraints; ~50 endpoints lack error response documentation. Both deferred — too much new content for a DC cleanup pass. Added to Deferred Issues Log.
+- **Category E (terminology)**: "upload" vs "save" for help/education endpoints — deferred pending user preference. Added to Deferred Issues Log.
+
+Phase DC first-file test run complete. `docs/api/api_endpoints.md` is now accurate, corruption-free, and has an ownership metadata block.
+
+---
+
+**2026-03-02 (v1.8.0: Phase DC checklist — added two-pass workflow to AGENT_INTEGRATION_TODO.md)**
+
+Expanded Phase DC in `docs/dev/AGENT_INTEGRATION_TODO.md` with:
+- Two-pass workflow (Pass 1 = accuracy, Pass 2 = content quality)
+- Safety callout: never delete without telling user what and why
+- 16-item Content Quality Checklist across 4 groups (Accuracy, Structure, Language, References)
+- Ownership metadata block requirement for all non-archive docs
+- Updated completion checklist to cover both passes
+
+---
+
+**2026-03-02 (v1.7.0: Phase 7A — Smart Chat Context Injector + Nutrient Boosters Fix)**
+
+### Smart Database-Aware LLM Responses
+
+The chat endpoint (`POST /api/v1/chat`) previously sent user messages to the LLM with no access
+to the app's own databases. Users asking nutrition questions received generic internet knowledge
+instead of answers grounded in the actual FODMAP, USDA, and AusNut data. This release fixes that.
+
+**New Files Created:**
+- `utils/chat_keywords.json` — Editable JSON configuration for all keyword mappings. Add new
+  nutrients, food categories, or intent trigger phrases here without touching Python code. Each
+  nutrient entry maps to the correct column name / nutrient string per database (FODMAP, USDA,
+  AusNut) since they all use different naming conventions.
+- `utils/chat_context.py` — Smart context injector. Detects user intent (nutrient, category,
+  direction, recipe interest, education interest, history request) from the message, runs targeted
+  queries against all relevant databases, and returns a structured `=== DATABASE CONTEXT ===` block
+  to inject into the LLM system prompt. Key functions:
+  - `detect_intent(message)` — keyword-based intent detection (longest-match for multi-word nutrients)
+  - `_query_fodmap_foods(intent)` — FODMAP table ordered by nutrient column, category-filtered
+  - `_query_usda_foods(intent)` — USDA junction table query (nutrient-gated to avoid 317k row dumps)
+  - `_query_ausnut_foods(intent)` — AusNut junction table query
+  - `_query_recipes(intent)` — keyword or recent recipe/meal search
+  - `_query_education(intent)` — chapter keyword search with 500-char excerpts
+  - `_query_chat_history()` — last 3 conversations (only on explicit request)
+  - `build_chat_context(message)` — orchestrates all queries; every individual query guarded by
+    try/except so database unavailability never crashes the chat endpoint
+
+**Modified Files:**
+- `routes/api_v1/chat.py`:
+  - Imports and calls `build_chat_context()` before every LLM call
+  - `db_context + recipe_context = full_context` passed to all three providers (Ollama, OpenAI, Anthropic)
+  - `get_persona_prompt()`: all four personas now include a data-grounding instruction telling the
+    LLM to cite the database source and always include FODMAP traffic light information when shown
+- `routes/api_v1/foods.py` — **Bug fix**: `GET /api/v1/foods/nutrient-boosters`
+  - Was: ignoring the `?nutrient=` parameter entirely; returning green-traffic-light foods alphabetically
+  - Now: `NUTRIENT_COLUMNS` dict maps nutrient names to Food model columns; results ordered by
+    `nutrient_col.desc()`; new optional `?category=` parameter; removed hardcoded green-only filter
+    (traffic light still returned in response so UI/LLM can show safety information)
+
+**Tests Added (10 new tests, total: 203):**
+- `TestChatEndpoints` (`@pytest.mark.integration`, 2 tests): auth enforcement + write:chat scope enforcement
+- `TestChatContextBuilder` (`@pytest.mark.unit`, 8 tests): `detect_intent()` for protein+vegetables,
+  low sodium, education flag, chat history flag, longest-match (saturated fat), `build_chat_context()`
+  returns string, empty on greeting, safe on garbage input
+
+**Nutrient Standardisation — Future Work Flagged:**
+The three databases use entirely different nutrient naming conventions (see TODO.md new section).
+Current workaround: `chat_keywords.json` maps each user keyword to the correct string per database.
+Long-term standardisation requires database migration — flagged in TODO.md for future implementation.
+
+**No model changes — no migration required.**
+Test count: 197 non-performance (+ 17 performance = 214 total). All passing.
+
+---
+
+**2026-03-02 (v1.8.0: Documentation Reorganisation)**
+
+Reorganised 23 root-level markdown files into a structured `docs/` folder hierarchy. No file renames — only moved into subfolders. All cross-references updated.
+
+**New folder structure:**
+- `docs/api/` — 8 API documentation files (api_endpoints.md, api_endpoint_full_documentation.md, API_DOCUMENTATION_INDEX.md, API_MIGRATION_GUIDE.md, API_PAGINATION_ERRORS_REFERENCE.md, API_SDK_EXAMPLES.md, WEBHOOK_REFERENCE.md, DATA_SCHEMA_REFERENCE.md)
+- `docs/dev/` — Developer/agent docs (AGENT_INTEGRATION_TODO.md, PROJECT_HEALTH_REPORT.md)
+- `docs/deployment/` — Ops guides (APP2_SETUP_GUIDE.md, DOCKER_DEPLOYMENT_GUIDE.md, MONITORING_ALERTING_GUIDE.md, PERFORMANCE_TUNING_GUIDE.md)
+- `docs/security/` — ADVANCED_SECURITY_GUIDE.md
+- `docs/features/` — RECIPE_URL_IMPORT_GUIDE.md
+- `docs/archive/` — TODO.md (Phases 1–5 complete), AGENT_INTEGRATION_PHASES_6_COMPLETE.md (Phase 6 history)
+- `tests/` — TESTING_GUIDE.md (moved from root, co-located with test files)
+
+**Root files unchanged:** CLAUDE.md, README.md, QUICKSTART.md, Version_History.md, markdown_syntax_guide.md
+
+**AGENT_INTEGRATION_TODO.md split:** Phase 6A–6H + Pre-Phase-7 content extracted to `docs/archive/AGENT_INTEGRATION_PHASES_6_COMPLETE.md`. Active file (`docs/dev/AGENT_INTEGRATION_TODO.md`) now contains only Phase 7+ work, protocol rules, and deferred issues log.
+
+**References updated in:** CLAUDE.md (10 lines), README.md (2 lines), API_DOCUMENTATION_INDEX.md (3 sections), AGENT_INTEGRATION_TODO.md (mandatory reading table), APP2_SETUP_GUIDE.md (5 links), PROJECT_HEALTH_REPORT.md (8 links), RECIPE_URL_IMPORT_GUIDE.md (1 link)
+
+**Nutrient standardisation deferred issue** migrated from TODO.md to AGENT_INTEGRATION_TODO.md deferred issues log.
+
+---
+
+**2026-03-02 (v1.6.0: Test Suite Restructuring, Migration Guard & Agent Safeguards)**
+
+### Test Infrastructure Overhaul
+Professional restructuring of the test suite to prevent recurring Alembic migration issues, fix test output truncation, and add automated safeguards for agentic workflows.
+
+**New Files Created:**
+- `pytest.ini` — Standardized pytest configuration: `-q --tb=short --no-header`, 7 marker definitions, DeprecationWarning filters. Shrinks 189-test output from ~300 lines to ~15 lines.
+- `tests/test_migrations.py` — Migration safety guard (4 tests, `@pytest.mark.migration`). Reads every file in `migrations/versions/` and fails with a clear actionable message if any `drop_column` or `drop_table` targets a protected table without being in the ALLOWLIST. Automated double-check for the Phase 6H Alembic incident.
+- `scripts/run_tests_agent.py` — Agent-safe test runner with 3-strike rule. After 3 consecutive failures of the same test, writes `AGENT_STOP.flag` and exits code 2. Appends a JSON record to `test_history.jsonl` after every run.
+- `TESTING_GUIDE.md` — Comprehensive test documentation: all 9 test files, all ~30 test classes, marker group reference, recommended workflows by scenario, migration safety procedure, agent instructions, issue history, and new-test checklist.
+- `run_tests.bat` — Full suite launcher with HTML report
+- `run_tests_quick.bat` — Smoke tests only (~30 seconds)
+- `run_tests_unit.bat` — Unit tests only (fastest)
+- `run_tests_no_perf.bat` — All except performance tests (recommended pre-commit)
+- `run_tests_migration.bat` — Migration guard only
+- `.git/hooks/pre-commit` — Auto-blocks commits that include migration files with dangerous drop operations
+
+**Files Modified:**
+- `tests/conftest.py` — Added `project_root` session fixture (Path to project root; fixes relative-path bug in test_query_optimization.py)
+- `tests/test_api_endpoints.py` — Added `@pytest.mark.integration` to all 10 classes; `@pytest.mark.smoke` to one test per class
+- `tests/test_auth.py` — Added markers to all 10 classes: `@pytest.mark.auth` (core classes), `@pytest.mark.security` (Phase 6C-6H classes), `@pytest.mark.smoke` (3 tests)
+- `tests/test_models.py` — Added `@pytest.mark.unit` to all 3 classes
+- `tests/test_security_api.py` — Added `@pytest.mark.integration, @pytest.mark.security` (via separate edit)
+- `tests/test_idempotency.py` — Added `@pytest.mark.unit` (TestIdempotencyUtils), `@pytest.mark.integration, @pytest.mark.security` (TestIdempotencyIntegration)
+- `tests/test_sanitize.py` — Added `@pytest.mark.unit` to all 3 classes
+- `tests/test_query_optimization.py` — Added `@pytest.mark.performance` to all 6 classes; fixed path bug in TestQueryOptimizationDocumentation (now uses `project_root` fixture instead of `open('relative/path')`)
+- `requirements.txt` — Added `pytest-html==4.1.1`
+- `.gitignore` — Added `test_reports/`, `test_history.jsonl`, `test_failure_counts.json`, `AGENT_STOP.flag`
+- `CLAUDE.md` — Added "Agent Testing Rules" section (critical rules for agents); added step 3 to migration procedure (run migration guard test)
+
+**Marker Groups Defined:**
+- `smoke` — ~10 tests, < 30 seconds
+- `unit` — ~57 tests (sanitize, models, idempotency utils), < 15 seconds
+- `integration` — ~63 tests (endpoints + security API + idempotency integration)
+- `auth` — ~76 tests (all test_auth.py)
+- `security` — ~80 tests (Phase 6 security features)
+- `performance` — ~17 tests (N+1 query counting, opt-in only)
+- `migration` — 4 tests (migration file safety guard)
+
+**Total tests:** 193 (189 existing + 4 new migration guard tests)
+
+---
+
+**2026-03-01 (v1.5.9: Pre-Phase-7 — Add POST /diary/symptoms and POST /diary/bowel Endpoints)**
+
+### New Dedicated Symptom & Bowel Endpoints
+Phase 7A's tool manifest maps tools 4 (`log_symptoms`) and 5 (`log_bowel`) to `POST /diary/entries` — but that endpoint didn't exist as a dedicated route. Symptoms and bowel entries could only be created via `POST /diary/entries/bulk` (wrapping in an array), which is awkward for bots making single entries.
+
+**Added 2 new endpoints to `routes/api_v1/diary.py`:**
+- `POST /api/v1/diary/symptoms` — create a single symptom entry (9 severity scores + severity/duration/notes)
+- `POST /api/v1/diary/bowel` — create a single bowel movement entry (bristol_type 1–7 + optional fields)
+- Both follow exact same pattern as `POST /diary/meals`: idempotency check → daily write quota → validate → create DiaryEntry → create child model → commit
+- `entry_time` defaults to current time when not provided (column is NOT NULL)
+- Total endpoints: 140 → 142; diary.py: 9 → 11
+
+**Tests:** 6 new tests added to `tests/test_api_endpoints.py` in `TestDiaryEndpoints`:
+- `test_create_symptom_success` (201), `test_create_symptom_requires_write_scope` (403), `test_create_symptom_missing_date` (400)
+- `test_create_bowel_success` (201), `test_create_bowel_requires_write_scope` (403), `test_create_bowel_requires_bristol_type` (400)
+- Test count: 189 → 195
+
+**No model changes. No migrations. No Alembic.**
+
+### Files Changed
+- `routes/api_v1/diary.py` — 2 new endpoint functions added
+- `tests/test_api_endpoints.py` — 6 new tests in `TestDiaryEndpoints`
+- `CLAUDE.md` — diary.py 9→11, total 140→142
+- `api_endpoints.md` — 2 new endpoints in quick reference + full documentation
+- `docs/mermaid_app_map.html` — Tab 1 diary count 9→11, total 140→142
+- `AGENT_INTEGRATION_TODO.md` — tool 4/5 mappings updated + Rule 8 added
+- `Version_History.md` — this entry
+
+---
+
+**2026-03-01 (v1.5.8: Phase 6I — Security Documentation Update)**
+
+### Phase 6I: Bot-Specific Security Documentation
+- Updated `ADVANCED_SECURITY_GUIDE.md` from v1.0.0 to v2.0.0 — added 10 new sections covering all bot-specific protections built in Phases 6A–6H
+- New sections added:
+  - **Bot Key Management** — `is_bot` flag usage, key fields reference, what bot mode enables
+  - **Bot Key Profiles** — recommended scope sets for 5 agent types: Claude, OpenClaw/MCP, GPT, Ollama/Local LLM, and Admin Monitoring bots; scopes to never grant to bots
+  - **Idempotency Keys** — developer usage guide with Python code example, protected endpoints list, key rules (24h TTL, 2xx-only caching)
+  - **Daily Write Caps** — quotas table, error response format with `reset_at`, how counting works
+  - **Circuit Breaker** — thresholds (10 failures / 5 min), what counts as a failure, reactivation via `PUT /auth/api-keys/{id}/reactivate`, bot developer best practices
+  - **Per-Endpoint-Type Rate Limits** — type limits table, classification priority, bot key 120/min cap
+  - **Prompt Injection Guards** — 4 defence layers documented (data wrapping, pattern detection, output scanning, text length limits)
+  - **Read-Only Mode Kill Switch** — activation/deactivation, emergency procedure (5-step checklist)
+  - **Enhanced Audit Logging** — all 13 fields documented, filtering examples for bot traffic analysis
+  - **Bot Security Checklist** — pre-issuance, monitoring, emergency response, and bot developer requirements
+- Updated `docs/mermaid_app_map.html` Tab 3 — `AccessLog` node now shows all 13 fields (6 new from Phase 6H: `is_bot`, `payload_size`, `response_size`, `idempotency_key`, `endpoint_type`, `anomaly_flag`); fixed class styling to include `IdempotencyCache` and `SystemSettings` nodes
+- No code changes, no model changes, no migrations, no test changes
+- Test count unchanged: 189 passing (0 failures)
+
+### Files Changed
+- `ADVANCED_SECURITY_GUIDE.md` — v1.0.0 → v2.0.0, ~10 new sections added
+- `docs/mermaid_app_map.html` — Tab 3 AccessLog node updated with Phase 6H fields
+- `Version_History.md` — this entry
+- `AGENT_INTEGRATION_TODO.md` — Phase 6I checklist items checked off
+
+---
+
+**2026-03-01 (v1.5.7: Phase 6H — Extended Audit Logging + Food Model Restoration + Test Isolation Fix)**
+
+### Phase 6H: Extended Audit Log Fields
+- Added 6 new columns to `ApiAccessLog` in `models/security.py`:
+  - `is_bot` (Boolean, nullable) — copied from `ApiKey.is_bot` at log time
+  - `payload_size_bytes` (Integer, nullable) — `request.content_length`
+  - `response_size_bytes` (Integer, nullable) — back-filled via `after_request` hook
+  - `idempotency_key` (String(128), nullable) — from `X-Idempotency-Key` header
+  - `endpoint_type` (String(20), nullable) — from `classify_endpoint_type()` (read/write/export/analytics/chat/auth)
+  - `anomaly_flag` (Boolean, default=False) — `True` for all rejected/failed requests (401, 403, 429, etc.)
+- Updated `_log_successful_access()` and `_log_failed_access()` in `utils/auth.py` to populate all 6 fields
+- Added `after_request` hook `update_audit_log_response_size()` in `app.py` to back-fill `response_size_bytes`
+- Added `is_bot` and `anomaly_flag` filter params to `GET /api/v1/auth/audit-log` in `routes/api_v1/security.py`
+- Migration `a00467fd273b` applied — 6 `add_column` operations only (all auto-generated noise was stripped)
+- Tests: 14 new tests in `TestAuditLogExtendedFields` in `tests/test_auth.py`
+
+### Food Model Restoration (Critical Fix)
+- **Problem discovered**: 60 nutritional columns in `models/food.py` had been replaced with `@property` stubs returning `None` during earlier Phase 6 work. The live database columns were NEVER dropped (all migration noise was correctly stripped), but the Python model no longer matched the database. This caused Alembic to generate ~60 `drop_column` operations on every `flask db migrate` run.
+- **Fix**: Restored all 60 `db.Column()` definitions in `models/food.py` with detailed documentation warning against future removal. Categories: serving info (2), energy (5), macros (10), fats (10), minerals (10), gut-specific sugars (4), vitamins (16), allergens/product info (4).
+- **Alembic env.py hardened**: Added `compare_type=False` (force assignment to override Flask-Migrate default) and `include_object` filter to exclude `_alembic_tmp_*` tables. Reduced migration noise from ~70 spurious operations to 3 harmless FK/NOT NULL items.
+- **Initial migration cleaned**: `6d82e00ff8d9_initial_schema.py` rewritten as a no-op with detailed history note explaining that its original `drop_column` operations were never applied.
+
+### Test Infrastructure Fix (Critical Fix)
+- **Problem discovered**: `db.init_app(app)` in `app.py` creates and caches the SQLAlchemy engine immediately at import time. The test conftest updated the database URI AFTER importing the app, but the engine was already locked to the production database (`instance/gut_health.db`). All tests were silently running against the production database. Combined with `read_only_mode='true'` left in the production DB from Phase 6G testing, this caused all write-operation tests to fail with 503.
+- **Fix (3 parts)**:
+  1. `config.py`: Changed `SQLALCHEMY_DATABASE_URI` to read from `DATABASE_URL` env var with fallback to default. Normal usage unchanged.
+  2. `tests/conftest.py`: Set `DATABASE_URL` env var BEFORE importing app, so `db.init_app()` caches the temp DB engine from the start. Added `autouse` fixture `_reset_system_settings` to reset `read_only_mode` after every test, preventing state bleed.
+  3. `app.py`: Moved `db.create_all()` from module level to `if __name__ == '__main__':` block to prevent table creation against the production DB during test imports.
+- **Production DB reset**: `system_settings.read_only_mode` reset from `'true'` to `'false'`
+- **Result**: All 189 tests pass (0 failures), both in isolation and when run together
+
+### Files Changed
+- `models/security.py` — 6 new columns on `ApiAccessLog`, updated `to_dict()`
+- `models/food.py` — 60 nutrition columns restored from `@property` stubs to `db.Column()`
+- `utils/auth.py` — `_log_successful_access()` and `_log_failed_access()` populate new fields
+- `app.py` — `after_request` hook added, `db.create_all()` moved to `if __name__ == '__main__':`
+- `routes/api_v1/security.py` — `is_bot` and `anomaly_flag` filter params on audit-log endpoint
+- `config.py` — `SQLALCHEMY_DATABASE_URI` reads from `DATABASE_URL` env var
+- `tests/conftest.py` — proper DB isolation via env var, autouse state-reset fixture
+- `tests/test_auth.py` — 14 new tests in `TestAuditLogExtendedFields`
+- `migrations/env.py` — `compare_type=False`, `include_object` filter
+- `migrations/versions/6d82e00ff8d9_initial_schema.py` — cleaned to no-op
+- `migrations/versions/a00467fd273b_phase_6h_extend_api_access_log.py` — 6 add_column only
+
+---
+
+**2026-03-01 (v1.5.6: Phase 6G — Read-Only Mode Kill Switch)**
+
+- Added `SystemSettings` model to `models/security.py`: key-value store with `get(key, default)` and `set(key, value)` class methods; table `system_settings`
+- Migration `0681369f14f7` applied — creates `system_settings` table (guarded with `IF NOT EXISTS` check for dev DBs already created by `db.create_all()`)
+- Added `enforce_read_only_mode()` `before_request` hook in `app.py`: blocks all `POST`/`PUT`/`DELETE`/`PATCH` to `/api/v1/` with 503 + `READ_ONLY_MODE` error code when `SystemSettings.get('read_only_mode') == 'true'`; `GET` always passes; non-API routes unaffected
+- Added 2 new endpoints to `routes/api_v1/settings.py` (scope: `admin:settings`):
+  - `GET /api/v1/admin/read-only-mode` — returns `{enabled, updated_at}`
+  - `POST /api/v1/admin/read-only-mode` — body `{"enabled": true|false}`, activates/deactivates
+- Tests: 12 new tests in `TestReadOnlyMode` in `tests/test_auth.py` — model get/set, GET blocked/allowed by ROM, POST/PUT blocked with 503, non-API POST unaffected, both admin endpoints (enable, disable, missing field, wrong scope); all pass
+- Total test count: 135 → 147 (164 total suite)
+- Total API endpoints: 138 → 140; settings.py: 10 → 12
+- Docs updated: CLAUDE.md, TODO.md, docs/mermaid_app_map.html (Tab 1 counts × 2, Tab 3 D6 node + A6 node)
+
+**2026-03-01 (v1.5.4: Phase 6E — Per-Endpoint-Type Rate Limits)**
+
+- Added `ENDPOINT_TYPE_LIMITS` dict to `utils/auth.py`: write=20/min, export=5/min, analytics=30/min, chat=10/min, auth=5/min (all per key, per 60-second window)
+- Added `classify_endpoint_type(path, method)` public helper: path-based types (export, analytics, chat, auth) take precedence over method-based types (write=POST/PUT/DELETE, read=GET), ensuring a POST to `/api/v1/analytics/*` is classified 'analytics' not 'write'
+- Added `_count_endpoint_type_requests(key_id, endpoint_type, since)` private helper: filters `ApiAccessLog` by path prefix for path-based types; for 'write', filters by method while excluding all special-path prefixes so each bucket is counted independently
+- Extended rate limit block in `require_api_key`: bot keys (`is_bot=True`) are capped at `min(rate_limit, 120)` req/min flat regardless of their configured `rate_limit`; per-type check follows the flat check and returns 429 with `endpoint_type` in details if the type bucket is exhausted; `Retry-After: 60` header included on all per-type 429 responses
+- Tests: 13 new tests in `TestEndpointTypeRateLimits` in `tests/test_auth.py` — unit tests for `classify_endpoint_type` (6 cases), `ENDPOINT_TYPE_LIMITS` values, integration tests for write type limit (threshold blocks / below-threshold passes), analytics type limit, bot flat cap at 120, non-bot respects configured rate_limit, write bucket excludes analytics path
+- Total test count: 122 → 135
+
+**2026-03-01 (v1.5.3: Phase 6D — Circuit Breaker Auto-Suspend)**
+
+- Added `suspension_reason = db.Column(db.String(200), nullable=True)` to `ApiKey` model in `models/security.py`
+- Added `suspension_reason` to `ApiKey.to_dict()` (always present, null when not suspended)
+- Added `CIRCUIT_BREAKER_THRESHOLD = 10` and `CIRCUIT_BREAKER_WINDOW_MINUTES = 5` constants to `utils/auth.py`
+- Added `_check_circuit_breaker(req, key_id)` helper: counts 4xx `ApiAccessLog` entries for the key in the last 5 min; if ≥10, sets `is_active=False` + `suspension_reason="circuit_breaker_triggered"` and returns a 403 `KEY_SUSPENDED_CIRCUIT_BREAKER` response
+- Changed `_log_failed_access()` to return the circuit breaker response when one fires (callers can propagate it); all `except Exception: pass` guards remain so a CB bug never blocks real traffic
+- Updated `require_api_key` callers to check the return of `_log_failed_access` for `expired_key` and `rate_limited` reasons
+- Updated `require_scope` to log `missing_scope` failures via `_log_failed_access` (scope failures now count toward the circuit breaker — catches misconfigured bots hitting wrong endpoints)
+- Added `PUT /api/v1/auth/api-keys/<key_id>/reactivate` endpoint to `routes/api_v1/security.py` (requires `admin:security`); sets `is_active=True`, clears `suspension_reason`
+- Applied migration `2746ca79c4d2` to add `suspension_reason` column (stripped all unintended auto-detected changes per CLAUDE.md safety rules)
+- Security.py endpoint count: 5 → 6; total API: 137 → 138
+- Updated `DATA_SCHEMA_REFERENCE.md`: `suspension_reason` added to ApiKey Object; `KEY_SUSPENDED_CIRCUIT_BREAKER` added to error codes table
+- Updated `docs/mermaid_app_map.html`: Tab 1 count 137→138; Tab 3 ApiKey node includes `suspension_reason`
+- Updated `CLAUDE.md`: security.py (5) → (6); api_v1 total 137 → 138
+- Tests: 10 new tests in `TestCircuitBreaker` in `tests/test_auth.py` (all pass); total test count 112 → 122
+
+**2026-03-01 (v1.5.2: Phase 6C — Hard Daily Write Caps Per API Key)**
+
+- Added `DAILY_WRITE_QUOTAS` dict and `check_daily_write_quota(key_id, endpoint_group)` to `utils/auth.py`
+- Quotas (POST writes per key per 24h, reset at midnight UTC):
+  - `diary`: 200 — meals, bulk entries, meal plans
+  - `recipes`: 50 — create and import
+  - `foods`: 100 — create and quick-add
+  - `notifications`: 500 — send
+  - `chat`: 200 — messages
+- Quota exceeded returns `429` with `DAILY_WRITE_LIMIT_EXCEEDED` error code and `reset_at` in body
+- Counts only today's POSTs in `ApiAccessLog` for the matching endpoint path prefix
+- Web bypass (no API key) and unknown groups always skip the quota check
+- Quota hits logged to `ApiAccessLog` with status 429 (anomaly_flag added in Phase 6H)
+- Applied to 8 POST endpoints: diary ×3, recipes ×2, foods ×2, notifications/send ×1, chat ×1
+- Tests: also wrote the missing 6A (`is_bot`) + 6B (idempotency) tests as required pre-step
+  — test count grew from 93 → 105 → 112 (all green)
+
+**2026-03-01 (v1.5.1: Phase 6B — Idempotency Keys on POST Write Endpoints)**
+
+- Added `IdempotencyCache` model to `models/security.py` — stores POST response body + status + 24h expiry
+- Created `utils/idempotency.py` with `check_idempotency()` and `store_idempotency()` helpers
+- Applied idempotency to 12 POST write endpoints across 6 route files:
+  - `diary.py`: `POST /diary/meals`, `POST /diary/entries/bulk`, `POST /diary/meal-plan`
+  - `recipes.py`: `POST /recipes`, `POST /recipes/import`
+  - `foods.py`: `POST /compendium/foods`, `POST /foods/quick-add`
+  - `reintroduction.py`: `POST /reintroduction/protocol`, `POST /reintroduction/evaluate`
+  - `notifications.py`: `POST /notifications/rules`, `POST /notifications/schedule`
+  - `chat.py`: `POST /chat`
+- Bots send `X-Idempotency-Key: <uuid>` header; retries receive `X-Idempotent-Replayed: true` with original response
+- Only 2xx responses cached; errors never cached; idempotency failures never block real requests
+- Table created by `db.create_all()` on app startup; migration `366a470c25a5` applied as record
+
+**2026-03-01 (v1.5.0: Phase 6A — Bot Flag on API Keys)**
+
+- Added `is_bot` boolean column to `ApiKey` model (`models/security.py`) — default `False`
+- `POST /api/v1/auth/api-keys` now accepts `is_bot` in request body; stored and returned in response
+- `GET /api/v1/auth/api-keys` now returns `is_bot` field on every key via `to_dict()`
+- Created and applied migration `3971f4143449_phase_6a_add_is_bot_to_api_keys` (add-only, no drops)
+- Migration stripped to single column addition — auto-generated food/educational column changes rejected as unsafe
+- Foundation for Phase 6 stricter bot defaults (6E) and kill switch (6G)
+
+**2026-02-28 (v1.4.6: Optional Future Documentation Suite)**
+
+- **OpenAPI 3.0 Schema (openapi.yaml)**
+  - Machine-readable API specification for auto-generating SDKs
+  - 350+ lines covering all 137 endpoints
+  - Request/response schemas, security schemes, examples
+  - Supports client SDK generation (Python, JavaScript, Go, etc.)
+  - Tools: openapi-generator, redoc, swagger-ui
+
+- **Docker Deployment Guide (DOCKER_DEPLOYMENT_GUIDE.md)**
+  - Complete containerization guide (50+ KB)
+  - Dockerfile with multi-stage build (Python 3.11-slim)
+  - Docker Compose for local development and production
+  - Kubernetes deployment examples with resources/limits
+  - Registry configuration (Docker Hub, ECR, Harbor)
+  - Scaling strategies (Docker Swarm, Kubernetes)
+  - Database backup services and persistent volumes
+
+- **Performance Tuning Guide (PERFORMANCE_TUNING_GUIDE.md)**
+  - 60+ KB comprehensive optimization guide
+  - Database optimization: connection pooling, indexing, eager loading
+  - Caching strategies: HTTP, application-level, Redis, ETags
+  - Query optimization: N+1 prevention, pagination, aggregation
+  - Infrastructure tuning: WAL mode, Gunicorn, thread pools, compression
+  - Profiling and benchmarking (Apache Bench, Locust)
+  - Performance metrics and baselines (p50, p99, throughput)
+
+- **Advanced Security Guide (ADVANCED_SECURITY_GUIDE.md)**
+  - 70+ KB production security hardening guide
+  - HTTPS/TLS setup with Let's Encrypt and Nginx
+  - CORS configuration and preflight handling
+  - Advanced rate limiting (per-endpoint, distributed with Redis)
+  - CSRF protection, input validation, output encoding
+  - API key management: generation, rotation, audit logs
+  - Secrets management: env vars, AWS Secrets Manager, Vault, K8s secrets
+  - Security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+  - Security checklist for production launch
+
+- **Monitoring & Alerting Guide (MONITORING_ALERTING_GUIDE.md)**
+  - 70+ KB comprehensive monitoring setup
+  - Error tracking with Sentry (exceptions, performance, release tracking)
+  - Metrics collection with Prometheus (counter, histogram, gauge)
+  - Application performance monitoring (Datadog, custom spans)
+  - Logging aggregation: ELK Stack (Elasticsearch, Logstash, Kibana)
+  - Alerting rules: Prometheus alerts, Sentry alerts, Datadog monitors
+  - Health checks: basic and detailed endpoints
+  - Load balancer configuration with health checks
+  - Dashboards: Grafana, Datadog, Kibana examples
+  - Alert runbooks and best practices
+
+**Total Phase 5 Documentation**: ~320 KB across 5 files (openapi.yaml + 4 guides)
+
+**2026-02-28 (v1.4.5: APP2 Setup & Key Exchange Documentation)**
+
+- **Comprehensive APP2 Setup Guide**
+  - Created `APP2_SETUP_GUIDE.md` (300+ lines, 60+ KB)
+  - Step-by-step key generation instructions (bootstrap script vs API)
+  - Secure key storage patterns (.env, config.py, Kubernetes secrets)
+  - Environment configuration examples
+
+- **Key Exchange Process Documentation**
+  - **Option A**: Bootstrap script (`python scripts/create_app2_key.py [--secondary]`)
+  - **Option B**: API creation (`POST /api/v1/auth/api-keys`)
+  - **Primary scopes** (15 required for day 1):
+    - Read: diary, analytics, export, chat, compendium, foods, recipes, search, fodmap, usda, ausnut, webhooks
+    - Write: diary, webhooks
+    - Stream: realtime
+  - **Secondary scopes** (6 for phase 2): gamification, reintroduction, notifications, billing, education, help
+  - **Forbidden scopes** for APP2: admin operations, write:foods, write:recipes, write:education, write:help
+
+- **Integration Code Examples**
+  - Python: requests library with error handling
+  - JavaScript: fetch API with retry logic
+  - Health check endpoint testing
+  - Scope verification and validation
+
+- **Security & Management**
+  - Key rotation procedures (90-day cycle)
+  - Rate limit monitoring (120/min default)
+  - Access log auditing
+  - Troubleshooting 401/403/429 errors
+  - Best practices (no git commits, env vars, key rotation)
+
+**2026-02-28 (v1.4.4: Recipe URL Import)**
+
+- **Recipe URL Scraper Implementation**
+  - Created `utils/recipe_scraper.py` (500+ lines) with full URL parsing support
+  - Supports JSON-LD, microdata, and Open Graph extraction
+  - Site-specific parsers for AllRecipes, Epicurious, Food.com, BBC Good Food, Food Network
+  - Automatic recipe field normalization across different formats
+  - Error handling with detailed error codes (RecipeScraperError, RecipeNotFoundError)
+  - 10-second timeout per request with proper error handling
+
+- **Recipe URL Scraping Capabilities**
+  - Extracts: recipe name, description, ingredients, instructions, prep/cook/total times, servings, images
+  - Automatic ingredient food matching (matches extracted ingredients to food library)
+  - Automatic field normalization (handles different data types across sites)
+  - Fallback chain for robust extraction: JSON-LD → Microdata → Open Graph → Site-specific
+  - Supports both list and dictionary ingredient formats
+  - Handles duration fields (ISO 8601 format)
+
+- **Enhanced `/api/v1/recipes/import` Endpoint**
+  - Previously JSON-only (`recipe_json` format), now supports URL imports
+  - New request format: `{"url": "https://example.com/recipe/123"}`
+  - Automatically scrapes recipe and converts to standard JSON format
+  - Maintains existing ingredient matching logic
+  - Returns matched/unmatched ingredient counts and food IDs
+  - Better error responses with specific error codes
+
+- **Added beautifulsoup4 Dependency**
+  - Added to requirements.txt (version 4.12.2)
+  - Used for HTML parsing and schema extraction
+  - Works with existing requests library
+
+- **Comprehensive URL Import Documentation**
+  - Created `RECIPE_URL_IMPORT_GUIDE.md` (200+ lines, 40+ KB)
+  - Supported websites with specifics for each
+  - Quick start guide with curl and Python examples
+  - Detailed extraction process and food matching logic
+  - Python and JavaScript integration code examples
+  - Batch import examples with rate limiting
+  - Comprehensive error handling and troubleshooting guide
+  - Best practices for production use
+  - Technical details on schema.org format support
+
+**2026-02-28 (v1.4.3: Legacy API Deprecation)**
+
+- **Deprecation System Implementation**
+  - Created `utils/deprecation.py` with deprecation decorator
+  - Decorator adds HTTP headers: Deprecation, Sunset, Warning, Link
+  - Automatic logging of deprecated endpoint access
+  - Deprecation status utilities for monitoring
+
+- **3 Legacy Endpoints Deprecated**
+  - `/api/match-ingredients` → `/api/v1/recipes/import` (Sunset: 2026-06-01)
+  - `/api/usda-search` → `/api/v1/usda/search` (Sunset: 2026-06-01)
+  - `/api/usda-food/<id>` → `/api/v1/usda/foods/{id}` (Sunset: 2026-06-01)
+  - All endpoints now return Deprecation headers
+  - Docstrings updated with DEPRECATED notices
+
+- **Migration Guide Created**
+  - Comprehensive `API_MIGRATION_GUIDE.md` (120+ lines)
+  - Before/after code examples for all 3 endpoints
+  - Python and JavaScript migration examples
+  - Troubleshooting section (401, 403, 429, validation errors)
+  - Migration checklist for users
+  - FAQ and support resources
+  - Sunset date: June 1, 2026 (94 days remaining)
+
+**2026-02-28 (v1.4.2: Complete API Documentation Gaps)**
+
+- **Comprehensive Pagination Documentation**
+  - Created `API_PAGINATION_ERRORS_REFERENCE.md` with detailed pagination guide (120 KB)
+  - Python and JavaScript examples for paginated requests
+  - Size recommendations and pagination limit documentation
+  - Forward/backward pagination patterns with code examples
+  - Pagination parameter validation and error handling
+
+- **Complete Error Codes Reference**
+  - Detailed description for all 13 error codes with HTTP status mapping
+  - Examples of each error type with resolution strategies
+  - Best practices for error handling in Python and JavaScript
+  - Common error scenarios and troubleshooting guide
+
+- **Query Optimization & N+1 Prevention Documentation**
+  - Implementation details for eager loading across key endpoints
+  - Performance metrics showing 40-1000x improvement
+  - Testing suite (`tests/test_query_optimization.py`) with 20+ tests
+  - Automated N+1 query verification for diary, analytics, and export endpoints
+  - Query counter fixture for performance testing
+
+- **Updated API Documentation Index**
+  - Added API_PAGINATION_ERRORS_REFERENCE.md to documentation index
+  - New navigation sections for pagination and query optimization
+  - Updated quick-start checklist with pagination reference
+
 **CORRECTION: 2026-02-28 (v1.4.1: Endpoint Count Correction)**- **Verified Endpoint Count: 137 (not 136)**  - `security.py` actually has 5 endpoints (including `GET /api/v1/auth/audit-log` from Phase 5C), not 4  - Updated all documentation files: TODO.md, CLAUDE.md, README.md, api_endpoints.md  - Added audit-log endpoint documentation to api_endpoints.md  - All 137 endpoints verified by @bp.route audit across all 20 route files- **Fixed Missing Dependencies**  - Added pytest, pytest-flask, pytest-cov, markdown2 to requirements.txt  - Test suite (81 tests) was created but dependencies were not documented
 
 **Latest Updates: 2026-02-28 (v1.4.0: Swagger API Docs + Database Migrations)**
@@ -3417,5 +4072,30 @@ templates/
 
 ---
 
-**Last Updated**: 2026-01-29
+---
+
+**Phase 6F — Prompt Injection Guards (2026-03-01)**
+
+Security hardening for the `/chat` LLM endpoint.
+
+- **New file: `utils/sanitize.py`**
+  - `wrap_user_data(text)` — wraps database-sourced content in `<user_data>...</user_data>` XML delimiters before injection into LLM prompts
+  - `check_injection_patterns(text)` — scans for 6 suspicious phrases (`ignore previous`, `disregard`, `you are now`, `system prompt`, `forget everything`, `new instructions`); logs a warning but never blocks (avoids false positives)
+  - `scan_output_for_keys(text)` — redacts 64-character hex strings (API key format) from LLM output before returning to client
+
+- **`routes/api_v1/chat.py` changes**
+  - All three providers (`call_ollama`, `call_openai`, `call_anthropic`) now append the `<user_data>` safety instruction to their system prompts
+  - `format_recipe_context()` wraps each recipe's text with `wrap_user_data()` before injecting into LLM context
+  - `POST /chat`: enforces 4,000-character message limit; calls `check_injection_patterns()`; scans AI response with `scan_output_for_keys()` before returning
+
+- **`utils/validators.py` changes**
+  - Added field length constants: `MAX_FOOD_NAME_LENGTH = 200`, `MAX_DIARY_NOTES_LENGTH = 2000`, `MAX_SYMPTOM_DESCRIPTION_LENGTH = 500`, `MAX_CHAT_MESSAGE_LENGTH = 4000`
+
+- **New file: `tests/test_sanitize.py`**
+  - 29 tests across `TestWrapUserData` (5), `TestCheckInjectionPatterns` (13), `TestScanOutputForKeys` (11)
+  - Full test suite: 135 → 164 passing
+
+---
+
+**Last Updated**: 2026-03-01
 **Maintained By**: Claude (AI Assistant)

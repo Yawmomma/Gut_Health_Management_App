@@ -60,7 +60,7 @@ curl -X POST http://localhost:5000/api/v1/webhooks/register \
     "id": 1,
     "url": "https://your-domain.com/webhooks/events",
     "events": ["meal.logged", "symptom.recorded", "entry.updated"],
-    "secret": "whsec_1234567890abcdef1234567890abcdef",
+    "secret": "whsec_<YOUR_WEBHOOK_SECRET>",
     "active": true,
     "created_at": "2026-02-28T12:00:00Z",
     "last_triggered": null,
@@ -83,7 +83,7 @@ import hashlib
 import json
 
 app = Flask(__name__)
-WEBHOOK_SECRET = "whsec_1234567890abcdef1234567890abcdef"
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET")  # Load from environment, never hardcode
 
 @app.route('/webhooks/events', methods=['POST'])
 def handle_webhook():
